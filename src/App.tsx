@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { marked } from 'marked'
 import './App.css'
 import { requestProductAdvice, continueProductChat } from './lib/openai'
 import type { SkinMetric } from './lib/types'
@@ -194,9 +195,16 @@ function App() {
           <div className="chat-pane">
             <div className="messages">
               {messages.map((message) => (
-                <article key={message.id} className={message.role === 'user' ? 'bubble user' : 'bubble'}>
-                  <p>{message.content}</p>
-                </article>
+                <article
+                  key={message.id}
+                  className={message.role === 'user' ? 'bubble user' : 'bubble'}
+                  dangerouslySetInnerHTML={{
+                    __html:
+                      message.role === 'user'
+                        ? escapeHtml(message.content)
+                        : renderMarkdown(message.content),
+                  }}
+                />
               ))}
               {isProcessing && <p className="typing">Assistant is thinking…</p>}
             </div>
@@ -352,5 +360,15 @@ const buildNarrative = ({
 
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value))
 const clamp100 = (value: number) => Math.min(100, Math.max(0, value))
+
+const escapeHtml = (input: string) =>
+  input
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+
+const renderMarkdown = (input: string) => marked.parse(input, { gfm: true })
 
 export default App

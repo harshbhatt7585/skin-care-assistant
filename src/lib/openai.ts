@@ -47,9 +47,9 @@ const buildMetricNarrative = (metrics: SkinMetric[]) =>
 export const requestProductAdvice = async (payload: AdviceRequestPayload): Promise<string> => {
   const client = getClient()
 
-  const userBrief = `
-  user a skin care assistant, analyze the face of the user, identify the skin type and skin concerns, and provide a product advice based on the face analysis.
-  `
+  const userBrief = `Skin scan insights\n${buildMetricNarrative(payload.metrics)}\n\nClient-noted concerns: ${
+    payload.concerns || 'Not shared'
+  }\nPriority focus: ${payload.focusAreas.length ? payload.focusAreas.join(', ') : 'Balance and barrier support'}\nEnvironment: ${payload.environment}\nRoutine intensity preference (1=fast, 5=clinical): ${payload.routineIntensity}`
   const response = await client.responses.create({
     model: 'gpt-4o-mini',
     input: [

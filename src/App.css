@@ -53,6 +53,10 @@
   color: var(--danger);
 }
 
+.status.inline {
+  align-self: flex-start;
+}
+
 .layout {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -295,6 +299,66 @@ button:not(:disabled):hover {
   white-space: pre-wrap;
   margin: 0;
   color: var(--text-dim);
+}
+
+.agent-result {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.recommendation-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.rec-card {
+  background: var(--bg-soft);
+  border-radius: 16px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rec-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.rec-header h4 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.rec-header span {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.rec-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.9rem;
+}
+
+.rec-meta a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.rec-meta a:hover {
+  text-decoration: underline;
 }
 
 .disclaimer {

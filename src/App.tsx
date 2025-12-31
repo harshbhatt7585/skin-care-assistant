@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ChangeEvent } from 'react'
 import './App.css'
-import { requestProductAdvice, type SkinMetric } from './lib/openai'
+import { requestProductAdvice } from './lib/openai'
+import { runFormulaAgent } from './lib/productAgent'
+import type { FormulaAgentResult, SkinMetric } from './lib/types'
 
 const FOCUS_OPTIONS = [
   'Hydration cushion',
@@ -42,6 +44,10 @@ function App() {
 
   const [isGenerating, setGenerating] = useState(false)
   const [advice, setAdvice] = useState('')
+  const [formula, setFormula] = useState('')
+  const [isAgentRunning, setAgentRunning] = useState(false)
+  const [agentResult, setAgentResult] = useState<FormulaAgentResult | null>(null)
+  const [agentError, setAgentError] = useState<string | null>(null)
 
   const cleanupCamera = useCallback(() => {
     const stream = videoRef.current?.srcObject as MediaStream | null
@@ -175,6 +181,31 @@ function App() {
     }
   }
 
+  const handleRunFormulaAgent = async () => {
+    const brief = formula.trim()
+    if (!brief) {
+      setAgentError('Describe the formula or hero ingredients before searching.')
+      return
+    }
+
+    try {
+      setAgentRunning(true)
+      setAgentError(null)
+      setAgentResult(null)
+      const result = await runFormulaAgent(brief)
+      setAgentResult(result)
+    } catch (err) {
+      console.error(err)
+      setAgentError(
+        err instanceof Error
+          ? err.message
+          : 'Formula agent ran into an issue. Check your search API key and retry.',
+      )
+    } finally {
+      setAgentRunning(false)
+    }
+  }
+
   return (
     <div className="app-shell">
       <header className="hero">
@@ -245,115 +276,10 @@ function App() {
             </button>
           </div>
 
-          {metrics.length > 0 && (
-            <div className="insights">
-              <div>
-                <p className="eyebrow">AI skin read</p>
-                <h3>{analysisSummary}</h3>
-                <p>
-                  These metrics look at color, tone, and contrast data from the snapshot. They act
-                  as signals for the LLM cosmetist — not a medical diagnosis.
-                </p>
-              </div>
-              <div className="metric-grid">
-                {metrics.map((metric) => (
-                  <article key={metric.key} className="metric-card">
-                    <div className="metric-header">
-                      <span>{metric.label}</span>
-                      <strong>{metric.value}</strong>
-                    </div>
-                    <div className="meter">
-                      <div style={{ width: `${metric.value}%` }} />
-                    </div>
-                    <p>{metric.summary}</p>
-                  </article>
-                ))}
-              </div>
-            </div>
-          )}
-        </section>
-
-        <section className="panel plan-panel">
-          <div className="panel-header">
-            <div>
-              <h2>2 · Tell the AI what matters</h2>
-              <p>Share flare triggers, lifestyle notes, or hero ingredients you love.</p>
-            </div>
-          </div>
-
-          <div className="preferences">
-            <label className="field">
-              <span>Concerns, triggers, lifestyle notes</span>
-              <textarea
-                placeholder="Maskne, SPF sensitivity, post-travel dehydration, etc."
-                rows={4}
-                value={concerns}
-                onChange={(event) => setConcerns(event.target.value)}
-              />
-            </label>
-
-            <div className="field">
-              <span>Focus areas</span>
-              <div className="chips">
-                {FOCUS_OPTIONS.map((focus) => {
-                  const isActive = focusAreas.includes(focus)
-                  return (
-                    <button
-                      type="button"
-                      key={focus}
-                      className={isActive ? 'chip active' : 'chip'}
-                      onClick={() => toggleFocusArea(focus)}
-                    >
-                      {focus}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-
-            <label className="field">
-              <span>Climate / environment</span>
-              <select value={environment} onChange={(event) => setEnvironment(event.target.value)}>
-                {ENVIRONMENT_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="field">
-              <span>Routine intensity: {routineIntensity}/5</span>
-              <input
-                type="range"
-                min={1}
-                max={5}
-                value={routineIntensity}
-                onChange={(event) => setRoutineIntensity(Number(event.target.value))}
-              />
-              <p className="hint">
-                1 = minimalist essentials, 5 = treatment-heavy ritual. We will always keep it safe
-                and patch-test friendly.
-              </p>
-            </label>
-          </div>
-
-          <div className="scanner-cta">
-            <button onClick={handleGenerateAdvice} disabled={isGenerating}>
-              {isGenerating ? 'Drafting your ritual...' : 'Build my ritual'}
-            </button>
-          </div>
-
-          {advice && (
-            <article className="ai-response">
-              <p className="eyebrow">AI ritual blueprint</p>
-              <pre>{advice}</pre>
-            </article>
-          )}
 
           <p className="disclaimer">
-            This assistant is not a dermatologist. Use the plan as education, patch test everything,
-            and speak with a professional for medical advice.
+            Requires a SerpAPI key (Google Shopping) for live search. Always verify retailers before buying
+            and patch test new formulas.
           </p>
         </section>
       </main>

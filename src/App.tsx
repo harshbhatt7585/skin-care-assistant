@@ -1,8 +1,8 @@
 import { useRef, useState } from 'react'
 import { marked } from 'marked'
 import './App.css'
-import { requestProductAdvice, continueProductChat } from './lib/openai'
-import type { SkinMetric } from './lib/types'
+import { requestProductAdvice, continueProductChat, searchRetailProducts } from './lib/openai'
+import type { ProductSuggestion, SkinMetric } from './lib/types'
 
 type ChatMessage = {
   id: string
@@ -75,14 +75,14 @@ function App() {
           },
         ])
 
-        await kickoffAssistant(newMetrics)
+        await kickoffAssistant(newMetrics, summary)
       }
       image.src = dataUrl
     }
     reader.readAsDataURL(file)
   }
 
-  const kickoffAssistant = async (scanMetrics: SkinMetric[]) => {
+  const kickoffAssistant = async (scanMetrics: SkinMetric[], summaryText: string) => {
     try {
       setProcessing(true)
       const plan = await requestProductAdvice({
@@ -92,13 +92,13 @@ function App() {
         environment: 'temperate',
         routineIntensity: 3,
       })
-      setMessages([
-        {
-          id: crypto.randomUUID(),
-          role: 'assistant',
-          content: plan,
-        },
-      ])
+      const planMessage = {
+        id: crypto.randomUUID(),
+        role: 'assistant' as const,
+        content: plan,
+      }
+      setMessages([planMessage])
+      await recommendProducts(scanMetrics, summaryText)
     } catch (err) {
       console.error(err)
       setError(
@@ -108,6 +108,29 @@ function App() {
       )
     } finally {
       setProcessing(false)
+    }
+  }
+
+  const recommendProducts = async (scanMetrics: SkinMetric[], summaryText: string) => {
+    const query = buildProductQuery(scanMetrics, summaryText)
+    if (!query) return
+    try {
+      const suggestions = await searchRetailProducts(query)
+      if (!suggestions.length) return
+      const markdown = formatProductMarkdown(suggestions)
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: markdown,
+        },
+      ])
+    } catch (err) {
+      console.error(err)
+      if (err instanceof Error && err.message.includes('SERPER')) {
+        setError('Add VITE_SERPER_API_KEY to enable live product recommendations.')
+      }
     }
   }
 
@@ -129,10 +152,7 @@ function App() {
       const assistantReply = await continueProductChat({
         metrics,
         summary: analysisSummary,
-        history: nextMessages.map((message) => ({
-          role: message.role,
-          content: message.content,
-        })),
+        history: nextMessages,
       })
 
       setMessages((prev) => [
@@ -370,5 +390,25 @@ const escapeHtml = (input: string) =>
     .replace(/'/g, '&#39;')
 
 const renderMarkdown = (input: string) => marked.parse(input, { gfm: true })
+
+const buildProductQuery = (metrics: SkinMetric[], summaryText: string) => {
+  if (!metrics.length && !summaryText) return ''
+  const prioritized = [...metrics]
+    .sort((a, b) => a.value - b.value)
+    .slice(0, 2)
+    .map((metric) => metric.label.toLowerCase())
+    .join(' and ')
+  return `${summaryText || 'skincare'} solutions for ${prioritized || 'hydration focus'} skincare products`
+}
+
+const formatProductMarkdown = (suggestions: ProductSuggestion[]) => {
+  const lines = suggestions.map((suggestion) => {
+    const pricePart = suggestion.price ? ` — ${suggestion.price}` : ''
+    const retailerPart = suggestion.retailer ? ` (${suggestion.retailer})` : ''
+    const snippetPart = suggestion.snippet ? ` · ${suggestion.snippet}` : ''
+    return `- [${suggestion.name}](${suggestion.url})${pricePart}${retailerPart}${snippetPart}`
+  })
+  return `Here are some ready-to-buy formulas I pulled for your scan:\n${lines.join('\n')}\n\nAlways verify vendors and patch test before use.`
+}
 
 export default App

@@ -1,13 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import type { ChangeEvent } from 'react'
+import { useRef, useState } from 'react'
 import './App.css'
-import { requestProductAdvice } from './lib/openai'
-import { runFormulaAgent } from './lib/productAgent'
-import type { FormulaAgentResult, SkinMetric } from './lib/types'
+import { requestProductAdvice, continueProductChat } from './lib/openai'
+import type { SkinMetric } from './lib/types'
 
-type EnvironmentOption = {
-  label: string
-  value: string
+type ChatMessage = {
+  id: string
+  role: 'user' | 'assistant'
+  content: string
 }
 
 type AnalysisResult = {
@@ -16,445 +15,210 @@ type AnalysisResult = {
 }
 
 function App() {
-  const videoRef = useRef<HTMLVideoElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
-  const [isCameraActive, setCameraActive] = useState(false)
-  const [snapshot, setSnapshot] = useState<string | null>(null)
+  const [photo, setPhoto] = useState<string | null>(null)
   const [analysisSummary, setAnalysisSummary] = useState('')
   const [metrics, setMetrics] = useState<SkinMetric[]>([])
-  const [statusMessage, setStatusMessage] = useState('')
+  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [input, setInput] = useState('')
+  const [isProcessing, setProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const [concerns, setConcerns] = useState('')
-  const [focusOptions, setFocusOptions] = useState<string[]>([])
-  const [environmentOptions, setEnvironmentOptions] = useState<EnvironmentOption[]>([])
-  const [focusAreas, setFocusAreas] = useState<string[]>([])
-  const [environment, setEnvironment] = useState('')
-  const [routineIntensity, setRoutineIntensity] = useState(3)
-
-  const [isGenerating, setGenerating] = useState(false)
-  const [advice, setAdvice] = useState('')
-  const [formula, setFormula] = useState('')
-  const [isAgentRunning, setAgentRunning] = useState(false)
-  const [agentResult, setAgentResult] = useState<FormulaAgentResult | null>(null)
-  const [agentError, setAgentError] = useState<string | null>(null)
-
-  const cleanupCamera = useCallback(() => {
-    const stream = videoRef.current?.srcObject as MediaStream | null
-    stream?.getTracks().forEach((track) => track.stop())
-    if (videoRef.current) {
-      videoRef.current.srcObject = null
-    }
-    setCameraActive(false)
-  }, [])
-
-  useEffect(() => () => cleanupCamera(), [cleanupCamera])
-
-  useEffect(() => {
-    const controller = new AbortController()
-
-    const loadOptions = async () => {
-      try {
-        const response = await fetch('/options.json', { signal: controller.signal })
-        if (!response.ok) {
-          throw new Error('Failed to load options.json')
-        }
-        const data = (await response.json()) as {
-          focusOptions?: string[]
-          environmentOptions?: EnvironmentOption[]
-        }
-        setFocusOptions(data.focusOptions ?? [])
-        setEnvironmentOptions(data.environmentOptions ?? [])
-        setFocusAreas((prev) =>
-          prev.length || !data.focusOptions?.length ? prev : [data.focusOptions[0]],
-        )
-        setEnvironment((prev) =>
-          prev || !data.environmentOptions?.length ? prev : data.environmentOptions[0].value,
-        )
-      } catch (err) {
-        if (err instanceof DOMException && err.name === 'AbortError') {
-          return
-        }
-        console.error('Unable to fetch options.json', err)
-      }
-    }
-
-    loadOptions()
-    return () => controller.abort()
-  }, [])
-
-  const handleStartCamera = async () => {
-    try {
-      setError(null)
-      setStatusMessage('Connecting to camera...')
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user' },
-      })
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream
-        await videoRef.current.play()
-        setCameraActive(true)
-        setStatusMessage('Camera ready. Hold still, then capture a frame.')
-      }
-    } catch (err) {
-      console.error(err)
-      setError('Unable to access your camera. Try uploading a clear selfie instead.')
-      setStatusMessage('')
-    }
-  }
-
-  const analyzeFromContext = (context: CanvasRenderingContext2D, width: number, height: number) => {
-    const imageData = context.getImageData(0, 0, width, height)
-    const { metrics: newMetrics, summary } = analyzeSkinSnapshot(imageData)
-    setMetrics(newMetrics)
-    setAnalysisSummary(summary)
-    setAdvice('')
-    return { metrics: newMetrics, summary }
-  }
-
-  const handleCapture = () => {
-    if (!videoRef.current || !canvasRef.current) {
-      setError('Camera not ready yet.')
-      return
-    }
-
-    const { videoWidth, videoHeight } = videoRef.current
-    if (!videoWidth || !videoHeight) {
-      setError('Waiting on the camera feed. Try again in a second.')
-      return
-    }
-
-    canvasRef.current.width = videoWidth
-    canvasRef.current.height = videoHeight
-    const ctx = canvasRef.current.getContext('2d')
-    if (!ctx) {
-      setError('Could not access drawing context for analysis.')
-      return
-    }
-
-    ctx.drawImage(videoRef.current, 0, 0, videoWidth, videoHeight)
-    const screenshot = canvasRef.current.toDataURL('image/png')
-    setSnapshot(screenshot)
+  const resetExperience = () => {
+    setPhoto(null)
+    setAnalysisSummary('')
+    setMetrics([])
+    setMessages([])
+    setInput('')
+    setProcessing(false)
     setError(null)
-    setStatusMessage('Scan captured. Scroll for insights below.')
-    analyzeFromContext(ctx, videoWidth, videoHeight)
   }
 
-  const handleFileUpload = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
 
+    setError(null)
     const reader = new FileReader()
     reader.onload = () => {
+      if (typeof reader.result !== 'string') {
+        setError('Unable to read that file. Try a different image.')
+        return
+      }
+
+      const dataUrl = reader.result
       const image = new Image()
-      image.onload = () => {
-        if (!canvasRef.current) return
-        canvasRef.current.width = image.width
-        canvasRef.current.height = image.height
-        const ctx = canvasRef.current.getContext('2d')
-        if (!ctx) return
-        ctx.drawImage(image, 0, 0)
-        const screenshot = canvasRef.current.toDataURL('image/png')
-        setSnapshot(screenshot)
-        setStatusMessage('Photo uploaded. Preview + AI readout below.')
-        analyzeFromContext(ctx, image.width, image.height)
+      image.onload = async () => {
+        const canvas = canvasRef.current
+        const context = canvas?.getContext('2d')
+        if (!canvas || !context) {
+          setError('Canvas not available for analysis.')
+          return
+        }
+
+        canvas.width = image.width
+        canvas.height = image.height
+        context.drawImage(image, 0, 0)
+        const imageData = context.getImageData(0, 0, image.width, image.height)
+        const { metrics: newMetrics, summary } = analyzeSkinSnapshot(imageData)
+
+        setPhoto(dataUrl)
+        setMetrics(newMetrics)
+        setAnalysisSummary(summary)
+        setMessages([
+          {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: 'Scan received. Give me a moment to read your skin and build a plan.',
+          },
+        ])
+
+        await kickoffAssistant(newMetrics)
       }
-      if (typeof reader.result === 'string') {
-        image.src = reader.result
-      }
+      image.src = dataUrl
     }
     reader.readAsDataURL(file)
   }
 
-  const toggleFocusArea = (focus: string) => {
-    setFocusAreas((prev) =>
-      prev.includes(focus) ? prev.filter((item) => item !== focus) : [...prev, focus],
-    )
-  }
-
-  const handleGenerateAdvice = async () => {
-    if (!metrics.length) {
-      setError('Capture or upload a scan before asking for guidance.')
-      return
-    }
-
+  const kickoffAssistant = async (scanMetrics: SkinMetric[]) => {
     try {
-      setGenerating(true)
-      setError(null)
-      setStatusMessage('Consulting the cosmetist...')
-      const response = await requestProductAdvice({
-        metrics,
-        concerns,
-        focusAreas,
-        environment,
-        routineIntensity,
+      setProcessing(true)
+      const plan = await requestProductAdvice({
+        metrics: scanMetrics,
+        concerns: '',
+        focusAreas: [],
+        environment: 'temperate',
+        routineIntensity: 3,
       })
-      setAdvice(response)
-      setStatusMessage('Routine ready — personalize further if needed.')
+      setMessages([
+        {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: plan,
+        },
+      ])
     } catch (err) {
       console.error(err)
       setError(
         err instanceof Error
           ? err.message
-          : 'Something went wrong while talking to OpenAI. Double-check your API key.',
+          : 'Could not reach the cosmetist. Double-check your API key.',
       )
     } finally {
-      setGenerating(false)
+      setProcessing(false)
     }
   }
 
-  const handleRunFormulaAgent = async () => {
-    const brief = formula.trim()
-    if (!brief) {
-      setAgentError('Describe the formula or hero ingredients before searching.')
-      return
+  const handleSend = async (event: React.FormEvent) => {
+    event.preventDefault()
+    if (!input.trim() || !photo || !metrics.length || isProcessing) return
+
+    const userMessage: ChatMessage = {
+      id: crypto.randomUUID(),
+      role: 'user',
+      content: input.trim(),
     }
+    const nextMessages = [...messages, userMessage]
+    setMessages(nextMessages)
+    setInput('')
 
     try {
-      setAgentRunning(true)
-      setAgentError(null)
-      setAgentResult(null)
-      const result = await runFormulaAgent(brief)
-      setAgentResult(result)
+      setProcessing(true)
+      const assistantReply = await continueProductChat({
+        metrics,
+        summary: analysisSummary,
+        history: nextMessages.map((message) => ({
+          role: message.role,
+          content: message.content,
+        })),
+      })
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: assistantReply,
+        },
+      ])
     } catch (err) {
       console.error(err)
-      setAgentError(
+      setError(
         err instanceof Error
           ? err.message
-          : 'Formula agent ran into an issue. Check your search API key and retry.',
+          : 'The chat assistant hit a snag. Try again in a moment.',
       )
     } finally {
-      setAgentRunning(false)
+      setProcessing(false)
     }
   }
 
   return (
     <div className="app-shell">
-      <header className="hero">
+      <header className="intro">
         <div>
-          <p className="eyebrow">Skin & Cosmetist Copilot</p>
-          <h1>Scan, decode, and build rituals with AI clarity.</h1>
+          <p className="eyebrow">Skin ritual copilot</p>
+          <h1>Upload a bare-face photo and chat through product picks.</h1>
           <p>
-            Capture a live snapshot or upload a clear photo, let the assistant interpret tone,
-            hydration, and flare signals, then receive ingredient-forward routines powered by
-            OpenAI.
+            We read tone, luminosity, and texture cues locally, then a licensed cosmetist agent chats
+            you through AM/PM rituals and follow-up questions.
           </p>
-          <div className="status-row">
-            {statusMessage && <span className="status">{statusMessage}</span>}
-            {error && <span className="status error">{error}</span>}
-          </div>
         </div>
+        {photo && (
+          <button className="text-button" onClick={resetExperience}>
+            Start over
+          </button>
+        )}
       </header>
 
-      <main className="layout">
-        <section className="panel scan-panel">
-          <div className="panel-header">
-            <div>
-              <h2>1 · Capture your skin snapshot</h2>
-              <p>Natural light works best. Remove heavy filters and keep the frame steady.</p>
-            </div>
-            <div className="actions">
-              {!isCameraActive ? (
-                <button className="ghost" onClick={handleStartCamera}>
-                  Enable live scan
-                </button>
-              ) : (
-                <button className="ghost" onClick={cleanupCamera}>
-                  Stop camera
-                </button>
-              )}
-              <label className="ghost upload">
-                Upload photo
-                <input type="file" accept="image/*" onChange={handleFileUpload} />
-              </label>
-            </div>
+      {!photo ? (
+        <section className="upload-card">
+          <div className="dashed">
+            <p>Drop a clear photo here or click to upload.</p>
+            <span>PNG or JPG · natural light · no heavy makeup</span>
+            <label>
+              Choose photo
+              <input type="file" accept="image/*" onChange={handleFileUpload} />
+            </label>
           </div>
-
-          <div className="scanner">
-            <div className="viewer">
-              {isCameraActive ? (
-                <video ref={videoRef} playsInline muted />
-              ) : (
-                <div className="placeholder">
-                  <p>Camera idle. Enable live scan or upload a recent, makeup-free photo.</p>
-                </div>
-              )}
-              <canvas ref={canvasRef} className="hidden" />
-            </div>
-            <div className="viewer">
-              {snapshot ? (
-                <img src={snapshot} alt="Captured skin" />
-              ) : (
-                <div className="placeholder">
-                  <p>Your capture will appear here for comparison.</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="scanner-cta">
-            <button onClick={handleCapture} disabled={!isCameraActive}>
-              Capture frame
-            </button>
-          </div>
-
-          <p className="disclaimer">
-            Requires a SerpAPI key (Google Shopping) for live search. Always verify retailers before buying
-            and patch test new formulas.
-          </p>
+          {error && <p className="error-text">{error}</p>}
         </section>
-
-        <section className="panel plan-panel">
-          <div className="panel-header">
-            <div>
-              <h2>2 · Tell the AI what matters</h2>
-              <p>Share flare triggers, lifestyle notes, or hero ingredients you love.</p>
-            </div>
+      ) : (
+        <section className="chat-shell">
+          <div className="photo-pane">
+            <img src={photo} alt="Uploaded skin" />
+            <p className="summary">{analysisSummary}</p>
           </div>
 
-          <div className="preferences">
-            <label className="field">
-              <span>Concerns, triggers, lifestyle notes</span>
-              <textarea
-                placeholder="Maskne, SPF sensitivity, post-travel dehydration, etc."
-                rows={4}
-                value={concerns}
-                onChange={(event) => setConcerns(event.target.value)}
-              />
-            </label>
-
-            <div className="field">
-              <span>Focus areas</span>
-              <div className="chips">
-                {focusOptions.length ? (
-                  focusOptions.map((focus) => {
-                    const isActive = focusAreas.includes(focus)
-                    return (
-                      <button
-                        type="button"
-                        key={focus}
-                        className={isActive ? 'chip active' : 'chip'}
-                        onClick={() => toggleFocusArea(focus)}
-                      >
-                        {focus}
-                      </button>
-                    )
-                  })
-                ) : (
-                  <span className="hint">Set focusOptions in public/options.json</span>
-                )}
-              </div>
+          <div className="chat-pane">
+            <div className="messages">
+              {messages.map((message) => (
+                <article key={message.id} className={message.role === 'user' ? 'bubble user' : 'bubble'}>
+                  <p>{message.content}</p>
+                </article>
+              ))}
+              {isProcessing && <p className="typing">Assistant is thinking…</p>}
             </div>
 
-            <label className="field">
-              <span>Climate / environment</span>
-              <select
-                value={environment}
-                onChange={(event) => setEnvironment(event.target.value)}
-                disabled={!environmentOptions.length}
-              >
-                {!environment && <option value="">Select environment</option>}
-                {environmentOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="field">
-              <span>Routine intensity: {routineIntensity}/5</span>
+            <form className="chat-input" onSubmit={handleSend}>
               <input
-                type="range"
-                min={1}
-                max={5}
-                value={routineIntensity}
-                onChange={(event) => setRoutineIntensity(Number(event.target.value))}
+                type="text"
+                placeholder="Ask about substitutions, ingredient layering, etc."
+                value={input}
+                onChange={(event) => setInput(event.target.value)}
+                disabled={!messages.length}
               />
-              <p className="hint">
-                1 = minimalist essentials, 5 = treatment-heavy ritual. We will always keep it safe
-                and patch-test friendly.
-              </p>
-            </label>
+              <button type="submit" disabled={!messages.length || isProcessing || !input.trim()}>
+                Send
+              </button>
+            </form>
+            {error && <p className="error-text">{error}</p>}
           </div>
-
-          <div className="scanner-cta">
-            <button onClick={handleGenerateAdvice} disabled={isGenerating}>
-              {isGenerating ? 'Drafting your ritual...' : 'Build my ritual'}
-            </button>
-          </div>
-
-          {advice && (
-            <article className="ai-response">
-              <p className="eyebrow">AI ritual blueprint</p>
-              <pre>{advice}</pre>
-            </article>
-          )}
-
-          <p className="disclaimer">
-            This assistant is not a dermatologist. Use the plan as education, patch test everything,
-            and speak with a professional for medical advice.
-          </p>
         </section>
+      )}
 
-        <section className="panel agent-panel">
-          <div className="panel-header">
-            <div>
-              <h2>3 · Scout products by formula</h2>
-              <p>Paste your hero ingredients or active percentages and let the agent find matching launches.</p>
-            </div>
-          </div>
-
-          <label className="field">
-            <span>Formula or ingredient brief</span>
-            <textarea
-              rows={4}
-              placeholder="e.g., 10% azelaic acid gel with niacinamide and soothing botanicals"
-              value={formula}
-              onChange={(event) => setFormula(event.target.value)}
-            />
-          </label>
-
-          <div className="scanner-cta">
-            <button onClick={handleRunFormulaAgent} disabled={isAgentRunning}>
-              {isAgentRunning ? 'Searching the web...' : 'Find matching products'}
-            </button>
-          </div>
-
-          {agentError && <span className="status error inline">{agentError}</span>}
-
-          {agentResult && (
-            <div className="agent-result">
-              <p className="eyebrow">Formula scout picks</p>
-              <p>{agentResult.summary}</p>
-              <div className="recommendation-grid">
-                {agentResult.recommendations.map((rec) => (
-                  <article key={`${rec.name}-${rec.url}`} className="rec-card">
-                    <div className="rec-header">
-                      <h4>{rec.name}</h4>
-                      {rec.retailer && <span>{rec.retailer}</span>}
-                    </div>
-                    <p>{rec.rationale}</p>
-                    <div className="rec-meta">
-                      {rec.price && <span>{rec.price}</span>}
-                      <a href={rec.url} target="_blank" rel="noreferrer">
-                        View product
-                      </a>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <p className="disclaimer">
-            Requires a SerpAPI key (Google Shopping) for live search. Always verify retailers before buying
-            and patch test new formulas.
-          </p>
-        </section>
-      </main>
+      <canvas ref={canvasRef} className="hidden" />
     </div>
   )
 }
@@ -491,16 +255,13 @@ const analyzeSkinSnapshot = (image: ImageData): AnalysisResult => {
     textureDelta += Math.abs(r - neutral) + Math.abs(g - neutral) + Math.abs(b - neutral)
   }
 
-  const avgRed = redSum / pixelCount / 255
-  const avgGreen = greenSum / pixelCount / 255
-  const avgBlue = blueSum / pixelCount / 255
   const avgBrightness = brightnessSum / pixelCount
   const brightnessVariance = brightnessSqSum / pixelCount - avgBrightness ** 2
   const contrast = Math.min(1, Math.sqrt(Math.max(0, brightnessVariance)) * 1.6)
   const avgChroma = chromaSum / pixelCount
   const textureScore = Math.min(1, textureDelta / (pixelCount * 255 * 1.5))
   const smoothness = clamp01(1 - textureScore)
-  const rednessTilt = clamp01(avgRed - (avgGreen + avgBlue) / 2)
+  const rednessTilt = clamp01((redSum / pixelCount / 255) - (greenSum / pixelCount / 255 + blueSum / pixelCount / 255) / 2)
 
   const hydrationScore = clamp100((1 - avgBrightness) * 115 + smoothness * 20)
   const oilScore = clamp100(avgBrightness * 120 + avgChroma * 25)
@@ -511,12 +272,12 @@ const analyzeSkinSnapshot = (image: ImageData): AnalysisResult => {
   const metrics: SkinMetric[] = [
     {
       key: 'hydration',
-      label: 'Hydration support',
+      label: 'Hydration',
       value: Math.round(hydrationScore),
       summary:
         hydrationScore > 65
-          ? 'Feels cushioned. Maintain with humectants and breathable occlusives.'
-          : 'Skin looks thirsty — layer humectants then seal with emollients.',
+          ? 'Well cushioned — keep humectants topped up.'
+          : 'Looks thirsty; layer humectants and seal with emollients.',
     },
     {
       key: 'oil',
@@ -524,17 +285,17 @@ const analyzeSkinSnapshot = (image: ImageData): AnalysisResult => {
       value: Math.round(oilScore),
       summary:
         oilScore > 60
-          ? 'Sebum is more active — think balancing cleansers and light gel textures.'
-          : 'Oil flow looks calm. Cream textures are safe.',
+          ? 'Sebum is lively; gel textures keep things breathable.'
+          : 'Oil flow looks calm. Cream textures are welcome.',
     },
     {
       key: 'sensitivity',
-      label: 'Sensitivity risk',
+      label: 'Sensitivity',
       value: Math.round(sensitivityScore),
       summary:
         sensitivityScore > 55
-          ? 'Redness shows up, so buffer actives and add soothing botanicals.'
-          : 'Barrier looks calm. Introduce actives gradually to keep it that way.',
+          ? 'Barrier is reactive. Buffer actives and add soothing botanicals.'
+          : 'Barrier looks calm; introduce actives gradually.',
     },
     {
       key: 'tone',
@@ -542,8 +303,8 @@ const analyzeSkinSnapshot = (image: ImageData): AnalysisResult => {
       value: Math.round(toneScore),
       summary:
         toneScore > 60
-          ? 'Tone reads uniform with subtle warmth.'
-          : 'Some uneven tone — think gentle exfoliation + brightening antioxidants.',
+          ? 'Tone reads even with gentle warmth.'
+          : 'Some uneven tone — brighten with antioxidants and SPF.',
     },
     {
       key: 'barrier',
@@ -552,7 +313,7 @@ const analyzeSkinSnapshot = (image: ImageData): AnalysisResult => {
       summary:
         barrierScore > 65
           ? 'Barrier looks resilient; maintain with ceramides + peptides.'
-          : 'Could use reinforcement — focus on ceramides, cholesterol, fatty acids.',
+          : 'Could use reinforcement — focus on lipids and barrier balms.',
     },
   ]
 
@@ -580,13 +341,13 @@ const buildNarrative = ({
   toneScore: number
   barrierScore: number
 }): string => {
-  const hydrationNote = hydrationScore > 70 ? 'well cushioned' : hydrationScore > 50 ? 'balanced' : 'dehydrated'
+  const hydrationNote = hydrationScore > 70 ? 'plump' : hydrationScore > 50 ? 'balanced' : 'dehydrated'
   const oilNote = oilScore > 65 ? 'luminous' : oilScore < 40 ? 'velvety-matte' : 'even'
-  const sensitivityNote = sensitivityScore > 60 ? 'easily triggered' : 'mostly calm'
-  const toneNote = toneScore > 60 ? 'even' : 'slightly patchy'
+  const sensitivityNote = sensitivityScore > 60 ? 'easily triggered' : 'calm'
+  const toneNote = toneScore > 60 ? 'even' : 'slightly varied'
   const barrierNote = barrierScore > 60 ? 'supported' : 'needing more reinforcement'
 
-  return `Complexion looks ${hydrationNote}, ${oilNote}, and ${toneNote} with a ${sensitivityNote} barrier that is ${barrierNote}.`
+  return `Complexion looks ${hydrationNote} and ${oilNote} with ${toneNote} tone. Barrier is ${barrierNote} and ${sensitivityNote}.`
 }
 
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value))

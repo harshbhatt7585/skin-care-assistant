@@ -401,6 +401,7 @@ const buildProductQuery = (metrics: SkinMetric[], summaryText: string) => {
   return `${summaryText || 'skincare'} solutions for ${prioritized || 'hydration focus'} skincare products`
 }
 
+
 const formatProductMarkdown = (suggestions: ProductSuggestion[]) => {
   const lines = suggestions.map((suggestion) => {
     const pricePart = suggestion.price ? ` — ${suggestion.price}` : ''

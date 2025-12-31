@@ -6,108 +6,218 @@ type AgentMessage = {
   content: string
 }
 
-type ToolHandler = (input: string) => Promise<string>
+type ToolHandler<TArgs = any> = (args: TArgs) => Promise<string>
+
+type ToolSpec<TArgs = any> = {
+  name: string
+  description: string
+  parameters: Record<string, any>
+  handler: ToolHandler<TArgs>
+}
 
 type AgentOptions = {
   systemPrompt?: string
-  tools?: Record<string, ToolHandler>
+  tools?: ToolSpec[]
+  model?: string
+  maxTurns?: number
 }
 
 const createClient = () => {
   const apiKey = import.meta.env.VITE_OPENAI_API_KEY
   if (!apiKey) {
-    throw new Error('Missing VITE_OPENAI_API_KEY. Add it to your .env.local before requesting advice.')
+    throw new Error('Missing VITE_OPENAI_API_KEY. Add it to your .env.local.')
   }
   return new OpenAI({ apiKey, dangerouslyAllowBrowser: true })
 }
 
 const extractResponseText = (response: { output_text?: string; output?: unknown[] }): string => {
-  if (response.output_text && response.output_text.trim().length > 0) {
-    return response.output_text.trim()
-  }
+  if (response.output_text && response.output_text.trim()) return response.output_text.trim()
 
   const aggregated: string[] = []
-  response.output?.forEach((item) => {
+  ;(response.output ?? []).forEach((item) => {
     if (typeof item !== 'object' || !item) return
     const candidate = item as { content?: Array<{ type?: string; text?: string }> }
     candidate.content?.forEach((content) => {
-      if (content?.type === 'output_text' && content.text) {
-        aggregated.push(content.text)
-      }
+      if (content?.type === 'output_text' && content.text) aggregated.push(content.text)
     })
   })
 
   return aggregated.join('\n').trim()
 }
 
-const serperTool: ToolHandler = async (input: string) => {
-  const apiKey = import.meta.env.VITE_SERPER_API_KEY
-  if (!apiKey) {
-    throw new Error('Missing VITE_SERPER_API_KEY for serper tool call.')
+type ToolCallItem = {
+  type: 'tool_call'
+  id: string
+  name: string
+  arguments: string | Record<string, any>
+}
+
+const parseToolCalls = (response: { output?: unknown[] }): ToolCallItem[] => {
+  const out: ToolCallItem[] = []
+  for (const item of response.output ?? []) {
+    if (typeof item !== 'object' || !item) continue
+    const it = item as any
+    if (it.type === 'tool_call' && it.name) {
+      out.push({
+        type: 'tool_call',
+        id: String(it.id ?? crypto.randomUUID()),
+        name: String(it.name),
+        arguments: it.arguments ?? {},
+      })
+    }
   }
+  return out
+}
 
-  const response = await fetch('https://google.serper.dev/search', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-API-KEY': apiKey,
-    },
-    body: JSON.stringify({ q: input, gl: 'us' }),
-  })
-
-  if (!response.ok) {
-    throw new Error('Serper search failed. Check your API key or quota.')
+const safeJsonParse = (value: unknown) => {
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value)
+    } catch {
+      return value
+    }
   }
-
-  const payload = (await response.json()) as Record<string, unknown>
-  return JSON.stringify(payload, null, 2)
+  return value
 }
 
 export class Agent {
   private client: OpenAI
   private systemPrompt?: string
-  private tools: Record<string, ToolHandler>
+  private model: string
+  private maxTurns: number
+  private toolMap: Map<string, ToolSpec>
 
   constructor(options: AgentOptions = {}) {
     this.client = createClient()
     this.systemPrompt = options.systemPrompt
-    this.tools = options.tools ?? {}
+    this.model = options.model ?? 'gpt-5-mini'
+    this.maxTurns = options.maxTurns ?? 6
+    this.toolMap = new Map()
+    ;(options.tools ?? []).forEach((tool) => this.toolMap.set(tool.name, tool))
+  }
+
+  private getToolDefsForModel() {
+    return Array.from(this.toolMap.values()).map((tool) => ({
+      type: 'function' as const,
+      name: tool.name,
+      description: tool.description,
+      parameters: tool.parameters,
+      strict: true,
+    }))
   }
 
   async respond(messages: AgentMessage[], overrideSystemPrompt?: string): Promise<string> {
     const compiled: AgentMessage[] = []
     const prompt = overrideSystemPrompt ?? this.systemPrompt
-    if (prompt) {
-      compiled.push({ role: 'system', content: prompt })
-    }
+    if (prompt) compiled.push({ role: 'system', content: prompt })
     compiled.push(...messages)
 
-    const response = await this.client.responses.create({
-      model: 'gpt-5-mini',
-      input: compiled,
+    let turn = 0
+    const input: any[] = compiled.map((message) => ({ role: message.role, content: message.content }))
+
+    while (turn < this.maxTurns) {
+      const response = await this.client.responses.create({
+        model: this.model,
+        input,
+        tools: this.getToolDefsForModel(),
+      })
+
+      const text = extractResponseText(response)
+      const toolCalls = parseToolCalls(response)
+
+      if (text && !toolCalls.length) {
+        return text
+      }
+
+      if (!toolCalls.length) {
+        throw new Error('Model returned no text and no tool calls.')
+      }
+
+      for (const call of toolCalls) {
+        const tool = this.toolMap.get(call.name)
+        if (!tool) {
+          input.push({ role: 'assistant', content: `Tool "${call.name}" is not available.` })
+          continue
+        }
+
+        const args = safeJsonParse(call.arguments)
+        let result: string
+        try {
+          result = await tool.handler(args)
+        } catch (error) {
+          result = `Tool "${call.name}" failed: ${error instanceof Error ? error.message : String(error)}`
+        }
+
+        input.push({
+          type: 'tool_result',
+          tool_call_id: call.id,
+          content: result,
+        })
+      }
+
+      turn += 1
+    }
+
+    throw new Error(`Max tool turns (${this.maxTurns}) exceeded without a final answer.`)
+  }
+
+  async callTool<TArgs = any>(name: string, args: TArgs): Promise<string> {
+    const tool = this.toolMap.get(name)
+    if (!tool) {
+      throw new Error(`Tool "${name}" is not available on this agent.`)
+    }
+    return tool.handler(args)
+  }
+}
+
+const serperTool: ToolSpec<{ q: string; gl?: string }> = {
+  name: 'serper',
+  description: 'Search the web for products and return structured results as JSON.',
+  parameters: {
+    type: 'object',
+    properties: {
+      q: { type: 'string', description: 'Search query' },
+      gl: { type: 'string', description: 'Country code (e.g., us, in)' },
+    },
+    required: ['q', 'gl'],
+    additionalProperties: false,
+  },
+  handler: async ({ q, gl = 'us' }) => {
+    const apiKey = import.meta.env.VITE_SERPER_API_KEY
+    if (!apiKey) throw new Error('Missing VITE_SERPER_API_KEY for serper tool call.')
+
+    const response = await fetch('https://google.serper.dev/search', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-KEY': apiKey,
+      },
+      body: JSON.stringify({ q, gl }),
     })
 
-    const text = extractResponseText(response)
-    if (!text) {
-      throw new Error('OpenAI returned an empty response.')
-    }
-    return text
-  }
+    if (!response.ok) throw new Error(`Serper search failed (${response.status}).`)
 
-  async toolCall(input: string, tool: string): Promise<string> {
-    const handler = this.tools[tool]
-    if (!handler) {
-      throw new Error(`Tool "${tool}" is not registered on this agent.`)
+    const payload = (await response.json()) as any
+    const slim = {
+      organic: (payload.organic ?? []).slice(0, 5),
+      shopping: (payload.shopping ?? []).slice(0, 5),
+      knowledgeGraph: payload.knowledgeGraph ?? null,
     }
-    return handler(input)
-  }
+    return JSON.stringify(slim, null, 2)
+  },
 }
 
 export const createCosmetistAgent = () =>
   new Agent({
-    systemPrompt:
-      'You are a licensed aesthetician and cosmetic chemist. Keep plans actionable, explain what each step does, cite hero ingredients, and remind the user to patch test. Use rich but concise markdown headings.',
-    tools: { serper: serperTool },
+    model: 'gpt-5-mini',
+    maxTurns: 5,
+    systemPrompt: [
+      'You are a licensed aesthetician and cosmetic chemist.',
+      'Keep plans actionable, explain what each step does, cite hero ingredients, and remind the user to patch test.',
+      'Use rich but concise markdown headings.',
+      'If asked to recommend products, use the serper tool to search the internet for relevant products.',
+    ].join(' '),
+    tools: [serperTool],
   })
 
 export const buildMetricNarrative = (metrics: SkinMetric[]) =>

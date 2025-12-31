@@ -52,7 +52,7 @@ export const continueProductChat = async ({
 
 export const searchRetailProducts = async (query: string): Promise<ProductSuggestion[]> => {
   const agent = getAgent()
-  const raw = await agent.toolCall(query, 'serper')
+  const raw = await agent.callTool('serper', { q: query, gl: 'us' })
   return parseSerperResults(raw)
 }
 

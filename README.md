@@ -31,6 +31,10 @@ A Vite + React + TypeScript experience for scanning a face (camera or upload), i
    ```
 4. Visit the printed URL, allow camera access (or upload a photo), capture a frame, describe your concerns, then click **Build my ritual**.
 
+### Customizing focus/environment options
+
+Edit `public/options.json` to control the focus chips and environment dropdown shown in the ritual builder — no source changes required.
+
 ## Formula Scout Agent
 
 - Uses [SerpAPI](https://serpapi.com/) (Google Shopping engine) to fetch public product listings that reference your ingredient brief. Supply `VITE_SERP_API_KEY` to enable it.

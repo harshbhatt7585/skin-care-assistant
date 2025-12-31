@@ -5,21 +5,10 @@ import { requestProductAdvice } from './lib/openai'
 import { runFormulaAgent } from './lib/productAgent'
 import type { FormulaAgentResult, SkinMetric } from './lib/types'
 
-const FOCUS_OPTIONS = [
-  'Hydration cushion',
-  'Barrier repair',
-  'Calm inflammation',
-  'Clarify breakouts',
-  'Fade spots + brighten',
-  'Smooth texture',
-] as const
-
-const ENVIRONMENT_OPTIONS = [
-  { label: 'Temperate / mixed climates', value: 'temperate' },
-  { label: 'Dry or desert air', value: 'dry' },
-  { label: 'Humid / tropical', value: 'humid' },
-  { label: 'Cold + indoor heat', value: 'cold' },
-] as const
+type EnvironmentOption = {
+  label: string
+  value: string
+}
 
 type AnalysisResult = {
   metrics: SkinMetric[]
@@ -38,8 +27,10 @@ function App() {
   const [error, setError] = useState<string | null>(null)
 
   const [concerns, setConcerns] = useState('')
-  const [focusAreas, setFocusAreas] = useState<string[]>(['Hydration cushion'])
-  const [environment, setEnvironment] = useState('temperate')
+  const [focusOptions, setFocusOptions] = useState<string[]>([])
+  const [environmentOptions, setEnvironmentOptions] = useState<EnvironmentOption[]>([])
+  const [focusAreas, setFocusAreas] = useState<string[]>([])
+  const [environment, setEnvironment] = useState('')
   const [routineIntensity, setRoutineIntensity] = useState(3)
 
   const [isGenerating, setGenerating] = useState(false)
@@ -59,6 +50,39 @@ function App() {
   }, [])
 
   useEffect(() => () => cleanupCamera(), [cleanupCamera])
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    const loadOptions = async () => {
+      try {
+        const response = await fetch('/options.json', { signal: controller.signal })
+        if (!response.ok) {
+          throw new Error('Failed to load options.json')
+        }
+        const data = (await response.json()) as {
+          focusOptions?: string[]
+          environmentOptions?: EnvironmentOption[]
+        }
+        setFocusOptions(data.focusOptions ?? [])
+        setEnvironmentOptions(data.environmentOptions ?? [])
+        setFocusAreas((prev) =>
+          prev.length || !data.focusOptions?.length ? prev : [data.focusOptions[0]],
+        )
+        setEnvironment((prev) =>
+          prev || !data.environmentOptions?.length ? prev : data.environmentOptions[0].value,
+        )
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') {
+          return
+        }
+        console.error('Unable to fetch options.json', err)
+      }
+    }
+
+    loadOptions()
+    return () => controller.abort()
+  }, [])
 
   const handleStartCamera = async () => {
     try {
@@ -276,6 +300,154 @@ function App() {
             </button>
           </div>
 
+          <p className="disclaimer">
+            Requires a SerpAPI key (Google Shopping) for live search. Always verify retailers before buying
+            and patch test new formulas.
+          </p>
+        </section>
+
+        <section className="panel plan-panel">
+          <div className="panel-header">
+            <div>
+              <h2>2 · Tell the AI what matters</h2>
+              <p>Share flare triggers, lifestyle notes, or hero ingredients you love.</p>
+            </div>
+          </div>
+
+          <div className="preferences">
+            <label className="field">
+              <span>Concerns, triggers, lifestyle notes</span>
+              <textarea
+                placeholder="Maskne, SPF sensitivity, post-travel dehydration, etc."
+                rows={4}
+                value={concerns}
+                onChange={(event) => setConcerns(event.target.value)}
+              />
+            </label>
+
+            <div className="field">
+              <span>Focus areas</span>
+              <div className="chips">
+                {focusOptions.length ? (
+                  focusOptions.map((focus) => {
+                    const isActive = focusAreas.includes(focus)
+                    return (
+                      <button
+                        type="button"
+                        key={focus}
+                        className={isActive ? 'chip active' : 'chip'}
+                        onClick={() => toggleFocusArea(focus)}
+                      >
+                        {focus}
+                      </button>
+                    )
+                  })
+                ) : (
+                  <span className="hint">Set focusOptions in public/options.json</span>
+                )}
+              </div>
+            </div>
+
+            <label className="field">
+              <span>Climate / environment</span>
+              <select
+                value={environment}
+                onChange={(event) => setEnvironment(event.target.value)}
+                disabled={!environmentOptions.length}
+              >
+                {!environment && <option value="">Select environment</option>}
+                {environmentOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="field">
+              <span>Routine intensity: {routineIntensity}/5</span>
+              <input
+                type="range"
+                min={1}
+                max={5}
+                value={routineIntensity}
+                onChange={(event) => setRoutineIntensity(Number(event.target.value))}
+              />
+              <p className="hint">
+                1 = minimalist essentials, 5 = treatment-heavy ritual. We will always keep it safe
+                and patch-test friendly.
+              </p>
+            </label>
+          </div>
+
+          <div className="scanner-cta">
+            <button onClick={handleGenerateAdvice} disabled={isGenerating}>
+              {isGenerating ? 'Drafting your ritual...' : 'Build my ritual'}
+            </button>
+          </div>
+
+          {advice && (
+            <article className="ai-response">
+              <p className="eyebrow">AI ritual blueprint</p>
+              <pre>{advice}</pre>
+            </article>
+          )}
+
+          <p className="disclaimer">
+            This assistant is not a dermatologist. Use the plan as education, patch test everything,
+            and speak with a professional for medical advice.
+          </p>
+        </section>
+
+        <section className="panel agent-panel">
+          <div className="panel-header">
+            <div>
+              <h2>3 · Scout products by formula</h2>
+              <p>Paste your hero ingredients or active percentages and let the agent find matching launches.</p>
+            </div>
+          </div>
+
+          <label className="field">
+            <span>Formula or ingredient brief</span>
+            <textarea
+              rows={4}
+              placeholder="e.g., 10% azelaic acid gel with niacinamide and soothing botanicals"
+              value={formula}
+              onChange={(event) => setFormula(event.target.value)}
+            />
+          </label>
+
+          <div className="scanner-cta">
+            <button onClick={handleRunFormulaAgent} disabled={isAgentRunning}>
+              {isAgentRunning ? 'Searching the web...' : 'Find matching products'}
+            </button>
+          </div>
+
+          {agentError && <span className="status error inline">{agentError}</span>}
+
+          {agentResult && (
+            <div className="agent-result">
+              <p className="eyebrow">Formula scout picks</p>
+              <p>{agentResult.summary}</p>
+              <div className="recommendation-grid">
+                {agentResult.recommendations.map((rec) => (
+                  <article key={`${rec.name}-${rec.url}`} className="rec-card">
+                    <div className="rec-header">
+                      <h4>{rec.name}</h4>
+                      {rec.retailer && <span>{rec.retailer}</span>}
+                    </div>
+                    <p>{rec.rationale}</p>
+                    <div className="rec-meta">
+                      {rec.price && <span>{rec.price}</span>}
+                      <a href={rec.url} target="_blank" rel="noreferrer">
+                        View product
+                      </a>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+          )}
 
           <p className="disclaimer">
             Requires a SerpAPI key (Google Shopping) for live search. Always verify retailers before buying

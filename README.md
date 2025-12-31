@@ -8,9 +8,10 @@ Lightweight Vite + React experience where a user uploads a bare-faced photo, the
    ```bash
    npm install
    ```
-2. Create `.env.local` (never commit it) and add your OpenAI key:
+2. Create `.env.local` (never commit it) and add your OpenAI key (and optional Serper key if you want to enable the agent's web-search tool):
    ```env
    VITE_OPENAI_API_KEY=sk-your-key
+   VITE_SERPER_API_KEY=serper-your-key
    ```
 3. Start the dev server:
    ```bash

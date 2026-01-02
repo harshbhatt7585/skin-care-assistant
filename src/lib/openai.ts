@@ -23,7 +23,7 @@ export const requestProductAdvice = async (payload: AdviceRequestPayload): Promi
   return agent.respond([
     {
       role: 'user',
-      content: `${userBrief}\n\nDeliver: 1) a diagnostic overview, 2) AM ritual (≤4 steps), 3) PM ritual (≤5 steps), 4) spotlight on 3 hero ingredients with over-the-counter product suggestions. When recommending products, call the serper tool to fetch current retail listings and cite them with markdown links. Close with gentle reminders.`,
+      content: `${userBrief}\n\nDeliver: 1) a diagnostic overview, 2) AM ritual (≤4 steps), 3) PM ritual (≤5 steps), 4) spotlight on 3 hero ingredients. This is the first response, so keep it conversational and do not call any external tools yet—just outline the routine and mention you can fetch shopping links if the user asks next.`,
     },
   ])
 }
@@ -42,7 +42,7 @@ export const continueProductChat = async ({
   }
 
   const agent = getAgent()
-  const context = `Skin summary: ${summary}\nKey metrics:\n${buildMetricNarrative(metrics)}\nRespond as a supportive cosmetist, reference the scan when useful, and keep patch-test reminders.`
+  const context = `Skin summary: ${summary}\nKey metrics:\n${buildMetricNarrative(metrics)}\nRespond as a supportive cosmetist, reference the scan when useful, and keep patch-test reminders. Only call the serper tool when the user explicitly asks for product links or where to buy items.`
 
   return agent.respond([
     { role: 'user', content: context },

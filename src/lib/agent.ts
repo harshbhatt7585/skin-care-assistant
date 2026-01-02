@@ -122,7 +122,11 @@ export class Agent {
         tools: this.getToolDefsForModel(),
       })
 
+      console.log('response', response)
+
       const text = extractResponseText(response)
+
+      console.log('text', text)
       const toolCalls = parseToolCalls(response)
 
       if (!toolCalls.length) {
@@ -149,9 +153,9 @@ export class Agent {
         }
 
         input.push({
-          type: 'tool_result',
+          role: 'tool',
           tool_call_id: call.id,
-          content: result,
+          content: [{ type: 'output_text', text: result }],
         })
       }
 

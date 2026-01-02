@@ -1,8 +1,8 @@
 import { useRef, useState } from 'react'
 import { marked } from 'marked'
 import './App.css'
-import { requestProductAdvice, continueProductChat, searchRetailProducts } from './lib/openai'
-import type { ProductSuggestion, SkinMetric } from './lib/types'
+import { requestProductAdvice, continueProductChat } from './lib/openai'
+import type { SkinMetric } from './lib/types'
 
 type ChatMessage = {
   id: string
@@ -75,14 +75,14 @@ function App() {
           },
         ])
 
-        await kickoffAssistant(newMetrics, summary)
+        await kickoffAssistant(newMetrics)
       }
       image.src = dataUrl
     }
     reader.readAsDataURL(file)
   }
 
-  const kickoffAssistant = async (scanMetrics: SkinMetric[], summaryText: string) => {
+  const kickoffAssistant = async (scanMetrics: SkinMetric[]) => {
     try {
       setProcessing(true)
       const plan = await requestProductAdvice({
@@ -98,7 +98,6 @@ function App() {
         content: plan,
       }
       setMessages([planMessage])
-      await recommendProducts(scanMetrics, summaryText)
     } catch (err) {
       console.error(err)
       setError(
@@ -108,29 +107,6 @@ function App() {
       )
     } finally {
       setProcessing(false)
-    }
-  }
-
-  const recommendProducts = async (scanMetrics: SkinMetric[], summaryText: string) => {
-    const query = buildProductQuery(scanMetrics, summaryText)
-    if (!query) return
-    try {
-      const suggestions = await searchRetailProducts(query)
-      if (!suggestions.length) return
-      const markdown = formatProductMarkdown(suggestions)
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          role: 'assistant',
-          content: markdown,
-        },
-      ])
-    } catch (err) {
-      console.error(err)
-      if (err instanceof Error && err.message.includes('SERPER')) {
-        setError('Add VITE_SERPER_API_KEY to enable live product recommendations.')
-      }
     }
   }
 
@@ -176,75 +152,75 @@ function App() {
   }
 
   return (
-    <div className="app-shell">
-      <header className="intro">
-        <div>
-          <p className="eyebrow">Skin ritual copilot</p>
-          <h1>Upload a bare-face photo and chat through product picks.</h1>
+    <div className="page">
+      <header className="hero">
+        <div className="hero__text">
+          <p className="hero__eyebrow">Skin ritual copilot</p>
+          <h1>Drop a bare-face photo. Chat your way to a routine.</h1>
           <p>
-            We read tone, luminosity, and texture cues locally, then a licensed cosmetist agent chats
-            you through AM/PM rituals and follow-up questions.
+            We analyze tone, oil balance, and barrier cues on-device, then a cosmetist agent keeps the
+            conversation going. No dashboards — just a calm chat.
           </p>
         </div>
         {photo && (
-          <button className="text-button" onClick={resetExperience}>
+          <button className="hero__reset" onClick={resetExperience}>
             Start over
           </button>
         )}
       </header>
 
-      {!photo ? (
-        <section className="upload-card">
-          <div className="dashed">
-            <p>Drop a clear photo here or click to upload.</p>
-            <span>PNG or JPG · natural light · no heavy makeup</span>
-            <label>
-              Choose photo
+      <main className="surface">
+        {!photo ? (
+          <section className="panel upload-panel">
+            <h2>Upload a photo</h2>
+            <p className="panel__body">Natural light, no heavy makeup. Your image stays in the browser.</p>
+            <label className="dropzone">
+              <span>Choose photo</span>
               <input type="file" accept="image/*" onChange={handleFileUpload} />
             </label>
-          </div>
-          {error && <p className="error-text">{error}</p>}
-        </section>
-      ) : (
-        <section className="chat-shell">
-          <div className="photo-pane">
-            <img src={photo} alt="Uploaded skin" />
-            <p className="summary">{analysisSummary}</p>
-          </div>
-
-          <div className="chat-pane">
-            <div className="messages">
-              {messages.map((message) => (
-                <article
-                  key={message.id}
-                  className={message.role === 'user' ? 'bubble user' : 'bubble'}
-                  dangerouslySetInnerHTML={{
-                    __html:
-                      message.role === 'user'
-                        ? escapeHtml(message.content)
-                        : renderMarkdown(message.content),
-                  }}
-                />
-              ))}
-              {isProcessing && <p className="typing">Assistant is thinking…</p>}
+            {error && <p className="text-error">{error}</p>}
+          </section>
+        ) : (
+          <section className="chat-layout">
+            <div className="panel photo-card">
+              <img src={photo} alt="Uploaded skin" />
+              <p>{analysisSummary}</p>
             </div>
 
-            <form className="chat-input" onSubmit={handleSend}>
-              <input
-                type="text"
-                placeholder="Ask about substitutions, ingredient layering, etc."
-                value={input}
-                onChange={(event) => setInput(event.target.value)}
-                disabled={!messages.length}
-              />
-              <button type="submit" disabled={!messages.length || isProcessing || !input.trim()}>
-                Send
-              </button>
-            </form>
-            {error && <p className="error-text">{error}</p>}
-          </div>
-        </section>
-      )}
+            <div className="panel chat-card">
+              <div className="messages">
+                {messages.map((message) => (
+                  <article
+                    key={message.id}
+                    className={message.role === 'user' ? 'bubble bubble--user' : 'bubble'}
+                    dangerouslySetInnerHTML={{
+                      __html:
+                        message.role === 'user'
+                          ? escapeHtml(message.content)
+                          : renderMarkdown(message.content),
+                    }}
+                  />
+                ))}
+                {isProcessing && <p className="typing">Assistant is thinking…</p>}
+              </div>
+
+              <form className="chat-input" onSubmit={handleSend}>
+                <input
+                  type="text"
+                  placeholder="Ask about substitutions, layering, travel routines..."
+                  value={input}
+                  onChange={(event) => setInput(event.target.value)}
+                  disabled={!messages.length}
+                />
+                <button type="submit" disabled={!messages.length || isProcessing || !input.trim()}>
+                  Send
+                </button>
+              </form>
+              {error && <p className="text-error">{error}</p>}
+            </div>
+          </section>
+        )}
+      </main>
 
       <canvas ref={canvasRef} className="hidden" />
     </div>
@@ -390,26 +366,5 @@ const escapeHtml = (input: string) =>
     .replace(/'/g, '&#39;')
 
 const renderMarkdown = (input: string) => marked.parse(input, { gfm: true })
-
-const buildProductQuery = (metrics: SkinMetric[], summaryText: string) => {
-  if (!metrics.length && !summaryText) return ''
-  const prioritized = [...metrics]
-    .sort((a, b) => a.value - b.value)
-    .slice(0, 2)
-    .map((metric) => metric.label.toLowerCase())
-    .join(' and ')
-  return `${summaryText || 'skincare'} solutions for ${prioritized || 'hydration focus'} skincare products`
-}
-
-
-const formatProductMarkdown = (suggestions: ProductSuggestion[]) => {
-  const lines = suggestions.map((suggestion) => {
-    const pricePart = suggestion.price ? ` — ${suggestion.price}` : ''
-    const retailerPart = suggestion.retailer ? ` (${suggestion.retailer})` : ''
-    const snippetPart = suggestion.snippet ? ` · ${suggestion.snippet}` : ''
-    return `- [${suggestion.name}](${suggestion.url})${pricePart}${retailerPart}${snippetPart}`
-  })
-  return `Here are some ready-to-buy formulas I pulled for your scan:\n${lines.join('\n')}\n\nAlways verify vendors and patch test before use.`
-}
 
 export default App

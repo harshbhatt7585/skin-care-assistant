@@ -125,12 +125,12 @@ export class Agent {
       const text = extractResponseText(response)
       const toolCalls = parseToolCalls(response)
 
-      if (text && !toolCalls.length) {
-        return text
-      }
-
       if (!toolCalls.length) {
-        throw new Error('Model returned no text and no tool calls.')
+        if (text) {
+          return text
+        }
+        const fallbackMessage = (response as { error?: { message?: string } })?.error?.message
+        return fallbackMessage || 'I could not form a response. Please try asking again.'
       }
 
       for (const call of toolCalls) {

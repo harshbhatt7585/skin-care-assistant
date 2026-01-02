@@ -12,11 +12,3 @@ export type AdviceRequestPayload = {
   environment: string
   routineIntensity: number
 }
-
-export type ProductSuggestion = {
-  name: string
-  url: string
-  price?: string
-  retailer?: string
-  snippet?: string
-}

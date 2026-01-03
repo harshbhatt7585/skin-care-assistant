@@ -1,14 +1,8 @@
 import { useRef, useState } from 'react'
 import { marked } from 'marked'
 import './App.css'
-import { requestProductAdvice, continueProductChat } from './lib/openai'
-import type { SkinMetric } from './lib/types'
-
-type ChatMessage = {
-  id: string
-  role: 'user' | 'assistant'
-  content: string
-}
+import { generatePlanWithQuery, searchRetailProducts } from './lib/openai'
+import type { ProductSuggestion, SkinMetric } from './lib/types'
 
 type AnalysisResult = {
   metrics: SkinMetric[]
@@ -17,22 +11,22 @@ type AnalysisResult = {
 
 function App() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
-
   const [photo, setPhoto] = useState<string | null>(null)
   const [analysisSummary, setAnalysisSummary] = useState('')
-  const [metrics, setMetrics] = useState<SkinMetric[]>([])
-  const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [input, setInput] = useState('')
-  const [isProcessing, setProcessing] = useState(false)
+  const [planMarkdown, setPlanMarkdown] = useState('')
+  const [products, setProducts] = useState<ProductSuggestion[]>([])
+  const [searchQuery, setSearchQuery] = useState('')
+  const [status, setStatus] = useState('Upload a clear photo to begin.')
   const [error, setError] = useState<string | null>(null)
+  const [isLoading, setLoading] = useState(false)
 
-  const resetExperience = () => {
+  const reset = () => {
     setPhoto(null)
     setAnalysisSummary('')
-    setMetrics([])
-    setMessages([])
-    setInput('')
-    setProcessing(false)
+    setPlanMarkdown('')
+    setProducts([])
+    setSearchQuery('')
+    setStatus('Upload a clear photo to begin.')
     setError(null)
   }
 
@@ -44,7 +38,7 @@ function App() {
     const reader = new FileReader()
     reader.onload = () => {
       if (typeof reader.result !== 'string') {
-        setError('Unable to read that file. Try a different image.')
+        setError('Unable to read that file. Try another image.')
         return
       }
 
@@ -57,97 +51,47 @@ function App() {
           setError('Canvas not available for analysis.')
           return
         }
-
         canvas.width = image.width
         canvas.height = image.height
         context.drawImage(image, 0, 0)
         const imageData = context.getImageData(0, 0, image.width, image.height)
         const { metrics: newMetrics, summary } = analyzeSkinSnapshot(imageData)
-
         setPhoto(dataUrl)
-        setMetrics(newMetrics)
         setAnalysisSummary(summary)
-        setMessages([
-          {
-            id: crypto.randomUUID(),
-            role: 'assistant',
-            content: 'Scan received. Give me a moment to read your skin and build a plan.',
-          },
-        ])
-
-        await kickoffAssistant(newMetrics)
+        await runAgent(newMetrics)
       }
       image.src = dataUrl
     }
     reader.readAsDataURL(file)
   }
 
-  const kickoffAssistant = async (scanMetrics: SkinMetric[]) => {
+  const runAgent = async (scanMetrics: SkinMetric[]) => {
     try {
-      setProcessing(true)
-      const plan = await requestProductAdvice({
+      setLoading(true)
+      setStatus('Reading your scan...')
+      const { planMarkdown: plan, searchQuery: query } = await generatePlanWithQuery({
         metrics: scanMetrics,
         concerns: '',
         focusAreas: [],
         environment: 'temperate',
         routineIntensity: 3,
       })
-      const planMessage = {
-        id: crypto.randomUUID(),
-        role: 'assistant' as const,
-        content: plan,
-      }
-      setMessages([planMessage])
+      setPlanMarkdown(plan)
+      setSearchQuery(query)
+      setStatus('Searching for products...')
+      const suggestions = await searchRetailProducts(query)
+      setProducts(suggestions)
+      setStatus('Done. Adjust anything you like and upload again to iterate.')
     } catch (err) {
       console.error(err)
       setError(
         err instanceof Error
           ? err.message
-          : 'Could not reach the cosmetist. Double-check your API key.',
+          : 'Something went wrong while generating your plan. Try again.',
       )
+      setStatus('Unable to finish. Fix the issue and retry.')
     } finally {
-      setProcessing(false)
-    }
-  }
-
-  const handleSend = async (event: React.FormEvent) => {
-    event.preventDefault()
-    if (!input.trim() || !photo || !metrics.length || isProcessing) return
-
-    const userMessage: ChatMessage = {
-      id: crypto.randomUUID(),
-      role: 'user',
-      content: input.trim(),
-    }
-    const nextMessages = [...messages, userMessage]
-    setMessages(nextMessages)
-    setInput('')
-
-    try {
-      setProcessing(true)
-      const assistantReply = await continueProductChat({
-        metrics,
-        summary: analysisSummary,
-        history: nextMessages,
-      })
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          role: 'assistant',
-          content: assistantReply,
-        },
-      ])
-    } catch (err) {
-      console.error(err)
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'The chat assistant hit a snag. Try again in a moment.',
-      )
-    } finally {
-      setProcessing(false)
+      setLoading(false)
     }
   }
 
@@ -156,14 +100,11 @@ function App() {
       <header className="hero">
         <div className="hero__text">
           <p className="hero__eyebrow">Skin ritual copilot</p>
-          <h1>Drop a bare-face photo. Chat your way to a routine.</h1>
-          <p>
-            We analyze tone, oil balance, and barrier cues on-device, then a cosmetist agent keeps the
-            conversation going. No dashboards — just a calm chat.
-          </p>
+          <h1>Drop a bare-face photo. Get a ritual plus real products.</h1>
+          <p>{status}</p>
         </div>
         {photo && (
-          <button className="hero__reset" onClick={resetExperience}>
+          <button className="hero__reset" onClick={reset}>
             Start over
           </button>
         )}
@@ -173,7 +114,7 @@ function App() {
         {!photo ? (
           <section className="panel upload-panel">
             <h2>Upload a photo</h2>
-            <p className="panel__body">Natural light, no heavy makeup. Your image stays in the browser.</p>
+            <p className="panel__body">Natural light, no heavy makeup. Everything stays on-device.</p>
             <label className="dropzone">
               <span>Choose photo</span>
               <input type="file" accept="image/*" onChange={handleFileUpload} />
@@ -181,41 +122,37 @@ function App() {
             {error && <p className="text-error">{error}</p>}
           </section>
         ) : (
-          <section className="chat-layout">
-            <div className="panel photo-card">
-              <img src={photo} alt="Uploaded skin" />
-              <p>{analysisSummary}</p>
+          <section className="results-grid">
+            <div className="panel plan-card">
+              <h2>Your AI ritual</h2>
+              <p className="plan-summary">{analysisSummary}</p>
+              {isLoading && <p className="typing">Working...</p>}
+              {planMarkdown && (
+                <div
+                  className="plan-markdown"
+                  dangerouslySetInnerHTML={{ __html: marked.parse(planMarkdown, { gfm: true }) }}
+                />
+              )}
             </div>
 
-            <div className="panel chat-card">
-              <div className="messages">
-                {messages.map((message) => (
-                  <article
-                    key={message.id}
-                    className={message.role === 'user' ? 'bubble bubble--user' : 'bubble'}
-                    dangerouslySetInnerHTML={{
-                      __html:
-                        message.role === 'user'
-                          ? escapeHtml(message.content)
-                          : renderMarkdown(message.content),
-                    }}
-                  />
+            <div className="panel products-card">
+              <h2>Shopable picks</h2>
+              {searchQuery && <p className="search-query">Search query: {searchQuery}</p>}
+              {products.length === 0 && !isLoading && <p>No live listings yet. Ask again after a moment.</p>}
+              <div className="product-list">
+                {products.map((product) => (
+                  <article key={product.url} className="product-card">
+                    <div>
+                      <a href={product.url} target="_blank" rel="noreferrer">
+                        {product.name}
+                      </a>
+                      {product.retailer && <span>{product.retailer}</span>}
+                    </div>
+                    {product.price && <p className="price">{product.price}</p>}
+                    {product.snippet && <p className="snippet">{product.snippet}</p>}
+                  </article>
                 ))}
-                {isProcessing && <p className="typing">Assistant is thinking…</p>}
               </div>
-
-              <form className="chat-input" onSubmit={handleSend}>
-                <input
-                  type="text"
-                  placeholder="Ask about substitutions, layering, travel routines..."
-                  value={input}
-                  onChange={(event) => setInput(event.target.value)}
-                  disabled={!messages.length}
-                />
-                <button type="submit" disabled={!messages.length || isProcessing || !input.trim()}>
-                  Send
-                </button>
-              </form>
               {error && <p className="text-error">{error}</p>}
             </div>
           </section>
@@ -356,15 +293,5 @@ const buildNarrative = ({
 
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value))
 const clamp100 = (value: number) => Math.min(100, Math.max(0, value))
-
-const escapeHtml = (input: string) =>
-  input
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-
-const renderMarkdown = (input: string) => marked.parse(input, { gfm: true })
 
 export default App

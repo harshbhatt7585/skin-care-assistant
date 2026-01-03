@@ -1,6 +1,6 @@
-# Skin Chat Ritualist
+# Skin Ritualist
 
-Lightweight Vite + React experience where a user uploads a bare-faced photo, the app runs a quick on-device pixel analysis, and an OpenAI-powered cosmetist chats through AM/PM product suggestions.
+Lightweight Vite + React experience where you upload a bare-faced photo, we run an on-device pixel scan, and OpenAI returns a markdown ritual plus a Serper-powered list of live products.
 
 ## Getting Started
 
@@ -17,13 +17,13 @@ Lightweight Vite + React experience where a user uploads a bare-faced photo, the
    ```bash
    npm run dev
    ```
-4. Visit the printed URL, upload a clear photo, and start chatting with the assistant.
+4. Visit the printed URL, upload a clear photo, and let the assistant generate a ritual + shoppable suggestions.
 
 ## How It Works
 
 - The image never leaves the browser; we use a hidden `<canvas>` to capture pixel data and build heuristics for hydration, oil balance, tone, barrier strength, and sensitivity.
-- Those signals seed an OpenAI Responses run (`gpt-4o-mini`) which produces the first routine suggestion.
-- Follow-up questions are handled in a chat UI that keeps the scan context in every turn so the cosmetist can tailor answers.
+- Those heuristics seed an OpenAI Responses run (`gpt-4o-mini`) that returns markdown with AM/PM rituals *and* a concise search query.
+- We send that query to Serper (Google Shopping) to fetch live product listings and surface them with links so you can review/buy directly.
 
 ## Scripts
 

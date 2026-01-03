@@ -95,7 +95,7 @@ export const searchRetailProducts = async (query: string): Promise<ProductSugges
       'Content-Type': 'application/json',
       'X-API-KEY': apiKey,
     },
-    body: JSON.stringify({ q: 'gentle gel cleanser hydrating toner hyaluronic acid lightweight serum gel-cream moisturizer SPF 30+ ceramides peptides vitamin C', gl: 'us' }),
+    body: JSON.stringify({ q: query, gl: 'us' }),
   })
 
   if (!response.ok) {

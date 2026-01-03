@@ -1,17 +1,12 @@
 import OpenAI from 'openai'
 import type { AdviceRequestPayload, ProductSuggestion, SkinMetric } from './types'
 
-let cachedClient: OpenAI | null = null
-
 const getClient = () => {
   const apiKey = import.meta.env.VITE_OPENAI_API_KEY
   if (!apiKey) {
     throw new Error('Missing VITE_OPENAI_API_KEY. Add it to your .env.local before requesting advice.')
   }
-  if (!cachedClient) {
-    cachedClient = new OpenAI({ apiKey, dangerouslyAllowBrowser: true })
-  }
-  return cachedClient
+  return new OpenAI({ apiKey, dangerouslyAllowBrowser: true })
 }
 
 const extractResponseText = (response: { output_text?: string; output?: unknown[] }) => {
@@ -34,21 +29,9 @@ const extractResponseText = (response: { output_text?: string; output?: unknown[
 const buildMetricNarrative = (metrics: SkinMetric[]) =>
   metrics.map((metric) => `${metric.label}: ${metric.value}/100 — ${metric.summary}`).join('\n')
 
-export const generatePlanWithQuery = async (
-  payload: AdviceRequestPayload,
-): Promise<{ planMarkdown: string; searchQuery: string }> => {
+export const generatePlanMarkdown = async (payload: AdviceRequestPayload): Promise<string> => {
   const client = getClient()
-  const planSchema = {
-    type: 'object',
-    properties: {
-      plan_markdown: { type: 'string' },
-      search_query: { type: 'string' },
-    },
-    required: ['plan_markdown', 'search_query'],
-    additionalProperties: false,
-  } as const
-
-  const instructions = `Skin scan insights\n${buildMetricNarrative(payload.metrics)}\n\nClient-noted concerns: ${
+  const prompt = `Skin scan insights\n${buildMetricNarrative(payload.metrics)}\n\nClient-noted concerns: ${
     payload.concerns || 'Not shared'
   }\nFocus areas: ${payload.focusAreas.length ? payload.focusAreas.join(', ') : 'Balance and barrier support'}\nEnvironment: ${payload.environment}\nRoutine intensity preference (1=fast, 5=clinical): ${
     payload.routineIntensity
@@ -60,30 +43,44 @@ export const generatePlanWithQuery = async (
       {
         role: 'system',
         content:
-          'You are a licensed aesthetician and cosmetic chemist. Provide confident, friendly markdown routines and include reminders to patch test.',
+          'You are a licensed aesthetician. Provide a concise markdown analysis with AM/PM routines and patch-test reminders.',
       },
       {
         role: 'user',
-        content: `${instructions}\n\nReturn JSON with: plan_markdown (the AM/PM plan written in markdown) and search_query (a concise search phrase I can send to a shopping API to locate suitable products).`,
+        content: prompt,
       },
     ],
-    text: {
-      format: {
-        type: 'json_schema',
-        name: 'skin_plan_schema',
-        schema: planSchema,
-        strict: true,
-      },
-    },
-  } as any)
+  })
 
   const text = extractResponseText(response)
   if (!text) {
     throw new Error('OpenAI did not return a plan. Try again in a moment.')
   }
+  return text
+}
 
-  const parsed = JSON.parse(text) as { plan_markdown: string; search_query: string }
-  return { planMarkdown: parsed.plan_markdown.trim(), searchQuery: parsed.search_query.trim() }
+export const generateProductQuery = async (planMarkdown: string): Promise<string> => {
+  const client = getClient()
+  const response = await client.responses.create({
+    model: 'gpt-4o-mini',
+    input: [
+      {
+        role: 'system',
+        content:
+          'You are a shopping assistant. Given a markdown ritual, produce a single concise search query to find over-the-counter products that match the recommended ingredients and concerns. Respond with the query only.',
+      },
+      {
+        role: 'user',
+        content: planMarkdown,
+      },
+    ],
+  })
+
+  const text = extractResponseText(response)
+  if (!text) {
+    throw new Error('OpenAI did not return a search query. Try again in a moment.')
+  }
+  return text.trim()
 }
 
 export const searchRetailProducts = async (query: string): Promise<ProductSuggestion[]> => {
@@ -92,13 +89,13 @@ export const searchRetailProducts = async (query: string): Promise<ProductSugges
     throw new Error('Missing VITE_SERPER_API_KEY for product lookup.')
   }
 
-  const response = await fetch('https://google.serper.dev/search', {
+  const response = await fetch('https://google.serper.dev/shopping', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'X-API-KEY': apiKey,
     },
-    body: JSON.stringify({ q: query, gl: 'us' }),
+    body: JSON.stringify({ q: 'gentle gel cleanser hydrating toner hyaluronic acid lightweight serum gel-cream moisturizer SPF 30+ ceramides peptides vitamin C', gl: 'us' }),
   })
 
   if (!response.ok) {
@@ -106,7 +103,12 @@ export const searchRetailProducts = async (query: string): Promise<ProductSugges
   }
 
   const payload = (await response.json()) as Record<string, unknown>
-  const shopping = Array.isArray(payload.shopping_results) ? payload.shopping_results : []
+  console.log('payload', payload)
+  const shopping = Array.isArray(payload.shopping_results)
+    ? payload.shopping_results
+    : Array.isArray(payload.shopping)
+      ? payload.shopping
+      : []
   const suggestions = shopping
     .map((item) => normalizeShopping(item as Record<string, unknown>))
     .filter((item): item is ProductSuggestion => Boolean(item))
@@ -116,7 +118,11 @@ export const searchRetailProducts = async (query: string): Promise<ProductSugges
     return suggestions
   }
 
-  const organic = Array.isArray(payload.organic_results) ? payload.organic_results : []
+  const organic = Array.isArray(payload.organic_results)
+    ? payload.organic_results
+    : Array.isArray(payload.organic)
+      ? payload.organic
+      : []
   return organic
     .map((item) => normalizeOrganic(item as Record<string, unknown>))
     .filter((item): item is ProductSuggestion => Boolean(item))

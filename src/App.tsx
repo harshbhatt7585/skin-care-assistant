@@ -1,7 +1,11 @@
 import { useRef, useState } from 'react'
 import { marked } from 'marked'
 import './App.css'
-import { generatePlanWithQuery, searchRetailProducts } from './lib/openai'
+import {
+  generatePlanMarkdown,
+  generateProductQuery,
+  searchRetailProducts,
+} from './lib/openai'
 import type { ProductSuggestion, SkinMetric } from './lib/types'
 
 type AnalysisResult = {
@@ -69,7 +73,7 @@ function App() {
     try {
       setLoading(true)
       setStatus('Reading your scan...')
-      const { planMarkdown: plan, searchQuery: query } = await generatePlanWithQuery({
+      const plan = await generatePlanMarkdown({
         metrics: scanMetrics,
         concerns: '',
         focusAreas: [],
@@ -77,11 +81,16 @@ function App() {
         routineIntensity: 3,
       })
       setPlanMarkdown(plan)
+
+      setStatus('Learning what to shop...')
+      const query = await generateProductQuery(plan)
       setSearchQuery(query)
-      setStatus('Searching for products...')
+
+      setStatus('Fetching live product listings...')
       const suggestions = await searchRetailProducts(query)
       setProducts(suggestions)
-      setStatus('Done. Adjust anything you like and upload again to iterate.')
+
+      setStatus('Done. Upload again to iterate or tweak the plan manually.')
     } catch (err) {
       console.error(err)
       setError(
@@ -136,9 +145,10 @@ function App() {
             </div>
 
             <div className="panel products-card">
-              <h2>Shopable picks</h2>
+              <h2>Shoppable picks</h2>
               {searchQuery && <p className="search-query">Search query: {searchQuery}</p>}
-              {products.length === 0 && !isLoading && <p>No live listings yet. Ask again after a moment.</p>}
+              {isLoading && <p className="typing">Looking for matches...</p>}
+              {!isLoading && !products.length && <p>No live listings yet. Try again in a moment.</p>}
               <div className="product-list">
                 {products.map((product) => (
                   <article key={product.url} className="product-card">

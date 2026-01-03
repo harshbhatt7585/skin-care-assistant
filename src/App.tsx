@@ -1,11 +1,7 @@
 import { useRef, useState } from 'react'
 import { marked } from 'marked'
 import './App.css'
-import {
-  generatePlanMarkdown,
-  generateProductQuery,
-  searchRetailProducts,
-} from './lib/openai'
+import { runRitualAgent } from './lib/openai'
 import type { ProductSuggestion, SkinMetric } from './lib/types'
 
 type AnalysisResult = {
@@ -19,7 +15,6 @@ function App() {
   const [analysisSummary, setAnalysisSummary] = useState('')
   const [planMarkdown, setPlanMarkdown] = useState('')
   const [products, setProducts] = useState<ProductSuggestion[]>([])
-  const [searchQuery, setSearchQuery] = useState('')
   const [status, setStatus] = useState('Upload a clear photo to begin.')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setLoading] = useState(false)
@@ -29,7 +24,6 @@ function App() {
     setAnalysisSummary('')
     setPlanMarkdown('')
     setProducts([])
-    setSearchQuery('')
     setStatus('Upload a clear photo to begin.')
     setError(null)
   }
@@ -62,34 +56,29 @@ function App() {
         const { metrics: newMetrics, summary } = analyzeSkinSnapshot(imageData)
         setPhoto(dataUrl)
         setAnalysisSummary(summary)
-        await runAgent(newMetrics)
+        await runAgent(newMetrics, summary)
       }
       image.src = dataUrl
     }
     reader.readAsDataURL(file)
   }
 
-  const runAgent = async (scanMetrics: SkinMetric[]) => {
+  const runAgent = async (scanMetrics: SkinMetric[], summary: string) => {
     try {
       setLoading(true)
       setStatus('Reading your scan...')
-      const plan = await generatePlanMarkdown({
-        metrics: scanMetrics,
-        concerns: '',
-        focusAreas: [],
-        environment: 'temperate',
-        routineIntensity: 3,
-      })
+      const { planMarkdown: plan, products: productList } = await runRitualAgent(
+        {
+          metrics: scanMetrics,
+          concerns: '',
+          focusAreas: [],
+          environment: 'temperate',
+          routineIntensity: 3,
+        },
+        summary,
+      )
       setPlanMarkdown(plan)
-
-      setStatus('Learning what to shop...')
-      const query = await generateProductQuery(plan)
-      setSearchQuery(query)
-
-      setStatus('Fetching live product listings...')
-      const suggestions = await searchRetailProducts(query)
-      setProducts(suggestions)
-
+      setProducts(productList)
       setStatus('Done. Upload again to iterate or tweak the plan manually.')
     } catch (err) {
       console.error(err)
@@ -146,7 +135,6 @@ function App() {
 
             <div className="panel products-card">
               <h2>Shoppable picks</h2>
-              {searchQuery && <p className="search-query">Search query: {searchQuery}</p>}
               {isLoading && <p className="typing">Looking for matches...</p>}
               {!isLoading && !products.length && <p>No live listings yet. Try again in a moment.</p>}
               <div className="product-list">

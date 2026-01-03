@@ -1,5 +1,9 @@
 import OpenAI from 'openai'
-import type { ChatCompletion, ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources/chat/completions'
+import type {
+  ChatCompletionMessageParam,
+  ChatCompletionMessageToolCall,
+  ChatCompletionTool,
+} from 'openai/resources/chat/completions'
 
 type AgentMessage = {
   role: 'system' | 'user' | 'assistant'
@@ -16,7 +20,7 @@ type ToolSpec<TArgs = any> = {
 }
 
 type AgentOptions = {
-  systemPrompt?: string
+  systemPrompt: string
   tools?: ToolSpec[]
   model?: string
   maxTurns?: number
@@ -43,16 +47,16 @@ const safeJsonParse = (value: unknown) => {
 
 export class Agent {
   private client: OpenAI
-  private systemPrompt?: string
+  private systemPrompt: string
   private model: string
   private maxTurns: number
   private toolMap: Map<string, ToolSpec>
 
-  constructor(options: AgentOptions = {}) {
+  constructor(options: AgentOptions) {
     this.client = createClient()
     this.systemPrompt = options.systemPrompt
     this.model = options.model ?? 'gpt-4o-mini'
-    this.maxTurns = options.maxTurns ?? 5
+    this.maxTurns = options.maxTurns ?? 6
     this.toolMap = new Map()
     ;(options.tools ?? []).forEach((tool) => this.toolMap.set(tool.name, tool))
   }
@@ -70,45 +74,33 @@ export class Agent {
   }
 
   async respond(messages: AgentMessage[]): Promise<string> {
-    const compiled: ChatCompletionMessageParam[] = []
-    if (this.systemPrompt) {
-      compiled.push({ role: 'system', content: this.systemPrompt } as ChatCompletionMessageParam)
-    }
+    const compiled: ChatCompletionMessageParam[] = [{ role: 'system', content: this.systemPrompt }]
     messages.forEach((message) =>
       compiled.push({ role: message.role, content: message.content } as ChatCompletionMessageParam),
     )
 
     for (let turn = 0; turn < this.maxTurns; turn++) {
-      const completion = (await this.client.chat.completions.create({
+      const completion = await this.client.chat.completions.create({
         model: this.model,
         messages: compiled,
         tools: this.getToolDefs(),
         tool_choice: this.toolMap.size ? 'auto' : undefined,
-      })) as ChatCompletion
+      })
 
       const choice = completion.choices[0]
       const message = choice.message
-      const toolCalls = ((message as any).tool_calls ?? []) as Array<{
-        id: string
-        function?: { name: string; arguments: string }
-      }>
+      const toolCalls = ((message as any).tool_calls ?? []) as Array<ChatCompletionMessageToolCall>
 
       if (toolCalls.length) {
         compiled.push({
           role: 'assistant',
-          content: (message.content ?? '') as string,
-          tool_calls: toolCalls.map((call) => ({
-            id: call.id,
-            type: 'function',
-            function: call.function!,
-          })),
-        } as ChatCompletionMessageParam)
+          content: message.content ?? '',
+          tool_calls: toolCalls.map((call) => call as ChatCompletionMessageToolCall),
+        })
 
         for (const call of toolCalls) {
-          const funcCall = call.function
-          if (!funcCall) {
-            continue
-          }
+          const funcCall = (call as any).function as { name: string; arguments: string } | undefined
+          if (!funcCall) continue
 
           const tool = this.toolMap.get(funcCall.name)
           if (!tool) {
@@ -189,16 +181,15 @@ const serperTool: ToolSpec<{ q: string; gl?: string }> = {
   },
 }
 
-export const createCosmetistAgent = () =>
+export const createCosmetistAgent = (context: string) =>
   new Agent({
     model: 'gpt-4o-mini',
     maxTurns: 6,
     systemPrompt: [
       'You are a licensed aesthetician and cosmetic chemist.',
-      'Step 1: analyze the scan summary and craft markdown with overview, AM/PM rituals, and reminders.',
-      'Step 2: when ready, call the serper tool with a targeted query to find 3-4 over-the-counter products matching the plan.',
-      'Step 3: parse the tool response and return a JSON object with plan_markdown plus a products array (name, url, price?, retailer?, snippet?).',
-      'Respond with JSON only in your final message.',
+      `Here is the scan context: ${context}.`,
+      'Chat naturally using markdown. When the user asks for products or shopping links, call the serper tool with a focused query and fold the results into your reply as bullet lists with links.',
+      'Always remind them to patch test.',
     ].join(' '),
     tools: [serperTool],
   })

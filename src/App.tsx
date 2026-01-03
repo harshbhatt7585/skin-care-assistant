@@ -1,8 +1,14 @@
 import { useRef, useState } from 'react'
 import { marked } from 'marked'
 import './App.css'
-import { runRitualAgent } from './lib/openai'
-import type { ProductSuggestion, SkinMetric } from './lib/types'
+import type { SkinMetric } from './lib/types'
+import { runChatTurn } from './lib/openai'
+
+type ChatMessage = {
+  id: string
+  role: 'user' | 'assistant'
+  content: string
+}
 
 type AnalysisResult = {
   metrics: SkinMetric[]
@@ -13,8 +19,10 @@ function App() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [photo, setPhoto] = useState<string | null>(null)
   const [analysisSummary, setAnalysisSummary] = useState('')
-  const [planMarkdown, setPlanMarkdown] = useState('')
-  const [products, setProducts] = useState<ProductSuggestion[]>([])
+  const [metrics, setMetrics] = useState<SkinMetric[] | null>(null)
+  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [history, setHistory] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([])
+  const [input, setInput] = useState('')
   const [status, setStatus] = useState('Upload a clear photo to begin.')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setLoading] = useState(false)
@@ -22,8 +30,10 @@ function App() {
   const reset = () => {
     setPhoto(null)
     setAnalysisSummary('')
-    setPlanMarkdown('')
-    setProducts([])
+    setMetrics(null)
+    setMessages([])
+    setHistory([])
+    setInput('')
     setStatus('Upload a clear photo to begin.')
     setError(null)
   }
@@ -53,22 +63,27 @@ function App() {
         canvas.height = image.height
         context.drawImage(image, 0, 0)
         const imageData = context.getImageData(0, 0, image.width, image.height)
-        const { metrics: newMetrics, summary } = analyzeSkinSnapshot(imageData)
+        const { metrics: computedMetrics, summary } = analyzeSkinSnapshot(imageData)
         setPhoto(dataUrl)
+        setMetrics(computedMetrics)
         setAnalysisSummary(summary)
-        await runAgent(newMetrics, summary)
+        await runAgentTurn(computedMetrics, summary, [])
       }
       image.src = dataUrl
     }
     reader.readAsDataURL(file)
   }
 
-  const runAgent = async (scanMetrics: SkinMetric[], summary: string) => {
+  const runAgentTurn = async (
+    scanMetrics: SkinMetric[],
+    summary: string,
+    nextHistory: Array<{ role: 'user' | 'assistant'; content: string }>,
+  ) => {
     try {
       setLoading(true)
-      setStatus('Reading your scan...')
-      const { planMarkdown: plan, products: productList } = await runRitualAgent(
-        {
+      setStatus('Consulting the cosmetist...')
+      const reply = await runChatTurn({
+        payload: {
           metrics: scanMetrics,
           concerns: '',
           focusAreas: [],
@@ -76,10 +91,12 @@ function App() {
           routineIntensity: 3,
         },
         summary,
-      )
-      setPlanMarkdown(plan)
-      setProducts(productList)
-      setStatus('Done. Upload again to iterate or tweak the plan manually.')
+        history: nextHistory,
+      })
+
+      setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: reply }])
+      setHistory([...nextHistory, { role: 'assistant', content: reply }])
+      setStatus('Done. Ask anything else or upload again to iterate.')
     } catch (err) {
       console.error(err)
       setError(
@@ -93,12 +110,24 @@ function App() {
     }
   }
 
+  const handleSend = async (event: React.FormEvent) => {
+    event.preventDefault()
+    if (!input.trim() || !metrics || !analysisSummary || isLoading) return
+
+    const userTurn = { role: 'user' as const, content: input.trim() }
+    const nextHistory = [...history, userTurn]
+    setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'user', content: userTurn.content }])
+    setHistory(nextHistory)
+    setInput('')
+    await runAgentTurn(metrics, analysisSummary, nextHistory)
+  }
+
   return (
     <div className="page">
       <header className="hero">
         <div className="hero__text">
           <p className="hero__eyebrow">Skin ritual copilot</p>
-          <h1>Drop a bare-face photo. Get a ritual plus real products.</h1>
+          <h1>Drop a bare-face photo. Chat through rituals + products.</h1>
           <p>{status}</p>
         </div>
         {photo && (
@@ -120,37 +149,41 @@ function App() {
             {error && <p className="text-error">{error}</p>}
           </section>
         ) : (
-          <section className="results-grid">
-            <div className="panel plan-card">
-              <h2>Your AI ritual</h2>
-              <p className="plan-summary">{analysisSummary}</p>
-              {isLoading && <p className="typing">Working...</p>}
-              {planMarkdown && (
-                <div
-                  className="plan-markdown"
-                  dangerouslySetInnerHTML={{ __html: marked.parse(planMarkdown, { gfm: true }) }}
-                />
-              )}
+          <section className="chat-layout">
+            <div className="panel photo-card">
+              <img src={photo} alt="Uploaded skin" />
+              <p>{analysisSummary}</p>
             </div>
 
-            <div className="panel products-card">
-              <h2>Shoppable picks</h2>
-              {isLoading && <p className="typing">Looking for matches...</p>}
-              {!isLoading && !products.length && <p>No live listings yet. Try again in a moment.</p>}
-              <div className="product-list">
-                {products.map((product) => (
-                  <article key={product.url} className="product-card">
-                    <div>
-                      <a href={product.url} target="_blank" rel="noreferrer">
-                        {product.name}
-                      </a>
-                      {product.retailer && <span>{product.retailer}</span>}
-                    </div>
-                    {product.price && <p className="price">{product.price}</p>}
-                    {product.snippet && <p className="snippet">{product.snippet}</p>}
-                  </article>
+            <div className="panel chat-card">
+              <div className="messages">
+                {messages.map((message) => (
+                  <article
+                    key={message.id}
+                    className={message.role === 'user' ? 'bubble bubble--user' : 'bubble'}
+                    dangerouslySetInnerHTML={{
+                      __html:
+                        message.role === 'user'
+                          ? escapeHtml(message.content)
+                          : marked.parse(message.content, { gfm: true }),
+                    }}
+                  />
                 ))}
+                {isLoading && <p className="typing">Assistant is thinking…</p>}
               </div>
+
+              <form className="chat-input" onSubmit={handleSend}>
+                <input
+                  type="text"
+                  placeholder="Ask about substitutions, layering, travel routines..."
+                  value={input}
+                  onChange={(event) => setInput(event.target.value)}
+                  disabled={!messages.length}
+                />
+                <button type="submit" disabled={!messages.length || isLoading || !input.trim()}>
+                  Send
+                </button>
+              </form>
               {error && <p className="text-error">{error}</p>}
             </div>
           </section>
@@ -211,12 +244,12 @@ const analyzeSkinSnapshot = (image: ImageData): AnalysisResult => {
   const metrics: SkinMetric[] = [
     {
       key: 'hydration',
-      label: 'Hydration',
+      label: 'Hydration support',
       value: Math.round(hydrationScore),
       summary:
         hydrationScore > 65
-          ? 'Well cushioned — keep humectants topped up.'
-          : 'Looks thirsty; layer humectants and seal with emollients.',
+          ? 'Feels cushioned. Keep humectants topped up.'
+          : 'Looks thirsty — layer humectants and seal with emollients.',
     },
     {
       key: 'oil',
@@ -243,7 +276,7 @@ const analyzeSkinSnapshot = (image: ImageData): AnalysisResult => {
       summary:
         toneScore > 60
           ? 'Tone reads even with gentle warmth.'
-          : 'Some uneven tone — brighten with antioxidants and SPF.',
+          : 'Some uneven tone — brighten with antioxidants + SPF.',
     },
     {
       key: 'barrier',
@@ -291,5 +324,13 @@ const buildNarrative = ({
 
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value))
 const clamp100 = (value: number) => Math.min(100, Math.max(0, value))
+
+const escapeHtml = (input: string) =>
+  input
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
 
 export default App

@@ -299,37 +299,7 @@ const analyzeSkinSnapshot = (image: ImageData): AnalysisResult => {
     },
   ]
 
-  const summary = buildNarrative({
-    hydrationScore,
-    oilScore,
-    sensitivityScore,
-    toneScore,
-    barrierScore,
-  })
-
-  return { metrics, summary }
-}
-
-const buildNarrative = ({
-  hydrationScore,
-  oilScore,
-  sensitivityScore,
-  toneScore,
-  barrierScore,
-}: {
-  hydrationScore: number
-  oilScore: number
-  sensitivityScore: number
-  toneScore: number
-  barrierScore: number
-}): string => {
-  const hydrationNote = hydrationScore > 70 ? 'plump' : hydrationScore > 50 ? 'balanced' : 'dehydrated'
-  const oilNote = oilScore > 65 ? 'luminous' : oilScore < 40 ? 'velvety-matte' : 'even'
-  const sensitivityNote = sensitivityScore > 60 ? 'easily triggered' : 'calm'
-  const toneNote = toneScore > 60 ? 'even' : 'slightly varied'
-  const barrierNote = barrierScore > 60 ? 'supported' : 'needing more reinforcement'
-
-  return `Complexion looks ${hydrationNote} and ${oilNote} with ${toneNote} tone. Barrier is ${barrierNote} and ${sensitivityNote}.`
+  return { metrics, summary: '' }
 }
 
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value))

@@ -10,7 +10,6 @@ type ChatMessage = {
 }
 
 function App() {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [photo, setPhoto] = useState<string | null>(null)
   const [analysisSummary, setAnalysisSummary] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -33,46 +32,41 @@ function App() {
     setError(null)
   }
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
 
     setError(null)
     setStatus('Analyzing face…')
-    const reader = new FileReader()
-    reader.onload = () => {
-      if (typeof reader.result !== 'string') {
-        setError('Unable to read that file. Try another image.')
-        setStatus('Upload a clear photo to begin.')
-        return
-      }
 
-      const dataUrl = reader.result
-      const image = new Image()
-      image.onload = async () => {
-        const canvas = canvasRef.current
-        const context = canvas?.getContext('2d')
-        if (!canvas || !context) {
-          setError('Canvas not available for analysis.')
-          return
-        }
-        canvas.width = image.width
-        canvas.height = image.height
-        context.drawImage(image, 0, 0)
-        const imageData = context.getImageData(0, 0, image.width, image.height)
-        const summary = analyzeSkinSnapshot(imageData)
-        setPhoto(dataUrl)
-        setAnalysisSummary(summary)
-        setStatus('Connecting with the cosmetist...')
-        await runAgentTurn(summary, [])
-      }
-      image.src = dataUrl
+    try {
+      const dataUrl = await readFileAsDataUrl(file)
+      setPhoto(dataUrl)
+      setStatus('Connecting with the cosmetist...')
+      await runAgentTurn(dataUrl, [])
+    } catch (err) {
+      console.error(err)
+      setError(err instanceof Error ? err.message : 'Could not process that image. Try another one.')
+      setStatus('Upload a clear photo to begin.')
     }
-    reader.readAsDataURL(file)
   }
 
+  const readFileAsDataUrl = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onerror = () => reject(new Error('Unable to read that file.'))
+      reader.onload = () => {
+        if (typeof reader.result !== 'string') {
+          reject(new Error('Unexpected file format.'))
+          return
+        }
+        resolve(reader.result)
+      }
+      reader.readAsDataURL(file)
+    })
+
   const runAgentTurn = async (
-    summary: string,
+    photoDataUrl: string,
     nextHistory: Array<{ role: 'user' | 'assistant'; content: string }>,
   ) => {
     try {
@@ -84,11 +78,12 @@ function App() {
               {
                 role: 'user' as const,
                 content:
-                  'Please analyze my scan and outline AM/PM rituals. Ask if I want shopping links before calling any tools.',
+                  'Please analyze my bare-face photo and outline AM/PM rituals. Ask if I want shopping links before calling any tools.',
               },
             ]
           : nextHistory
-      const reply = await runChatTurn({ summary, history: baseHistory })
+
+      const reply = await runChatTurn({ photoDataUrl, history: baseHistory })
       streamAssistantReply(reply, [...baseHistory, { role: 'assistant', content: reply }])
       setStatus('Done. Ask anything else or upload again to iterate.')
     } catch (err) {
@@ -106,14 +101,14 @@ function App() {
 
   const handleSend = async (event: React.FormEvent) => {
     event.preventDefault()
-    if (!input.trim() || !analysisSummary || isLoading) return
+    if (!input.trim() || !photo || isLoading) return
 
     const userTurn = { role: 'user' as const, content: input.trim() }
     const nextHistory = [...history, userTurn]
     setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'user', content: userTurn.content }])
     setHistory(nextHistory)
     setInput('')
-    await runAgentTurn(analysisSummary, nextHistory)
+    await runAgentTurn(photo, nextHistory)
   }
 
   const streamAssistantReply = (
@@ -123,13 +118,14 @@ function App() {
     const id = crypto.randomUUID()
     setMessages((prev) => [...prev, { id, role: 'assistant', content: '' }])
 
-    const tokens = text.length ? text.split(/(?<=\s)/) : []
-    if (!tokens.length) {
+    if (!text.length) {
       setHistory(nextHistory)
       return
     }
 
+    const tokens = text.split(/(?<=\s)/)
     let index = 0
+
     const step = () => {
       setMessages((prev) =>
         prev.map((message) =>
@@ -223,68 +219,9 @@ function App() {
           </section>
         )}
       </main>
-
-      <canvas ref={canvasRef} className="hidden" />
     </div>
   )
 }
-
-const analyzeSkinSnapshot = (image: ImageData): string => {
-  const { data, width, height } = image
-  const pixelCount = width * height
-  let redSum = 0
-  let greenSum = 0
-  let blueSum = 0
-  let brightnessSum = 0
-  let brightnessSqSum = 0
-  let chromaSum = 0
-  let textureDelta = 0
-
-  for (let i = 0; i < data.length; i += 4) {
-    const r = data[i]
-    const g = data[i + 1]
-    const b = data[i + 2]
-
-    redSum += r
-    greenSum += g
-    blueSum += b
-
-    const brightness = (r + g + b) / 3 / 255
-    brightnessSum += brightness
-    brightnessSqSum += brightness * brightness
-
-    const maxChannel = Math.max(r, g, b)
-    const minChannel = Math.min(r, g, b)
-    chromaSum += (maxChannel - minChannel) / 255
-
-    const neutral = (r + g + b) / 3
-    textureDelta += Math.abs(r - neutral) + Math.abs(g - neutral) + Math.abs(b - neutral)
-  }
-
-  const avgBrightness = brightnessSum / pixelCount
-  const brightnessVariance = brightnessSqSum / pixelCount - avgBrightness ** 2
-  const contrast = Math.min(1, Math.sqrt(Math.max(0, brightnessVariance)) * 1.6)
-  const avgChroma = chromaSum / pixelCount
-  const textureScore = Math.min(1, textureDelta / (pixelCount * 255 * 1.5))
-  const smoothness = clamp01(1 - textureScore)
-  const rednessTilt = clamp01((redSum / pixelCount / 255) - (greenSum / pixelCount / 255 + blueSum / pixelCount / 255) / 2)
-
-  const hydrationScore = clamp100((1 - avgBrightness) * 115 + smoothness * 20)
-  const oilScore = clamp100(avgBrightness * 120 + avgChroma * 25)
-  const sensitivityScore = clamp100(rednessTilt * 160 + contrast * 25)
-  const toneScore = clamp100((1 - contrast) * 120 - rednessTilt * 30)
-  const barrierScore = clamp100(smoothness * 130 - contrast * 20)
-  const summary = `Hydration: ${Math.round(hydrationScore)}/100 · Oil balance: ${Math.round(
-    oilScore,
-  )}/100 · Sensitivity: ${Math.round(sensitivityScore)}/100 · Tone: ${Math.round(
-    toneScore,
-  )}/100 · Barrier: ${Math.round(barrierScore)}/100`
-
-  return summary
-}
-
-const clamp01 = (value: number) => Math.min(1, Math.max(0, value))
-const clamp100 = (value: number) => Math.min(100, Math.max(0, value))
 
 const escapeHtml = (input: string) =>
   input

@@ -6,13 +6,13 @@ type ConversationTurn = {
 }
 
 export const runChatTurn = async ({
-  summary,
+  photoDataUrl,
   history,
 }: {
-  summary: string
+  photoDataUrl: string
   history: ConversationTurn[]
 }): Promise<string> => {
-  const agent = createCosmetistAgent(summary)
+  const agent = createCosmetistAgent(photoDataUrl)
   const conversation = history.length
     ? history
     : [

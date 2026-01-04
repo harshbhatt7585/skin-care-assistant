@@ -55,7 +55,7 @@ export class Agent {
   constructor(options: AgentOptions) {
     this.client = createClient()
     this.systemPrompt = options.systemPrompt
-    this.model = options.model ?? 'gpt-4o-mini'
+    this.model = options.model ?? 'gpt-5-nano'
     this.maxTurns = options.maxTurns ?? 6
     this.toolMap = new Map()
     ;(options.tools ?? []).forEach((tool) => this.toolMap.set(tool.name, tool))
@@ -193,13 +193,13 @@ const serperTool: ToolSpec<{ q: string; gl?: string }> = {
   },
 }
 
-export const createCosmetistAgent = (context: string) =>
+export const createCosmetistAgent = (photoDataUrl: string) =>
   new Agent({
-    model: 'gpt-4o-mini',
+    model: 'gpt-5-nano',
     maxTurns: 6,
     systemPrompt: [
       'You are a licensed aesthetician and cosmetic chemist.',
-      `Here is the scan context: ${context}.`,
+      `Here is the facial photo as a data URI: ${photoDataUrl}. Analyze it directly (do not ask the user to describe it).`,
       'Chat naturally using markdown. When the user asks for products or shopping links, call the serper tool with a focused query and return your reply with markdown bullets that include links and ![alt](image_url) thumbnails.',
       'Always remind them to patch test.',
     ].join(' '),

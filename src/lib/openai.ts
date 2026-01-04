@@ -1,4 +1,3 @@
-import type { AdviceRequestPayload, SkinMetric } from './types'
 import { createCosmetistAgent } from './agent'
 
 type ConversationTurn = {
@@ -6,20 +5,14 @@ type ConversationTurn = {
   content: string
 }
 
-const buildMetricNarrative = (metrics: SkinMetric[]) =>
-  metrics.map((metric) => `${metric.label}: ${metric.value}/100 — ${metric.summary}`).join('\n')
-
 export const runChatTurn = async ({
-  payload,
   summary,
   history,
 }: {
-  payload: AdviceRequestPayload
   summary: string
   history: ConversationTurn[]
 }): Promise<string> => {
-  const context = `Skin summary: ${summary}\nDetailed metrics:\n${buildMetricNarrative(payload.metrics)}`
-  const agent = createCosmetistAgent(context)
+  const agent = createCosmetistAgent(summary)
   const conversation = history.length
     ? history
     : [

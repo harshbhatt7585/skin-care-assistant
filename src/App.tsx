@@ -1,7 +1,6 @@
 import { useRef, useState } from 'react'
 import { marked } from 'marked'
 import './App.css'
-import type { SkinMetric } from './lib/types'
 import { runChatTurn } from './lib/openai'
 
 type ChatMessage = {
@@ -10,16 +9,10 @@ type ChatMessage = {
   content: string
 }
 
-type AnalysisResult = {
-  metrics: SkinMetric[]
-  summary: string
-}
-
 function App() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [photo, setPhoto] = useState<string | null>(null)
   const [analysisSummary, setAnalysisSummary] = useState('')
-  const [metrics, setMetrics] = useState<SkinMetric[] | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [history, setHistory] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([])
   const [input, setInput] = useState('')
@@ -30,7 +23,6 @@ function App() {
   const reset = () => {
     setPhoto(null)
     setAnalysisSummary('')
-    setMetrics(null)
     setMessages([])
     setHistory([])
     setInput('')
@@ -65,12 +57,11 @@ function App() {
         canvas.height = image.height
         context.drawImage(image, 0, 0)
         const imageData = context.getImageData(0, 0, image.width, image.height)
-        const { metrics: computedMetrics, summary } = analyzeSkinSnapshot(imageData)
+        const summary = analyzeSkinSnapshot(imageData)
         setPhoto(dataUrl)
-        setMetrics(computedMetrics)
         setAnalysisSummary(summary)
         setStatus('Connecting with the cosmetist...')
-        await runAgentTurn(computedMetrics, summary, [])
+        await runAgentTurn(summary, [])
       }
       image.src = dataUrl
     }
@@ -78,27 +69,26 @@ function App() {
   }
 
   const runAgentTurn = async (
-    scanMetrics: SkinMetric[],
     summary: string,
     nextHistory: Array<{ role: 'user' | 'assistant'; content: string }>,
   ) => {
     try {
       setLoading(true)
       setStatus('Consulting the cosmetist...')
-      const reply = await runChatTurn({
-        payload: {
-          metrics: scanMetrics,
-          concerns: '',
-          focusAreas: [],
-          environment: 'temperate',
-          routineIntensity: 3,
-        },
-        summary,
-        history: nextHistory,
-      })
+      const baseHistory =
+        nextHistory.length === 0
+          ? [
+              {
+                role: 'user' as const,
+                content:
+                  'Please analyze my scan and outline AM/PM rituals. Ask if I want shopping links before calling any tools.',
+              },
+            ]
+          : nextHistory
+      const reply = await runChatTurn({ summary, history: baseHistory })
 
       setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: reply }])
-      setHistory([...nextHistory, { role: 'assistant', content: reply }])
+      setHistory([...baseHistory, { role: 'assistant', content: reply }])
       setStatus('Done. Ask anything else or upload again to iterate.')
     } catch (err) {
       console.error(err)
@@ -115,14 +105,14 @@ function App() {
 
   const handleSend = async (event: React.FormEvent) => {
     event.preventDefault()
-    if (!input.trim() || !metrics || !analysisSummary || isLoading) return
+    if (!input.trim() || !analysisSummary || isLoading) return
 
     const userTurn = { role: 'user' as const, content: input.trim() }
     const nextHistory = [...history, userTurn]
     setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'user', content: userTurn.content }])
     setHistory(nextHistory)
     setInput('')
-    await runAgentTurn(metrics, analysisSummary, nextHistory)
+    await runAgentTurn(analysisSummary, nextHistory)
   }
 
   return (
@@ -188,9 +178,8 @@ function App() {
                   placeholder="Ask about substitutions, layering, travel routines..."
                   value={input}
                   onChange={(event) => setInput(event.target.value)}
-                  disabled={!messages.length}
                 />
-                <button type="submit" disabled={!messages.length || isLoading || !input.trim()}>
+                <button type="submit" disabled={isLoading || !input.trim()}>
                   Send
                 </button>
               </form>
@@ -205,7 +194,7 @@ function App() {
   )
 }
 
-const analyzeSkinSnapshot = (image: ImageData): AnalysisResult => {
+const analyzeSkinSnapshot = (image: ImageData): string => {
   const { data, width, height } = image
   const pixelCount = width * height
   let redSum = 0
@@ -250,56 +239,13 @@ const analyzeSkinSnapshot = (image: ImageData): AnalysisResult => {
   const sensitivityScore = clamp100(rednessTilt * 160 + contrast * 25)
   const toneScore = clamp100((1 - contrast) * 120 - rednessTilt * 30)
   const barrierScore = clamp100(smoothness * 130 - contrast * 20)
+  const summary = `Hydration: ${Math.round(hydrationScore)}/100 · Oil balance: ${Math.round(
+    oilScore,
+  )}/100 · Sensitivity: ${Math.round(sensitivityScore)}/100 · Tone: ${Math.round(
+    toneScore,
+  )}/100 · Barrier: ${Math.round(barrierScore)}/100`
 
-  const metrics: SkinMetric[] = [
-    {
-      key: 'hydration',
-      label: 'Hydration support',
-      value: Math.round(hydrationScore),
-      summary:
-        hydrationScore > 65
-          ? 'Feels cushioned. Keep humectants topped up.'
-          : 'Looks thirsty — layer humectants and seal with emollients.',
-    },
-    {
-      key: 'oil',
-      label: 'Oil balance',
-      value: Math.round(oilScore),
-      summary:
-        oilScore > 60
-          ? 'Sebum is lively; gel textures keep things breathable.'
-          : 'Oil flow looks calm. Cream textures are welcome.',
-    },
-    {
-      key: 'sensitivity',
-      label: 'Sensitivity',
-      value: Math.round(sensitivityScore),
-      summary:
-        sensitivityScore > 55
-          ? 'Barrier is reactive. Buffer actives and add soothing botanicals.'
-          : 'Barrier looks calm; introduce actives gradually.',
-    },
-    {
-      key: 'tone',
-      label: 'Tone evenness',
-      value: Math.round(toneScore),
-      summary:
-        toneScore > 60
-          ? 'Tone reads even with gentle warmth.'
-          : 'Some uneven tone — brighten with antioxidants + SPF.',
-    },
-    {
-      key: 'barrier',
-      label: 'Barrier strength',
-      value: Math.round(barrierScore),
-      summary:
-        barrierScore > 65
-          ? 'Barrier looks resilient; maintain with ceramides + peptides.'
-          : 'Could use reinforcement — focus on lipids and barrier balms.',
-    },
-  ]
-
-  return { metrics, summary: '' }
+  return summary
 }
 
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value))

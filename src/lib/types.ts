@@ -19,4 +19,5 @@ export type ProductSuggestion = {
   price?: string
   retailer?: string
   snippet?: string
+  image?: string
 }

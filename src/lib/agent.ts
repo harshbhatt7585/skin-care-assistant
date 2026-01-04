@@ -141,7 +141,7 @@ export class Agent {
 
 const serperTool: ToolSpec<{ q: string; gl?: string }> = {
   name: 'serper',
-  description: 'Search Google Shopping for skincare products matching the current plan.',
+  description: 'Fetch image-based product cards for skincare recommendations.',
   parameters: {
     type: 'object',
     properties: {
@@ -157,13 +157,13 @@ const serperTool: ToolSpec<{ q: string; gl?: string }> = {
       throw new Error('Missing VITE_SERPER_API_KEY for serper tool call.')
     }
 
-    const response = await fetch('https://google.serper.dev/search', {
+    const response = await fetch('https://google.serper.dev/images', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-API-KEY': apiKey,
       },
-      body: JSON.stringify({ q, gl }),
+      body: JSON.stringify({ q, gl, num: 20 }),
     })
 
     if (!response.ok) {
@@ -171,13 +171,25 @@ const serperTool: ToolSpec<{ q: string; gl?: string }> = {
     }
 
     const payload = (await response.json()) as Record<string, unknown>
-    const shoppingRaw = payload.shopping_results ?? payload.shopping
-    const organicRaw = payload.organic_results ?? payload.organic
-    const slim = {
-      shopping: Array.isArray(shoppingRaw) ? shoppingRaw.slice(0, 6) : [],
-      organic: Array.isArray(organicRaw) ? organicRaw.slice(0, 4) : [],
-    }
-    return JSON.stringify(slim)
+    const images = Array.isArray(payload.images) ? payload.images : []
+
+    const listings = images
+      .map((item) => ({
+        name: typeof item.title === 'string' ? item.title : undefined,
+        link: typeof item.link === 'string' ? item.link : undefined,
+        retailer: typeof item.source === 'string' ? item.source : undefined,
+        snippet: typeof item.snippet === 'string' ? item.snippet : undefined,
+        image:
+          typeof item.imageUrl === 'string'
+            ? item.imageUrl
+            : typeof item.thumbnailUrl === 'string'
+              ? item.thumbnailUrl
+              : undefined,
+      }))
+      .filter((item) => item.name && item.link && item.image)
+      .slice(0, 6)
+
+    return JSON.stringify({ listings })
   },
 }
 
@@ -188,7 +200,7 @@ export const createCosmetistAgent = (context: string) =>
     systemPrompt: [
       'You are a licensed aesthetician and cosmetic chemist.',
       `Here is the scan context: ${context}.`,
-      'Chat naturally using markdown. When the user asks for products or shopping links, call the serper tool with a focused query and fold the results into your reply as bullet lists with links.',
+      'Chat naturally using markdown. When the user asks for products or shopping links, call the serper tool with a focused query and return your reply with markdown bullets that include links and ![alt](image_url) thumbnails.',
       'Always remind them to patch test.',
     ].join(' '),
     tools: [serperTool],

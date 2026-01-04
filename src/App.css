@@ -69,6 +69,56 @@ a {
   cursor: pointer;
 }
 
+.analysis-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(114, 255, 230, 0.08);
+  border: 1px solid rgba(114, 255, 230, 0.3);
+  color: rgba(247, 251, 255, 0.85);
+  padding: 12px 20px;
+  border-radius: 999px;
+  max-width: 320px;
+  margin: 0 auto;
+  font-weight: 500;
+  animation: slideIn 0.4s ease-out;
+}
+
+.pulse-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #72ffe6;
+  box-shadow: 0 0 8px rgba(114, 255, 230, 0.8);
+  animation: pulse 1.2s infinite ease-in-out;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.8);
+    opacity: 0.6;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-8px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
 .surface {
   max-width: 900px;
   width: 100%;
@@ -168,6 +218,12 @@ a {
 
 .bubble :last-child {
   margin-bottom: 0;
+}
+
+.bubble img {
+  max-width: 100%;
+  border-radius: 12px;
+  margin: 8px 0;
 }
 
 .typing {

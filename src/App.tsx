@@ -43,10 +43,12 @@ function App() {
     if (!file) return
 
     setError(null)
+    setStatus('Analyzing face…')
     const reader = new FileReader()
     reader.onload = () => {
       if (typeof reader.result !== 'string') {
         setError('Unable to read that file. Try another image.')
+        setStatus('Upload a clear photo to begin.')
         return
       }
 
@@ -67,6 +69,7 @@ function App() {
         setPhoto(dataUrl)
         setMetrics(computedMetrics)
         setAnalysisSummary(summary)
+        setStatus('Connecting with the cosmetist...')
         await runAgentTurn(computedMetrics, summary, [])
       }
       image.src = dataUrl
@@ -136,6 +139,13 @@ function App() {
           </button>
         )}
       </header>
+
+      {status.startsWith('Analyzing face') && (
+        <div className="analysis-banner">
+          <span className="pulse-dot" />
+          <p>{status}</p>
+        </div>
+      )}
 
       <main className="surface">
         {!photo ? (

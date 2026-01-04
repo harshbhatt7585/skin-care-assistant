@@ -19,8 +19,11 @@ function App() {
   const [status, setStatus] = useState('Upload a clear photo to begin.')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setLoading] = useState(false)
+  const streamingTimers = useRef<number[]>([])
 
   const reset = () => {
+    streamingTimers.current.forEach((timer) => clearTimeout(timer))
+    streamingTimers.current = []
     setPhoto(null)
     setAnalysisSummary('')
     setMessages([])
@@ -86,9 +89,7 @@ function App() {
             ]
           : nextHistory
       const reply = await runChatTurn({ summary, history: baseHistory })
-
-      setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: reply }])
-      setHistory([...baseHistory, { role: 'assistant', content: reply }])
+      streamAssistantReply(reply, [...baseHistory, { role: 'assistant', content: reply }])
       setStatus('Done. Ask anything else or upload again to iterate.')
     } catch (err) {
       console.error(err)
@@ -113,6 +114,40 @@ function App() {
     setHistory(nextHistory)
     setInput('')
     await runAgentTurn(analysisSummary, nextHistory)
+  }
+
+  const streamAssistantReply = (
+    text: string,
+    nextHistory: Array<{ role: 'user' | 'assistant'; content: string }>,
+  ) => {
+    const id = crypto.randomUUID()
+    setMessages((prev) => [...prev, { id, role: 'assistant', content: '' }])
+
+    const tokens = text.length ? text.split(/(?<=\s)/) : []
+    if (!tokens.length) {
+      setHistory(nextHistory)
+      return
+    }
+
+    let index = 0
+    const step = () => {
+      setMessages((prev) =>
+        prev.map((message) =>
+          message.id === id
+            ? { ...message, content: message.content + (tokens[index] ?? '') }
+            : message,
+        ),
+      )
+      index += 1
+      if (index < tokens.length) {
+        const timer = window.setTimeout(step, 18)
+        streamingTimers.current.push(timer)
+      } else {
+        setHistory(nextHistory)
+      }
+    }
+
+    step()
   }
 
   return (

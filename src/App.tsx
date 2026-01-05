@@ -9,11 +9,13 @@ type ChatMessage = {
   content: string
 }
 
+type ConversationTurn = { role: 'user' | 'assistant'; content: string }
+
 function App() {
   const [photo, setPhoto] = useState<string | null>(null)
   const [analysisSummary, setAnalysisSummary] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [history, setHistory] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([])
+  const [history, setHistory] = useState<ConversationTurn[]>([])
   const [input, setInput] = useState('')
   const [status, setStatus] = useState('Upload a clear photo to begin.')
   const [error, setError] = useState<string | null>(null)
@@ -43,7 +45,16 @@ function App() {
       const dataUrl = await readFileAsDataUrl(file)
       setPhoto(dataUrl)
       setStatus('Connecting with the cosmetist...')
-      await runAgentTurn(dataUrl, [])
+      const initialHistory = await runAgentTurn(dataUrl, [])
+      if (!initialHistory) return
+      const autoPrompt = {
+        role: 'user' as const,
+        content: 'Please send product links and shopping options for this plan.',
+      }
+      setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'user', content: autoPrompt.content }])
+      const secondHistory: ConversationTurn[] = [...initialHistory, autoPrompt]
+      setHistory(secondHistory)
+      await runAgentTurn(dataUrl, secondHistory)
     } catch (err) {
       console.error(err)
       setError(err instanceof Error ? err.message : 'Could not process that image. Try another one.')
@@ -67,12 +78,12 @@ function App() {
 
   const runAgentTurn = async (
     photoDataUrl: string,
-    nextHistory: Array<{ role: 'user' | 'assistant'; content: string }>,
-  ) => {
+    nextHistory: ConversationTurn[],
+  ): Promise<ConversationTurn[] | undefined> => {
     try {
       setLoading(true)
       setStatus('Consulting the cosmetist...')
-      const baseHistory =
+      const baseHistory: ConversationTurn[] =
         nextHistory.length === 0
           ? [
               {
@@ -84,8 +95,11 @@ function App() {
           : nextHistory
 
       const reply = await runChatTurn({ photoDataUrl, history: baseHistory })
-      streamAssistantReply(reply, [...baseHistory, { role: 'assistant', content: reply }])
+      const finalHistory: ConversationTurn[] = [...baseHistory, { role: 'assistant', content: reply }]
+      await streamAssistantReply(reply)
+      setHistory(finalHistory)
       setStatus('Done. Ask anything else or upload again to iterate.')
+      return finalHistory
     } catch (err) {
       console.error(err)
       setError(
@@ -111,40 +125,38 @@ function App() {
     await runAgentTurn(photo, nextHistory)
   }
 
-  const streamAssistantReply = (
-    text: string,
-    nextHistory: Array<{ role: 'user' | 'assistant'; content: string }>,
-  ) => {
-    const id = crypto.randomUUID()
-    setMessages((prev) => [...prev, { id, role: 'assistant', content: '' }])
+  const streamAssistantReply = (text: string) =>
+    new Promise<void>((resolve) => {
+      const id = crypto.randomUUID()
+      setMessages((prev) => [...prev, { id, role: 'assistant', content: '' }])
 
-    if (!text.length) {
-      setHistory(nextHistory)
-      return
-    }
+      if (!text.length) {
+        resolve()
+        return
+      }
 
-    const tokens = text.split(/(?<=\s)/)
+      const tokens = text.split(/(?<=\s)/)
     let index = 0
 
-    const step = () => {
-      setMessages((prev) =>
-        prev.map((message) =>
-          message.id === id
-            ? { ...message, content: message.content + (tokens[index] ?? '') }
-            : message,
-        ),
-      )
-      index += 1
-      if (index < tokens.length) {
-        const timer = window.setTimeout(step, 18)
-        streamingTimers.current.push(timer)
-      } else {
-        setHistory(nextHistory)
+      const step = () => {
+        setMessages((prev) =>
+          prev.map((message) =>
+            message.id === id
+              ? { ...message, content: message.content + (tokens[index] ?? '') }
+              : message,
+          ),
+        )
+        index += 1
+        if (index < tokens.length) {
+          const timer = window.setTimeout(step, 18)
+          streamingTimers.current.push(timer)
+        } else {
+          resolve()
+        }
       }
-    }
 
-    step()
-  }
+      step()
+    })
 
   return (
     <div className="page">

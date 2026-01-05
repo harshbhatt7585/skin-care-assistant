@@ -1,9 +1,5 @@
 import OpenAI from 'openai'
-import type {
-  ChatCompletionMessageParam,
-  ChatCompletionMessageToolCall,
-  ChatCompletionTool,
-} from 'openai/resources/chat/completions'
+import type { ChatCompletionTool } from 'openai/resources/chat/completions'
 
 type AgentMessage = {
   role: 'system' | 'user' | 'assistant'
@@ -74,32 +70,62 @@ export class Agent {
   }
 
   async respond(messages: AgentMessage[]): Promise<string> {
-    const compiled: ChatCompletionMessageParam[] = [{ role: 'system', content: this.systemPrompt }]
-    messages.forEach((message) =>
-      compiled.push({ role: message.role, content: message.content } as ChatCompletionMessageParam),
-    )
+    const compiled: any[] = [{ role: 'system', content: this.systemPrompt }]
+    messages.forEach((message) => compiled.push({ role: message.role, content: message.content }))
 
     for (let turn = 0; turn < this.maxTurns; turn++) {
-      const completion = await this.client.chat.completions.create({
+      const stream = (await this.client.chat.completions.create({
         model: this.model,
         messages: compiled,
         tools: this.getToolDefs(),
         tool_choice: this.toolMap.size ? 'auto' : undefined,
-      })
+        stream: true,
+      })) as AsyncIterable<any>
 
-      const choice = completion.choices[0]
-      const message = choice.message
-      const toolCalls = ((message as any).tool_calls ?? []) as Array<ChatCompletionMessageToolCall>
+      let accumulated = ''
+      const toolMap: Record<string, { id: string; function: { name: string; arguments: string } }> = {}
+      let finishReason: string | null = null
+
+      for await (const chunk of stream) {
+        const choice = chunk.choices?.[0]
+        if (!choice) continue
+
+        finishReason = choice.finish_reason ?? finishReason
+        const delta = choice.delta ?? {}
+
+        if (Array.isArray(delta.content)) {
+          accumulated += delta.content.map((part: any) => part?.text ?? '').join('')
+        }
+        if (typeof delta.content === 'string') {
+          accumulated += delta.content
+        }
+
+        if (Array.isArray(delta.tool_calls)) {
+          delta.tool_calls.forEach((callDelta: any) => {
+            const id = callDelta.id || crypto.randomUUID()
+            if (!toolMap[id]) {
+              toolMap[id] = {
+                id,
+                function: { name: '', arguments: '' },
+              }
+            }
+            if (callDelta.function?.name) {
+              toolMap[id].function.name = callDelta.function.name
+            }
+            if (callDelta.function?.arguments) {
+              toolMap[id].function.arguments += callDelta.function.arguments
+            }
+          })
+        }
+      }
+
+      const toolCalls = Object.values(toolMap)
 
       if (toolCalls.length) {
-        compiled.push({
-          role: 'assistant',
-          content: message.content ?? '',
-          tool_calls: toolCalls.map((call) => call as ChatCompletionMessageToolCall),
-        })
+        compiled.push({ role: 'assistant', content: accumulated, tool_calls: toolCalls })
 
         for (const call of toolCalls) {
-          const funcCall = (call as any).function as { name: string; arguments: string } | undefined
+          const funcCall = call.function
           if (!funcCall) continue
 
           const tool = this.toolMap.get(funcCall.name)
@@ -108,7 +134,7 @@ export class Agent {
               role: 'tool',
               tool_call_id: call.id,
               content: `Tool "${funcCall.name}" is not available.`,
-            } as ChatCompletionMessageParam)
+            })
             continue
           }
 
@@ -125,13 +151,13 @@ export class Agent {
             role: 'tool',
             tool_call_id: call.id,
             content: result,
-          } as ChatCompletionMessageParam)
+          })
         }
         continue
       }
 
-      if (message.content) {
-        return message.content
+      if (finishReason === 'stop' && accumulated) {
+        return accumulated
       }
     }
 

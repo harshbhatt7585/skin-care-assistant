@@ -44,6 +44,7 @@ function App() {
     try {
       const dataUrl = await readFileAsDataUrl(file)
       setPhoto(dataUrl)
+      setAnalysisSummary('Photo uploaded — reading your skin profile...')
       setStatus('Connecting with the cosmetist...')
       const initialHistory = await runAgentTurn(dataUrl, [])
       if (!initialHistory) return
@@ -52,6 +53,8 @@ function App() {
         content: 'Please send product links and shopping options for this plan.',
       }
       setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'user', content: autoPrompt.content }])
+      setStatus('Pulling live product matches...')
+      setAnalysisSummary('Gathering live shopping picks...')
       const secondHistory: ConversationTurn[] = [...initialHistory, autoPrompt]
       setHistory(secondHistory)
       await runAgentTurn(dataUrl, secondHistory)
@@ -99,6 +102,7 @@ function App() {
       await streamAssistantReply(reply)
       setHistory(finalHistory)
       setStatus('Done. Ask anything else or upload again to iterate.')
+      setAnalysisSummary('Response delivered — keep the chat going or upload again.')
       return finalHistory
     } catch (err) {
       console.error(err)
@@ -165,6 +169,12 @@ function App() {
           <p className="hero__eyebrow">Skin ritual copilot</p>
           <h1>Drop a bare-face photo. Chat through rituals + products.</h1>
           <p>{status}</p>
+          {photo && (
+            <div className="hero__summary">
+              <span>Live scan status</span>
+              <p>{analysisSummary || 'Photo ready — chatting through details.'}</p>
+            </div>
+          )}
         </div>
         {photo && (
           <button className="hero__reset" onClick={reset}>

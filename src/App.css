@@ -287,6 +287,41 @@ a {
   margin-bottom: 0;
 }
 
+.bubble ul:has(img) {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(180px, 1fr);
+  gap: 16px;
+  overflow-x: auto;
+  padding: 8px 0 12px;
+  margin: 0;
+  list-style: none;
+  scrollbar-width: thin;
+}
+
+.bubble ul:has(img) > li {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 18px;
+  padding: 12px;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bubble ul:has(img) > li > p:first-child {
+  font-weight: 600;
+}
+
+.bubble ul:has(img) img {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 14px;
+  margin: 0;
+}
+
 .bubble img {
   max-width: 100%;
   border-radius: 12px;

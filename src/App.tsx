@@ -99,7 +99,7 @@ function App() {
 
       const reply = await runChatTurn({ photoDataUrl, history: baseHistory })
       const finalHistory: ConversationTurn[] = [...baseHistory, { role: 'assistant', content: reply }]
-      await streamAssistantReply(reply)
+      setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: reply }])
       setHistory(finalHistory)
       setStatus('Done. Ask anything else or upload again to iterate.')
       setAnalysisSummary('Response delivered — keep the chat going or upload again.')
@@ -129,38 +129,10 @@ function App() {
     await runAgentTurn(photo, nextHistory)
   }
 
-  const streamAssistantReply = (text: string) =>
-    new Promise<void>((resolve) => {
-      const id = crypto.randomUUID()
-      setMessages((prev) => [...prev, { id, role: 'assistant', content: '' }])
-
-      if (!text.length) {
-        resolve()
-        return
-      }
-
-      const tokens = text.split(/(?<=\s)/)
-    let index = 0
-
-      const step = () => {
-        setMessages((prev) =>
-          prev.map((message) =>
-            message.id === id
-              ? { ...message, content: message.content + (tokens[index] ?? '') }
-              : message,
-          ),
-        )
-        index += 1
-        if (index < tokens.length) {
-          const timer = window.setTimeout(step, 18)
-          streamingTimers.current.push(timer)
-        } else {
-          resolve()
-        }
-      }
-
-      step()
-    })
+  const streamAssistantReply = async () => {
+    streamingTimers.current.forEach((timer) => clearTimeout(timer))
+    streamingTimers.current = []
+  }
 
   return (
     <div className="page">

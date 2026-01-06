@@ -1,66 +1,31 @@
 <!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Skin Assistant UI Sandbox</title>
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
-    <div class="page">
-      <header class="hero">
-        <div class="hero__text">
-          <p class="hero__eyebrow">Skin ritual copilot</p>
-          <h1>Drop a bare-face photo. Chat through rituals + products.</h1>
-          <p data-status>Upload a clear photo to begin.</p>
-          <div class="hero__summary hidden" data-hero-summary>
-            <span>Live scan status</span>
-            <p data-summary>Photo ready — chatting through details.</p>
-          </div>
-        </div>
-        <button class="hero__reset hidden" data-reset>Start over</button>
-      </header>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>UI Samples</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      font-family: system-ui, sans-serif;
+      background: #05070d;
+      color: #f0f8ff;
+    }
 
-      <div class="analysis-banner hidden" data-analysis-banner>
-        <span class="pulse-dot"></span>
-        <p>Analyzing face…</p>
-      </div>
-
-      <main class="surface">
-        <section class="panel upload-panel" data-upload-panel>
-          <h2>Upload a photo</h2>
-          <p class="panel__body">Natural light, no heavy makeup. Everything stays on-device.</p>
-          <label class="dropzone">
-            <span>Choose photo</span>
-            <input type="file" accept="image/*" data-photo-input />
-          </label>
-          <button class="hero__reset upload-panel__sample" type="button" data-sample-photo>
-            Use sample photo
-          </button>
-          <p class="text-error hidden" data-error></p>
-        </section>
-
-        <section class="chat-layout hidden" data-chat-layout>
-          <div class="panel photo-card">
-            <img src="" alt="Uploaded skin" data-photo-preview />
-            <p data-photo-summary>Photo ready — chatting through details.</p>
-          </div>
-
-          <div class="panel chat-card">
-            <div class="messages" data-messages></div>
-            <form class="chat-input" data-chat-form>
-              <input
-                type="text"
-                placeholder="Ask about substitutions, layering, travel routines..."
-                data-chat-input
-              />
-              <button type="submit" data-send>Send</button>
-            </form>
-          </div>
-        </section>
-      </main>
-    </div>
-
-    <script src="mock.js"></script>
-  </body>
+    a {
+      color: #72ffe6;
+      text-decoration: none;
+      border-bottom: 1px solid rgba(114, 255, 230, 0.4);
+      padding-bottom: 2px;
+    }
+  </style>
+</head>
+<body>
+  <p>
+    Open the <a href="./face-analysis-ui/index.html">face-analysis prototype</a> to view the
+    circular scan animation.
+  </p>
+</body>
 </html>

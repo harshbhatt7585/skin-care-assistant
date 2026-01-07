@@ -102,7 +102,7 @@ function App() {
       setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: reply }])
       setHistory(finalHistory)
       setStatus('Done. Ask anything else or upload again to iterate.')
-      setAnalysisSummary('Response delivered — keep the chat going or upload again.')
+      setAnalysisSummary('')
       return finalHistory
     } catch (err) {
       console.error(err)
@@ -138,8 +138,8 @@ function App() {
     <div className="page">
       <header className="hero">
         <div className="hero__text">
-          <p className="hero__eyebrow">Skin ritual copilot</p>
-          <h1>Drop a bare-face photo. Chat through rituals + products.</h1>
+          <p className="hero__eyebrow">Skin Care Copilot</p>
+          <h1>Drop a bare-face photo.</h1>
           <p>{status}</p>
         </div>
       </header>

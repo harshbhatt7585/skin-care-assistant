@@ -94,6 +94,7 @@ function App() {
           : nextHistory
 
       const reply = await runChatTurn({ photoDataUrl, history: baseHistory })
+      console.log('reply', reply)
       const finalHistory: ConversationTurn[] = [...baseHistory, { role: 'assistant', content: reply }]
       setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: reply }])
       setHistory(finalHistory)
@@ -168,18 +169,44 @@ function App() {
 
             <div className="chat-thread">
               <div className="messages">
-                {messages.map((message) => (
-                  <article
-                    key={message.id}
-                    className={message.role === 'user' ? 'bubble bubble--user' : 'bubble'}
-                    dangerouslySetInnerHTML={{
-                      __html:
-                        message.role === 'user'
-                          ? escapeHtml(message.content)
-                          : formatAssistantContent(message.content),
-                    }}
-                  />
-                ))}
+                {messages.map((message) => {
+                  if (message.role === 'user') {
+                    return (
+                      <article
+                        key={message.id}
+                        className="bubble bubble--user"
+                        dangerouslySetInnerHTML={{ __html: escapeHtml(message.content) }}
+                      />
+                    )
+                  }
+
+                  const parsedProducts = parseProductSections(message.content)
+                  if (parsedProducts) {
+                    const { sections, remainder } = parsedProducts
+                    return (
+                      <article key={message.id} className="bubble">
+                        {remainder && (
+                          <div
+                            dangerouslySetInnerHTML={{
+                              __html: formatAssistantContent(remainder),
+                            }}
+                          />
+                        )}
+                        <ProductShowcase sections={sections} />
+                      </article>
+                    )
+                  }
+
+                  return (
+                    <article
+                      key={message.id}
+                      className="bubble"
+                      dangerouslySetInnerHTML={{
+                        __html: formatAssistantContent(message.content),
+                      }}
+                    />
+                  )
+                })}
                 {isLoading && <p className="typing">Assistant is thinking…</p>}
               </div>
 
@@ -211,45 +238,162 @@ const escapeHtml = (input: string) =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;')
 
-const formatAssistantContent = (content: string) => {
+const formatAssistantContent = (content: string) => marked.parse(content, { gfm: true })
+
+type ProductEntry = {
+  retailer: string
+  link?: string
+  thumbnail?: string
+  alt?: string
+}
+
+type ProductSection = {
+  title: string
+  entries: ProductEntry[]
+}
+
+type ParsedEntry = ProductEntry & { lineIndexes: number[] }
+type SectionMeta = { startIndex: number; data: { title: string; entries: ParsedEntry[] } }
+
+const parseProductSections = (
+  content: string,
+): { sections: ProductSection[]; remainder: string } | null => {
   const lines = content.split(/\r?\n/)
-  const transformed: string[] = []
-  let pendingLink: string | null = null
-  let lastHeading: string | null = null
+  const sections: SectionMeta[] = []
+  let currentSection: SectionMeta | null = null
+  let currentEntry: ParsedEntry | null = null
 
-  lines.forEach((line) => {
+  const hasUpcomingBullet = (startIndex: number) =>
+    lines.slice(startIndex, startIndex + 6).some((line) => line.trim().startsWith('- '))
+
+  lines.forEach((line, index) => {
     const trimmed = line.trim()
-    if (!trimmed) {
-      transformed.push('')
+    if (!trimmed) return
+
+    const normalized = trimmed.replace(/^-+\s*/, '')
+    const isLink = /^link:/i.test(normalized)
+    const isThumb = /^thumbnail:/i.test(normalized)
+
+    if (!trimmed.startsWith('-') && !isLink && !isThumb && hasUpcomingBullet(index + 1)) {
+      currentSection = { startIndex: index, data: { title: trimmed, entries: [] } }
+      sections.push(currentSection)
+      currentEntry = null
       return
     }
 
-    const linkMatch = trimmed.match(/^Link:\s*(https?:\/\/\S+)/i)
-    if (linkMatch) {
-      pendingLink = linkMatch[1]
-      transformed.push(`Link: [Open product ↗](${pendingLink})`)
+    if (trimmed.startsWith('- ') && !isLink && !isThumb) {
+      const entry: ParsedEntry = { retailer: normalized, lineIndexes: [index] }
+      currentEntry = entry
+      currentSection?.data.entries.push(entry)
       return
     }
 
-    const imageMatch = trimmed.match(/^Image:\s*(https?:\/\/\S+)/i)
-    if (imageMatch) {
-      const imageUrl = imageMatch[1]
-      const linkTarget = pendingLink ?? imageUrl
-      const alt = lastHeading ?? 'Product thumbnail'
-      transformed.push(`[![${alt}](${imageUrl})](${linkTarget})`)
-      pendingLink = null
+    if (isLink && currentEntry) {
+      const linkMatch = normalized.match(/^link:\s*(https?:\/\/\S+)/i)
+      if (linkMatch) {
+        currentEntry.link = linkMatch[1]
+        currentEntry.lineIndexes.push(index)
+      }
       return
     }
 
-    if (!trimmed.startsWith('Image:') && !trimmed.startsWith('Link:')) {
-      lastHeading = trimmed
+    if (isThumb && currentEntry) {
+      const rest = normalized.replace(/^thumbnail:\s*/i, '')
+      const explicit = rest.match(/\((https?:\/\/[^)]+)\)/)
+      const fallback = rest.match(/https?:\/\/\S+/)
+      currentEntry.thumbnail = explicit?.[1] ?? fallback?.[0]
+      const altMatch = rest.match(/!\[([^\]]+)\]/)
+      if (altMatch) currentEntry.alt = altMatch[1]
+      currentEntry.lineIndexes.push(index)
     }
-
-    transformed.push(trimmed)
   })
 
-  return marked.parse(transformed.join('\n'), { gfm: true })
+  const filteredSections = sections
+    .map((section) => ({
+      startIndex: section.startIndex,
+      data: {
+        title: section.data.title,
+        entries: section.data.entries.filter(
+          (entry) => entry.retailer && (entry.link || entry.thumbnail),
+        ),
+      },
+    }))
+    .filter((section) => section.data.entries.length > 0)
+
+  if (filteredSections.length === 0) {
+    return null
+  }
+
+  const usedIndexes = new Set<number>()
+  filteredSections.forEach((section) => {
+    usedIndexes.add(section.startIndex)
+    section.data.entries.forEach((entry) => entry.lineIndexes.forEach((idx) => usedIndexes.add(idx)))
+  })
+
+  const remainder = lines
+    .map((line, idx) => (usedIndexes.has(idx) ? '' : line))
+    .join('\n')
+    .trim()
+
+  return {
+    sections: filteredSections.map((section) => ({
+      title: section.data.title,
+      entries: section.data.entries.map(({ lineIndexes, ...rest }) => rest),
+    })),
+    remainder,
+  }
 }
+
+const ProductShowcase = ({ sections }: { sections: ProductSection[] }) => (
+  <div className="product-showcase">
+    {sections.map((section, sectionIndex) => (
+      <div className="product-showcase__section" key={`${section.title}-${sectionIndex}`}>
+        <div className="product-showcase__heading">
+          <span className="product-showcase__dot" />
+          <h4>{section.title}</h4>
+        </div>
+        <div className="product-showcase__list">
+          {section.entries.map((entry, entryIndex) => {
+            const targetUrl = entry.link || entry.thumbnail
+            const card = (
+              <div className="product-card" style={{ animationDelay: `${entryIndex * 0.04}s` }}>
+                {entry.thumbnail && (
+                  <div className="product-card__thumb">
+                    <img
+                      src={entry.thumbnail}
+                      alt={entry.alt || entry.retailer}
+                      loading="lazy"
+                    />
+                  </div>
+                )}
+                <div className="product-card__body">
+                  <p className="product-card__retailer">{entry.retailer}</p>
+                  {entry.link && <span className="product-card__cta">Open product ↗</span>}
+                </div>
+              </div>
+            )
+
+            return targetUrl ? (
+              <a
+                key={`${entry.retailer}-${entryIndex}`}
+                href={targetUrl}
+                className="product-card__link"
+                target="_blank"
+                rel="noreferrer"
+              >
+                {card}
+              </a>
+            ) : (
+              <div key={`${entry.retailer}-${entryIndex}`} className="product-card__link">
+                {card}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    ))}
+  </div>
+)
 
 const ScanVisualization = ({
   photo,

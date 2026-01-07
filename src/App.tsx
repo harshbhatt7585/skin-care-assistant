@@ -148,11 +148,6 @@ function App() {
             </div>
           )}
         </div>
-        {photo && (
-          <button className="hero__reset" onClick={reset}>
-            Start over
-          </button>
-        )}
       </header>
 
       {status.startsWith('Analyzing face') && (

@@ -162,11 +162,11 @@ function App() {
         </div>
       )}
 
-      <main className="surface">
+      <main className="simple-main">
         {!photo ? (
-          <section className="panel upload-panel">
+          <section className="upload-panel">
             <h2>Upload a photo</h2>
-            <p className="panel__body">Natural light, no heavy makeup. Everything stays on-device.</p>
+            <p>Natural light, no heavy makeup. Everything stays on-device.</p>
             <label className="dropzone">
               <span>Choose photo</span>
               <input type="file" accept="image/*" onChange={handleFileUpload} />
@@ -174,13 +174,15 @@ function App() {
             {error && <p className="text-error">{error}</p>}
           </section>
         ) : (
-          <section className="chat-layout">
-            <div className="panel photo-card">
+          <section className="analysis-stack">
+            <div className="analysis-visual">
               <ScanVisualization photo={photo} isLoading={isLoading} />
-              <p>{analysisSummary}</p>
+              <p className="analysis-copy">
+                {analysisSummary || 'Photo ready — chatting through details.'}
+              </p>
             </div>
 
-            <div className="panel chat-card">
+            <div className="chat-thread">
               <div className="messages">
                 {messages.map((message) => (
                   <article
@@ -190,7 +192,7 @@ function App() {
                       __html:
                         message.role === 'user'
                           ? escapeHtml(message.content)
-                          : marked.parse(message.content, { gfm: true }),
+                          : formatAssistantContent(message.content),
                     }}
                   />
                 ))}
@@ -224,6 +226,46 @@ const escapeHtml = (input: string) =>
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;')
+
+const formatAssistantContent = (content: string) => {
+  const lines = content.split(/\r?\n/)
+  const transformed: string[] = []
+  let pendingLink: string | null = null
+  let lastHeading: string | null = null
+
+  lines.forEach((line) => {
+    const trimmed = line.trim()
+    if (!trimmed) {
+      transformed.push('')
+      return
+    }
+
+    const linkMatch = trimmed.match(/^Link:\s*(https?:\/\/\S+)/i)
+    if (linkMatch) {
+      pendingLink = linkMatch[1]
+      transformed.push(`Link: [Open product ↗](${pendingLink})`)
+      return
+    }
+
+    const imageMatch = trimmed.match(/^Image:\s*(https?:\/\/\S+)/i)
+    if (imageMatch) {
+      const imageUrl = imageMatch[1]
+      const linkTarget = pendingLink ?? imageUrl
+      const alt = lastHeading ?? 'Product thumbnail'
+      transformed.push(`[![${alt}](${imageUrl})](${linkTarget})`)
+      pendingLink = null
+      return
+    }
+
+    if (!trimmed.startsWith('Image:') && !trimmed.startsWith('Link:')) {
+      lastHeading = trimmed
+    }
+
+    transformed.push(trimmed)
+  })
+
+  return marked.parse(transformed.join('\n'), { gfm: true })
+}
 
 const ScanVisualization = ({
   photo,
@@ -326,6 +368,7 @@ const ScanVisualization = ({
         {isLoading && (
           <div className="scan-visual__status">
             <span className="scan-visual__dot" />
+            <p>Analyzing pixels…</p>
           </div>
         )}
       </div>

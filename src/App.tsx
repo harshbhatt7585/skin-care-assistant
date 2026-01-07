@@ -141,12 +141,6 @@ function App() {
           <p className="hero__eyebrow">Skin ritual copilot</p>
           <h1>Drop a bare-face photo. Chat through rituals + products.</h1>
           <p>{status}</p>
-          {photo && (
-            <div className="hero__summary">
-              <span>Live scan status</span>
-              <p>{analysisSummary || 'Photo ready — chatting through details.'}</p>
-            </div>
-          )}
         </div>
       </header>
 

@@ -317,7 +317,6 @@ const ScanVisualization = ({
         {isLoading && (
           <div className="scan-visual__status">
             <span className="scan-visual__dot" />
-            <p>Analyzing pixels…</p>
           </div>
         )}
       </div>

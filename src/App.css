@@ -416,15 +416,17 @@ a {
 }
 
 .bubble ul:has(img) img {
-  width: 100%;
-  height: 150px;
+  width: min(220px, 65vw);
+  height: auto;
   object-fit: cover;
-  border-radius: 14px;
-  margin: 0;
+  border-radius: 12px;
+  margin: 4px 0 0;
+  align-self: flex-start;
 }
 
 .bubble img {
-  max-width: 100%;
+  max-width: min(240px, 70vw);
+  height: auto;
   border-radius: 12px;
   margin: 8px 0;
 }

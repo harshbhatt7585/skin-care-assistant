@@ -243,7 +243,7 @@ const ScanVisualization = ({
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    let animationFrameId: number
+    let animationFrameId: number | null = null
     let stars: Array<{ x: number; y: number; r: number; a: number; tw: number }> = []
 
     const rand = (min: number, max: number) => Math.random() * (max - min) + min
@@ -292,15 +292,24 @@ const ScanVisualization = ({
       makeStars()
     }
 
+    if (!isLoading) {
+      resize()
+      const rect = container.getBoundingClientRect()
+      ctx.clearRect(0, 0, rect.width, rect.height)
+      return
+    }
+
     handleResize()
     animationFrameId = window.requestAnimationFrame(draw)
     window.addEventListener('resize', handleResize)
 
     return () => {
       window.removeEventListener('resize', handleResize)
-      window.cancelAnimationFrame(animationFrameId)
+      if (animationFrameId) {
+        window.cancelAnimationFrame(animationFrameId)
+      }
     }
-  }, [photo])
+  }, [photo, isLoading])
 
   if (!photo) {
     return null

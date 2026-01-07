@@ -13,7 +13,6 @@ type ConversationTurn = { role: 'user' | 'assistant'; content: string }
 
 function App() {
   const [photo, setPhoto] = useState<string | null>(null)
-  const [analysisSummary, setAnalysisSummary] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [history, setHistory] = useState<ConversationTurn[]>([])
   const [input, setInput] = useState('')
@@ -26,7 +25,6 @@ function App() {
     streamingTimers.current.forEach((timer) => clearTimeout(timer))
     streamingTimers.current = []
     setPhoto(null)
-    setAnalysisSummary('')
     setMessages([])
     setHistory([])
     setInput('')
@@ -44,7 +42,6 @@ function App() {
     try {
       const dataUrl = await readFileAsDataUrl(file)
       setPhoto(dataUrl)
-      setAnalysisSummary('Photo uploaded — reading your skin profile...')
       setStatus('Connecting with the cosmetist...')
       const initialHistory = await runAgentTurn(dataUrl, [])
       if (!initialHistory) return
@@ -54,7 +51,6 @@ function App() {
       }
       setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'user', content: autoPrompt.content }])
       setStatus('Pulling live product matches...')
-      setAnalysisSummary('Gathering live shopping picks...')
       const secondHistory: ConversationTurn[] = [...initialHistory, autoPrompt]
       setHistory(secondHistory)
       await runAgentTurn(dataUrl, secondHistory)
@@ -102,7 +98,6 @@ function App() {
       setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: reply }])
       setHistory(finalHistory)
       setStatus('Done. Ask anything else or upload again to iterate.')
-      setAnalysisSummary('')
       return finalHistory
     } catch (err) {
       console.error(err)
@@ -167,7 +162,7 @@ function App() {
             <div className="analysis-visual">
               <ScanVisualization photo={photo} isLoading={isLoading} />
               <p className="analysis-copy">
-                {analysisSummary || 'Photo ready — chatting through details.'}
+                {status}
               </p>
             </div>
 
@@ -357,7 +352,6 @@ const ScanVisualization = ({
         {isLoading && (
           <div className="scan-visual__status">
             <span className="scan-visual__dot" />
-            <p>Analyzing pixels…</p>
           </div>
         )}
       </div>

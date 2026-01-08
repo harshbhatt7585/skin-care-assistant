@@ -182,7 +182,7 @@ const serperTool: ToolSpec<{ q: string; gl?: string }> = {
 
 export const createCosmetistAgent = (photoDataUrl: string) =>
   new Agent({
-    model: 'gpt-5-mini',
+    model: 'gpt-5-nano',
     maxTurns: 6,
     systemPrompt: [
       'You are a licensed aesthetician and cosmetic chemist.',

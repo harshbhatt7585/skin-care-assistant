@@ -88,7 +88,7 @@ function App() {
               {
                 role: 'user' as const,
                 content:
-                  'Please analyze my bare-face photo and outline AM/PM rituals. Ask if I want shopping links before calling any tools.',
+                  'Please analyze my bare-face photo and outline AM/PM rituals. Write analysis in points, Writr concerns if acne, pigmentation, dark spots, redness, wrinkles, etc. and give rating on these conditions: Hydration, Oil Balance, Tone, Barrier Strength, Sensitivity. Dont explain anything, just the points and ratings.',
               },
             ]
           : nextHistory

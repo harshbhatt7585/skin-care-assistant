@@ -139,31 +139,49 @@ export class Agent {
   }
 }
 
-const serperTool: ToolSpec<{ q: string; gl?: string }> = {
+const detectUserLocale = () => {
+  if (typeof navigator === 'undefined') {
+    return { language: 'en', region: 'us' }
+  }
+
+  const locale = navigator.languages?.[0] || navigator.language || 'en-US'
+  const [languagePart, regionPart] = locale.split(/[-_]/)
+  return {
+    language: (languagePart || 'en').toLowerCase(),
+    region: (regionPart || 'us').toLowerCase(),
+  }
+}
+
+const serperTool: ToolSpec<{ q: string; gl?: string; hl?: string }> = {
   name: 'serper',
-  description: 'Fetch image-based product cards for skincare recommendations.',
+  description: 'Fetch shopping search results tailored to the user\'s locale.',
   parameters: {
     type: 'object',
     properties: {
       q: { type: 'string', description: 'Search query describing the desired products' },
-      gl: { type: 'string', description: 'Country code (e.g., us, in)' },
+      gl: { type: 'string', description: 'Country code (e.g., us, in). Defaults to user region.' },
+      hl: { type: 'string', description: 'Language code (e.g., en, fr). Defaults to user locale.' },
     },
     required: ['q'],
     additionalProperties: false,
   },
-  handler: async ({ q, gl = 'us' }) => {
+  handler: async ({ q, gl, hl }) => {
     const apiKey = import.meta.env.VITE_SERPER_API_KEY
     if (!apiKey) {
       throw new Error('Missing VITE_SERPER_API_KEY for serper tool call.')
     }
 
-    const response = await fetch('https://google.serper.dev/images', {
+    const { language, region } = detectUserLocale()
+    const finalGl = (gl || region || 'us').toLowerCase()
+    const finalHl = (hl || language || 'en').toLowerCase()
+
+    const response = await fetch('https://google.serper.dev/shopping', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-API-KEY': apiKey,
       },
-      body: JSON.stringify({ q, gl, num: 20 }),
+      body: JSON.stringify({ q, gl: finalGl, hl: finalHl, num: 20 }),
     })
 
     if (!response.ok) {
@@ -171,25 +189,12 @@ const serperTool: ToolSpec<{ q: string; gl?: string }> = {
     }
 
     const payload = (await response.json()) as Record<string, unknown>
-    const images = Array.isArray(payload.images) ? payload.images : []
+    const shoppingPayload = {
+      knowledgeGraph: payload.knowledgeGraph,
+      organic: payload.organic,
+    }
 
-    const listings = images
-      .map((item) => ({
-        name: typeof item.title === 'string' ? item.title : undefined,
-        link: typeof item.link === 'string' ? item.link : undefined,
-        retailer: typeof item.source === 'string' ? item.source : undefined,
-        snippet: typeof item.snippet === 'string' ? item.snippet : undefined,
-        image:
-          typeof item.imageUrl === 'string'
-            ? item.imageUrl
-            : typeof item.thumbnailUrl === 'string'
-              ? item.thumbnailUrl
-              : undefined,
-      }))
-      .filter((item) => item.name && item.link && item.image)
-      .slice(0, 6)
-
-    return JSON.stringify({ listings })
+    return JSON.stringify(shoppingPayload)
   },
 }
 

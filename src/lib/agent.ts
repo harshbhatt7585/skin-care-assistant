@@ -139,41 +139,23 @@ export class Agent {
   }
 }
 
-const detectUserLocale = () => {
-  if (typeof navigator === 'undefined') {
-    return { language: 'en', region: 'us' }
-  }
-
-  const locale = navigator.languages?.[0] || navigator.language || 'en-US'
-  const [languagePart, regionPart] = locale.split(/[-_]/)
-  return {
-    language: (languagePart || 'en').toLowerCase(),
-    region: (regionPart || 'us').toLowerCase(),
-  }
-}
-
-const serperTool: ToolSpec<{ q: string; gl?: string; hl?: string }> = {
+const serperTool: ToolSpec<{ q: string; gl?: string }> = {
   name: 'serper',
-  description: 'Fetch shopping search results tailored to the user\'s locale.',
+  description: 'Fetch shopping search results for skincare recommendations.',
   parameters: {
     type: 'object',
     properties: {
       q: { type: 'string', description: 'Search query describing the desired products' },
-      gl: { type: 'string', description: 'Country code (e.g., us, in). Defaults to user region.' },
-      hl: { type: 'string', description: 'Language code (e.g., en, fr). Defaults to user locale.' },
+      gl: { type: 'string', description: 'Country code (e.g., us, in)' },
     },
     required: ['q'],
     additionalProperties: false,
   },
-  handler: async ({ q, gl, hl }) => {
+  handler: async ({ q, gl = 'us' }) => {
     const apiKey = import.meta.env.VITE_SERPER_API_KEY
     if (!apiKey) {
       throw new Error('Missing VITE_SERPER_API_KEY for serper tool call.')
     }
-
-    const { language, region } = detectUserLocale()
-    const finalGl = (gl || region || 'us').toLowerCase()
-    const finalHl = (hl || language || 'en').toLowerCase()
 
     const response = await fetch('https://google.serper.dev/shopping', {
       method: 'POST',
@@ -181,7 +163,7 @@ const serperTool: ToolSpec<{ q: string; gl?: string; hl?: string }> = {
         'Content-Type': 'application/json',
         'X-API-KEY': apiKey,
       },
-      body: JSON.stringify({ q, gl: finalGl, hl: finalHl, num: 20 }),
+      body: JSON.stringify({ q, gl, num: 20 }),
     })
 
     if (!response.ok) {

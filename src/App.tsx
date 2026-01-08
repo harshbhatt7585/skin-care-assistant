@@ -260,7 +260,10 @@ const formatAssistantContent = (content: string) => {
     .split(/\r?\n/)
     .filter((line) => {
       const trimmed = line.trim()
-      return !/^[-\s]*link:/i.test(trimmed) && !/^[-\s]*thumbnail:/i.test(trimmed)
+      return (
+        !/^[-\s]*link:/i.test(trimmed) &&
+        !/^[-\s]*(thumbnail|image):/i.test(trimmed)
+      )
     })
     .join('\n')
   return marked.parse(sanitized, { gfm: true })
@@ -271,6 +274,7 @@ type ProductEntry = {
   link?: string
   thumbnail?: string
   alt?: string
+  reason?: string
 }
 
 type ProductSection = {
@@ -360,16 +364,17 @@ const parseProductSections = (
 
     const normalized = trimmed.replace(/^-+\s*/, '')
     const isLink = /^link:/i.test(normalized)
-    const isThumb = /^thumbnail:/i.test(normalized)
+    const isThumb = /^(thumbnail|image):/i.test(normalized)
+    const isReason = /^why\s+it\s+fits:/i.test(normalized)
 
-    if (!trimmed.startsWith('-') && !isLink && !isThumb && hasUpcomingBullet(index + 1)) {
+    if (!trimmed.startsWith('-') && !isLink && !isThumb && !isReason && hasUpcomingBullet(index + 1)) {
       currentSection = { startIndex: index, data: { title: trimmed, entries: [] } }
       sections.push(currentSection)
       currentEntry = null
       return
     }
 
-    if (trimmed.startsWith('- ') && !isLink && !isThumb) {
+    if (trimmed.startsWith('- ') && !isLink && !isThumb && !isReason) {
       const entry: ParsedEntry = { retailer: normalized, lineIndexes: [index] }
       currentEntry = entry
       currentSection?.data.entries.push(entry)
@@ -386,12 +391,19 @@ const parseProductSections = (
     }
 
     if (isThumb && currentEntry) {
-      const rest = normalized.replace(/^thumbnail:\s*/i, '')
+      const rest = normalized.replace(/^(thumbnail|image):\s*/i, '')
       const explicit = rest.match(/\((https?:\/\/[^)]+)\)/)
       const fallback = rest.match(/https?:\/\/\S+/)
       currentEntry.thumbnail = explicit?.[1] ?? fallback?.[0]
       const altMatch = rest.match(/!\[([^\]]+)\]/)
       if (altMatch) currentEntry.alt = altMatch[1]
+      currentEntry.lineIndexes.push(index)
+      return
+    }
+
+    if (isReason && currentEntry) {
+      const reasonText = normalized.replace(/^why\s+it\s+fits:\s*/i, '')
+      currentEntry.reason = reasonText
       currentEntry.lineIndexes.push(index)
     }
   })
@@ -456,7 +468,7 @@ const ProductShowcase = ({ sections }: { sections: ProductSection[] }) => (
                 )}
                 <div className="product-card__body">
                   <p className="product-card__retailer">{entry.retailer}</p>
-                  {entry.link && <span className="product-card__cta">Open product ↗</span>}
+                  {entry.reason && <p className="product-card__reason">{entry.reason}</p>}
                 </div>
               </div>
             )

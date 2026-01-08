@@ -452,9 +452,10 @@ a {
   color: rgba(247, 251, 255, 0.9);
 }
 
-.product-card__cta {
+.product-card__reason {
+  margin: 0;
   font-size: 0.85rem;
-  color: rgba(114, 255, 230, 0.9);
+  color: rgba(247, 251, 255, 0.75);
 }
 
 @keyframes productReveal {

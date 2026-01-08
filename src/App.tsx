@@ -180,6 +180,23 @@ function App() {
                     )
                   }
 
+                  const parsedShopping = parseShoppingPayload(message.content)
+                  if (parsedShopping) {
+                    const { payload, remainder } = parsedShopping
+                    return (
+                      <article key={message.id} className="bubble">
+                        {remainder && (
+                          <div
+                            dangerouslySetInnerHTML={{
+                              __html: formatAssistantContent(remainder),
+                            }}
+                          />
+                        )}
+                        <ShoppingPreview data={payload} />
+                      </article>
+                    )
+                  }
+
                   const parsedProducts = parseProductSections(message.content)
                   if (parsedProducts) {
                     const { sections, remainder } = parsedProducts
@@ -238,7 +255,16 @@ const escapeHtml = (input: string) =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;')
 
-const formatAssistantContent = (content: string) => marked.parse(content, { gfm: true })
+const formatAssistantContent = (content: string) => {
+  const sanitized = content
+    .split(/\r?\n/)
+    .filter((line) => {
+      const trimmed = line.trim()
+      return !/^[-\s]*link:/i.test(trimmed) && !/^[-\s]*thumbnail:/i.test(trimmed)
+    })
+    .join('\n')
+  return marked.parse(sanitized, { gfm: true })
+}
 
 type ProductEntry = {
   retailer: string
@@ -250,6 +276,68 @@ type ProductEntry = {
 type ProductSection = {
   title: string
   entries: ProductEntry[]
+}
+
+type ShoppingPayload = {
+  knowledgeGraph?: {
+    title?: string
+    type?: string
+    website?: string
+    imageUrl?: string
+    description?: string
+    descriptionLink?: string
+    attributes?: Record<string, string>
+  }
+  organic?: Array<{
+    title?: string
+    link?: string
+    snippet?: string
+    position?: number
+  }>
+}
+
+const parseShoppingPayload = (
+  content: string,
+): { payload: ShoppingPayload; remainder: string } | null => {
+  const codeMatch = content.match(/```json([\s\S]*?)```/i)
+  const candidate = codeMatch ? codeMatch[1].trim() : content.trim()
+  let parsed: ShoppingPayload | null = null
+  const tryParse = (raw: string) => {
+    try {
+      parsed = JSON.parse(raw)
+      return true
+    } catch (error) {
+      return false
+    }
+  }
+
+  if (!tryParse(candidate)) {
+    const start = candidate.indexOf('{')
+    const end = candidate.lastIndexOf('}')
+    if (start === -1 || end === -1 || end <= start) {
+      return null
+    }
+    if (!tryParse(candidate.slice(start, end + 1))) {
+      return null
+    }
+  }
+
+  if (!parsed || typeof parsed !== 'object') {
+    return null
+  }
+
+  if (!parsed.knowledgeGraph && !parsed.organic) {
+    return null
+  }
+
+  const remainder = codeMatch
+    ? content.replace(codeMatch[0], '').trim()
+    : content.replace(candidate, '').trim()
+
+  return {
+    payload: parsed,
+    remainder,
+  }
 }
 
 type ParsedEntry = ProductEntry & { lineIndexes: number[] }
@@ -394,6 +482,82 @@ const ProductShowcase = ({ sections }: { sections: ProductSection[] }) => (
     ))}
   </div>
 )
+
+const ShoppingPreview = ({ data }: { data: ShoppingPayload }) => {
+  const organic = data.organic?.slice(0, 6) ?? []
+  const hero = data.knowledgeGraph
+
+  if (!hero && organic.length === 0) {
+    return null
+  }
+
+  return (
+    <div className="shopping-preview">
+      {hero && (
+        <div className="shopping-hero">
+          {hero.imageUrl && (
+            <div className="shopping-hero__image">
+              <img src={hero.imageUrl} alt={hero.title || 'Preview'} loading="lazy" />
+            </div>
+          )}
+          <div className="shopping-hero__body">
+            <p className="shopping-hero__eyebrow">Live shopping pulse</p>
+            <h3>{hero.title}</h3>
+            {hero.type && <span className="shopping-hero__type">{hero.type}</span>}
+            {hero.description && (
+              <p className="shopping-hero__description">{hero.description}</p>
+            )}
+            {hero.attributes && (
+              <dl className="shopping-hero__attributes">
+                {Object.entries(hero.attributes)
+                  .slice(0, 4)
+                  .map(([label, value]) => (
+                    <div key={label}>
+                      <dt>{label}</dt>
+                      <dd>{value}</dd>
+                    </div>
+                  ))}
+              </dl>
+            )}
+            {hero.website && (
+              <a
+                href={hero.website}
+                className="shopping-hero__cta"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Visit site ↗
+              </a>
+            )}
+          </div>
+        </div>
+      )}
+
+      {organic.length > 0 && (
+        <div className="shopping-cards">
+          {organic.map((item, index) => (
+            <a
+              key={`${item.link}-${index}`}
+              href={item.link}
+              target="_blank"
+              rel="noreferrer"
+              className="shopping-card"
+              style={{ animationDelay: `${index * 0.03}s` }}
+            >
+              <div className="shopping-card__header">
+                <span className="shopping-card__index">
+                  {(item.position ?? index + 1).toString().padStart(2, '0')}
+                </span>
+                <p className="shopping-card__title">{item.title}</p>
+              </div>
+              {item.snippet && <p className="shopping-card__snippet">{item.snippet}</p>}
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 const ScanVisualization = ({
   photo,

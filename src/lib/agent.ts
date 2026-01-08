@@ -55,7 +55,7 @@ export class Agent {
   constructor(options: AgentOptions) {
     this.client = createClient()
     this.systemPrompt = options.systemPrompt
-    this.model = options.model ?? 'gpt-5-nano'
+    this.model = options.model ?? 'gpt-5-mini'
     this.maxTurns = options.maxTurns ?? 6
     this.toolMap = new Map()
     ;(options.tools ?? []).forEach((tool) => this.toolMap.set(tool.name, tool))
@@ -182,7 +182,7 @@ const serperTool: ToolSpec<{ q: string; gl?: string }> = {
 
 export const createCosmetistAgent = (photoDataUrl: string) =>
   new Agent({
-    model: 'gpt-5-nano',
+    model: 'gpt-5-mini',
     maxTurns: 6,
     systemPrompt: [
       'You are a licensed aesthetician and cosmetic chemist.',

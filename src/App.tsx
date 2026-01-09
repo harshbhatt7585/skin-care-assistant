@@ -19,6 +19,7 @@ function App() {
   const [status, setStatus] = useState('Upload a clear photo to begin.')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setLoading] = useState(false)
+  const [scanMetrics, setScanMetrics] = useState<ScanMetrics | null>(null)
   const streamingTimers = useRef<number[]>([])
 
   const reset = () => {
@@ -30,6 +31,7 @@ function App() {
     setInput('')
     setStatus('Upload a clear photo to begin.')
     setError(null)
+    setScanMetrics(null)
   }
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -51,6 +53,18 @@ function App() {
       ]
       setMessages(assistantMessages)
       setHistory(workflow.history)
+      try {
+        const parsed = JSON.parse(workflow.ratings)
+        setScanMetrics({
+          hydration: Number(parsed.hydration),
+          oilBalance: Number(parsed.oilBalance),
+          tone: Number(parsed.tone),
+          barrierStrength: Number(parsed.barrierStrength),
+          sensitivity: Number(parsed.sensitivity),
+        })
+      } catch (error) {
+        console.warn('Could not parse scan metrics JSON', error)
+      }
       setStatus('Done. Ask anything else or upload again to iterate.')
     } catch (err) {
       console.error(err)
@@ -162,6 +176,7 @@ function App() {
           <section className="analysis-stack">
             <div className="analysis-visual">
               <ScanVisualization photo={photo} isLoading={isLoading} />
+              {scanMetrics && <ScanMetricsPanel metrics={scanMetrics} />}
               <p className="analysis-copy">
                 {status}
               </p>
@@ -282,6 +297,13 @@ type ProductSection = {
   entries: ProductEntry[]
 }
 
+type ScanMetrics = {
+  hydration: number
+  oilBalance: number
+  tone: number
+  barrierStrength: number
+  sensitivity: number
+}
 type ShoppingPayload = {
   knowledgeGraph?: {
     title?: string
@@ -494,6 +516,27 @@ const ProductShowcase = ({ sections }: { sections: ProductSection[] }) => (
     ))}
   </div>
 )
+
+const ScanMetricsPanel = ({ metrics }: { metrics: ScanMetrics }) => {
+  const entries = [
+    { label: 'Hydration', value: metrics.hydration },
+    { label: 'Oil Balance', value: metrics.oilBalance },
+    { label: 'Tone', value: metrics.tone },
+    { label: 'Barrier', value: metrics.barrierStrength },
+    { label: 'Sensitivity', value: metrics.sensitivity },
+  ]
+
+  return (
+    <div className="scan-metrics">
+      {entries.map((entry) => (
+        <div key={entry.label} className="scan-metrics__item">
+          <span>{entry.label}</span>
+          <strong>{entry.value}/5</strong>
+        </div>
+      ))}
+    </div>
+  )
+}
 
 const ShoppingPreview = ({ data }: { data: ShoppingPayload }) => {
   const organic = data.organic?.slice(0, 6) ?? []

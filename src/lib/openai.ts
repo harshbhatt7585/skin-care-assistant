@@ -33,6 +33,7 @@ export const runInitialWorkflow = async ({
   history: ConversationTurn[]
   analysis: string
   shopping: string
+  ratings: string
 }> => {
   const agent = createCosmetistAgent(photoDataUrl)
   const history: ConversationTurn[] = []
@@ -46,6 +47,15 @@ export const runInitialWorkflow = async ({
   const analysis = await agent.respond(history)
   history.push({ role: 'assistant', content: analysis })
 
+  const ratingPrompt: ConversationTurn = {
+    role: 'user',
+    content:
+      'From that analysis, output a JSON object with keys hydration, oilBalance, tone, barrierStrength, sensitivity (numbers 1-5). No prose.',
+  }
+  history.push(ratingPrompt)
+  const ratings = await agent.respond(history)
+  history.push({ role: 'assistant', content: ratings })
+
   const shoppingPrompt: ConversationTurn = {
     role: 'user',
     content:
@@ -55,5 +65,5 @@ export const runInitialWorkflow = async ({
   const shopping = await agent.respond(history)
   history.push({ role: 'assistant', content: shopping })
 
-  return { history, analysis, shopping }
+  return { history, analysis, shopping, ratings }
 }

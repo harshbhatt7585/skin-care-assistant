@@ -309,6 +309,36 @@ a {
   pointer-events: none;
 }
 
+.scan-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: 6px;
+  margin-top: 12px;
+  width: 100%;
+}
+
+.scan-metrics__item {
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(114, 255, 230, 0.18);
+  text-align: center;
+  color: rgba(247, 251, 255, 0.85);
+}
+
+.scan-metrics__item span {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.scan-metrics__item strong {
+  font-size: 1rem;
+  color: rgba(114, 255, 230, 0.95);
+}
+
 .scan-visual__canvas {
   position: absolute;
   inset: 0;

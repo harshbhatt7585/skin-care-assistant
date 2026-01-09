@@ -25,45 +25,50 @@ export const runChatTurn = async ({
   return agent.respond(conversation)
 }
 
-export const runInitialWorkflow = async ({
+type WorkflowCallbacks = {
+  onAnalysis?: (analysis: string, history: ConversationTurn[]) => void
+  onRatings?: (ratings: string, history: ConversationTurn[]) => void
+  onShopping?: (shopping: string, history: ConversationTurn[]) => void
+}
+
+export const runInitialWorkflowSequenced = async ({
   photoDataUrl,
+  callbacks,
 }: {
   photoDataUrl: string
+  callbacks?: WorkflowCallbacks
 }): Promise<{
   history: ConversationTurn[]
-  analysis: string
-  shopping: string
-  ratings: string
 }> => {
   const agent = createCosmetistAgent(photoDataUrl)
   const history: ConversationTurn[] = []
 
-  const analysisPrompt: ConversationTurn = {
-    role: 'user',
-    content:
-      'Please analyze my bare-face photo. List bullet-point concerns (acne, pigmentation, redness, wrinkles, etc.) and rate Hydration, Oil Balance, Tone, Barrier Strength, and Sensitivity on a 1–5 scale. Keep it concise.',
+  const promptAndRespond = async (
+    content: string,
+    cb?: (reply: string, historySnapshot: ConversationTurn[]) => void,
+  ) => {
+    const prompt: ConversationTurn = { role: 'user', content }
+    history.push(prompt)
+    const reply = await agent.respond(history)
+    history.push({ role: 'assistant', content: reply })
+    cb?.(reply, [...history])
+    return reply
   }
-  history.push(analysisPrompt)
-  const analysis = await agent.respond(history)
-  history.push({ role: 'assistant', content: analysis })
 
-  const ratingPrompt: ConversationTurn = {
-    role: 'user',
-    content:
-      'From that analysis, output a JSON object with keys hydration, oilBalance, tone, barrierStrength, sensitivity (numbers 1-5). No prose.',
-  }
-  history.push(ratingPrompt)
-  const ratings = await agent.respond(history)
-  history.push({ role: 'assistant', content: ratings })
+  await promptAndRespond(
+    'Please analyze my bare-face photo. List bullet-point concerns (acne, pigmentation, redness, wrinkles, etc.) and rate Hydration, Oil Balance, Tone, Barrier Strength, and Sensitivity on a 1–5 scale. Keep it concise.',
+    callbacks?.onAnalysis,
+  )
 
-  const shoppingPrompt: ConversationTurn = {
-    role: 'user',
-    content:
-      'Using that assessment, fetch current shopping options with links and thumbnails for the AM/PM plan. Use tools if needed and return markdown with inline product cards.',
-  }
-  history.push(shoppingPrompt)
-  const shopping = await agent.respond(history)
-  history.push({ role: 'assistant', content: shopping })
+  await promptAndRespond(
+    'From that analysis, output a JSON object with keys hydration, oilBalance, tone, barrierStrength, sensitivity (numbers 1-5). No prose.',
+    callbacks?.onRatings,
+  )
 
-  return { history, analysis, shopping, ratings }
+  await promptAndRespond(
+    'Using that assessment, fetch current shopping options with links and thumbnails for the AM/PM plan. Use tools if needed and return markdown with inline product cards.',
+    callbacks?.onShopping,
+  )
+
+  return { history }
 }

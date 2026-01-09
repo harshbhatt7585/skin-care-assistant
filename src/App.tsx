@@ -5,7 +5,7 @@ import ScanMetricsPanel, { type ScanMetrics } from './components/ScanMetricsPane
 import ProductShowcase from './components/ProductShowcase'
 import ShoppingPreview from './components/ShoppingPreview'
 import { parseProductSections, parseShoppingPayload, stripToolArtifacts } from './lib/parsers'
-import { runChatTurn, runInitialWorkflow } from './lib/openai'
+import { runChatTurn, runInitialWorkflowSequenced } from './lib/openai'
 
 type ChatMessage = {
   id: string
@@ -37,25 +37,37 @@ function App() {
       const dataUrl = await readFileAsDataUrl(file)
       setPhoto(dataUrl)
       setStatus('Consulting the cosmetist...')
-      const workflow = await runInitialWorkflow({ photoDataUrl: dataUrl })
-      const assistantMessages: ChatMessage[] = [
-        { id: crypto.randomUUID(), role: 'assistant', content: workflow.analysis },
-        { id: crypto.randomUUID(), role: 'assistant', content: workflow.shopping },
-      ]
-      setMessages(assistantMessages)
-      setHistory(workflow.history)
-      try {
-        const parsed = JSON.parse(workflow.ratings)
-        setScanMetrics({
-          hydration: Number(parsed.hydration),
-          oilBalance: Number(parsed.oilBalance),
-          tone: Number(parsed.tone),
-          barrierStrength: Number(parsed.barrierStrength),
-          sensitivity: Number(parsed.sensitivity),
-        })
-      } catch (error) {
-        console.warn('Could not parse scan metrics JSON', error)
-      }
+      await runInitialWorkflowSequenced({
+        photoDataUrl: dataUrl,
+        callbacks: {
+          onAnalysis: (analysis, historySnapshot) => {
+            setMessages([{ id: crypto.randomUUID(), role: 'assistant', content: analysis }])
+            setHistory(historySnapshot)
+            setStatus('Reviewing concerns…')
+          },
+          onRatings: (ratings) => {
+            try {
+              const parsed = JSON.parse(ratings)
+              setScanMetrics({
+                hydration: Number(parsed.hydration),
+                oilBalance: Number(parsed.oilBalance),
+                tone: Number(parsed.tone),
+                barrierStrength: Number(parsed.barrierStrength),
+                sensitivity: Number(parsed.sensitivity),
+              })
+            } catch (error) {
+              console.warn('Could not parse scan metrics JSON', error)
+            }
+          },
+          onShopping: (shopping, historySnapshot) => {
+            setMessages((prev) => [
+              ...prev,
+              { id: crypto.randomUUID(), role: 'assistant', content: shopping },
+            ])
+            setHistory(historySnapshot)
+          },
+        },
+      })
       setStatus('Done. Ask anything else or upload again to iterate.')
     } catch (err) {
       console.error(err)

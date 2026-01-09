@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { marked } from 'marked'
 import './App.css'
-import { runChatTurn } from './lib/openai'
+import { runChatTurn, runInitialWorkflow } from './lib/openai'
 
 type ChatMessage = {
   id: string
@@ -38,26 +38,26 @@ function App() {
 
     setError(null)
     setStatus('Analyzing face…')
+    setLoading(true)
 
     try {
       const dataUrl = await readFileAsDataUrl(file)
       setPhoto(dataUrl)
-      setStatus('Connecting with the cosmetist...')
-      const initialHistory = await runAgentTurn(dataUrl, [])
-      if (!initialHistory) return
-      const autoPrompt = {
-        role: 'user' as const,
-        content: 'Please send product links and shopping options for this plan.',
-      }
-      setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'user', content: autoPrompt.content }])
-      setStatus('Pulling live product matches...')
-      const secondHistory: ConversationTurn[] = [...initialHistory, autoPrompt]
-      setHistory(secondHistory)
-      await runAgentTurn(dataUrl, secondHistory)
+      setStatus('Consulting the cosmetist...')
+      const workflow = await runInitialWorkflow({ photoDataUrl: dataUrl })
+      const assistantMessages: ChatMessage[] = [
+        { id: crypto.randomUUID(), role: 'assistant', content: workflow.analysis },
+        { id: crypto.randomUUID(), role: 'assistant', content: workflow.shopping },
+      ]
+      setMessages(assistantMessages)
+      setHistory(workflow.history)
+      setStatus('Done. Ask anything else or upload again to iterate.')
     } catch (err) {
       console.error(err)
       setError(err instanceof Error ? err.message : 'Could not process that image. Try another one.')
       setStatus('Upload a clear photo to begin.')
+    } finally {
+      setLoading(false)
     }
   }
 

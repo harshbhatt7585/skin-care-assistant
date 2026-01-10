@@ -295,7 +295,13 @@ function App() {
                     />
                   )
                 })}
-                {isLoading && <p className="typing">Assistant is thinking…</p>}
+                {isLoading && (
+                  <div className="typing" aria-live="polite" aria-label="Assistant is replying">
+                    <span />
+                    <span />
+                    <span />
+                  </div>
+                )}
               </div>
 
               <form className="chat-input" onSubmit={handleSend}>

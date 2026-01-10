@@ -262,6 +262,7 @@ a {
   flex-direction: column;
   gap: 16px;
   align-items: center;
+  position: relative;
 }
 
 .analysis-copy {
@@ -791,5 +792,56 @@ a {
 
   .chat-input {
     flex-direction: column;
+  }
+}
+.scan-metrics--overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.scan-metrics__item {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 14px;
+  background: rgba(4, 8, 12, 0.88);
+  border: 1px solid rgba(114, 255, 230, 0.35);
+  color: rgba(247, 251, 255, 0.9);
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  transform: translate(-50%, -50%);
+}
+
+.scan-metrics__item strong {
+  font-size: 1rem;
+  color: rgba(114, 255, 230, 0.95);
+}
+
+.scan-metrics__arrow {
+  width: 2px;
+  height: 70px;
+  background: linear-gradient(180deg, rgba(114, 255, 230, 0.85), transparent);
+  display: block;
+  transform-origin: top center;
+  animation: arrowPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes arrowPulse {
+  0% {
+    opacity: 0.3;
+    transform: scaleY(0.7);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scaleY(1.1);
+  }
+  100% {
+    opacity: 0.3;
+    transform: scaleY(0.7);
   }
 }

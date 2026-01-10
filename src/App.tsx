@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
 import ScanVisualization from './components/ScanVisualization'
 import ScanMetricsPanel, { type ScanMetrics } from './components/ScanMetricsPanel'
@@ -24,6 +24,33 @@ function App() {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setLoading] = useState(false)
   const [scanMetrics, setScanMetrics] = useState<ScanMetrics | null>(null)
+  const [location, setLocation] = useState<{ lat: number, lon: number } | null>(null)
+
+  function getLocation() {
+    if (!navigator.geolocation) {
+      console.log("Geolocation is not supported by this browser.");
+        "Geolocation is not supported by this browser.";
+      return;
+    }
+  
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+  
+        console.log(`Latitude: ${lat}, Longitude: ${lon}`);
+        setLocation({ lat, lon })
+      },
+      (error) => {
+        console.log("Permission denied or error occurred.");
+        setLocation(null)
+      }
+    );
+  }
+
+  useEffect(() => {
+    getLocation()
+  }, [])
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]

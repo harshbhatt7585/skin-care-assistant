@@ -822,14 +822,8 @@ a {
   color: rgba(114, 255, 230, 0.95);
 }
 
-.scan-metrics__arrow {
-  width: 2px;
-  height: 70px;
-  background: linear-gradient(180deg, rgba(114, 255, 230, 0.85), transparent);
-  display: block;
-  transform-origin: top center;
-  animation: arrowPulse 2.4s ease-in-out infinite;
-}
+/* .scan-metrics__arrow {
+} */
 
 @keyframes arrowPulse {
   0% {

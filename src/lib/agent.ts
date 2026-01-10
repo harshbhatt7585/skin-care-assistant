@@ -24,6 +24,7 @@ type AgentOptions = {
   tools?: ToolSpec[]
   model?: string
   maxTurns?: number
+  photoDataUrl?: string
 }
 
 const createClient = () => {
@@ -51,6 +52,7 @@ export class Agent {
   private systemPrompt: string
   private model: string
   private maxTurns: number
+  private photoDataUrl?: string
   private toolMap: Map<string, ToolSpec>
 
   constructor(options: AgentOptions) {
@@ -58,6 +60,7 @@ export class Agent {
     this.systemPrompt = options.systemPrompt
     this.model = options.model ?? 'gpt-5-mini'
     this.maxTurns = options.maxTurns ?? 6
+    this.photoDataUrl = options.photoDataUrl
     this.toolMap = new Map()
     ;(options.tools ?? []).forEach((tool) => this.toolMap.set(tool.name, tool))
   }
@@ -76,6 +79,16 @@ export class Agent {
 
   async respond(messages: AgentMessage[]): Promise<string> {
     const compiled: ChatCompletionMessageParam[] = [{ role: 'system', content: this.systemPrompt }]
+
+    if (this.photoDataUrl) {
+      compiled.push({
+        role: 'user',
+        content: [
+          { type: 'text', text: 'Here is the bare-face scan image to analyze.' },
+          { type: 'image_url', image_url: { url: this.photoDataUrl } },
+        ],
+      } as ChatCompletionMessageParam)
+    }
     messages.forEach((message) =>
       compiled.push({ role: message.role, content: message.content } as ChatCompletionMessageParam),
     )
@@ -184,11 +197,12 @@ const serperTool: ToolSpec<{ q: string; gl?: string }> = {
 
 export const createCosmetistAgent = (photoDataUrl: string) =>
   new Agent({
-    model: 'gpt-5-nano',
+    model: 'gpt-5-mini',
     maxTurns: 6,
+    photoDataUrl,
     systemPrompt: [
       'You are a licensed aesthetician and cosmetic chemist.',
-      `Here is the facial photo as a data URI: ${photoDataUrl}`,
+      'You can see the provided bare-face scan image via the companion user message. Never claim you cannot view it; describe what you observe and avoid asking for re-uploads.',
       'Chat naturally using markdown. When the user asks for products or shopping links, call the serper tool with a focused query and return your reply with markdown bullets that include links and thumbnails.',
     ].join(' '),
     tools: [serperTool],

@@ -805,7 +805,6 @@ a {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
   padding: 6px 12px;
   border-radius: 14px;
   background: rgba(4, 8, 12, 0.88);

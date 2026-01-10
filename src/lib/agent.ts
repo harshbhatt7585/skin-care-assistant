@@ -91,6 +91,7 @@ export class Agent {
       const choice = completion.choices[0]
       const message = choice.message
       const toolCalls = ((message as any).tool_calls ?? []) as Array<ChatCompletionMessageToolCall>
+      
 
       if (toolCalls.length) {
         compiled.push({

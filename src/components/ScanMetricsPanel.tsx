@@ -40,27 +40,27 @@ const ScanMetricsPanel = ({ metrics }: { metrics: ScanMetrics }) => {
       const base = {
         hydration: {
           x: circleRect.left + circleRect.width / 2,
-          y: circleRect.top - 50,
+          y: circleRect.top - 30,
           angle: -90,
         },
         oilBalance: {
-          x: circleRect.right + 60,
+          x: circleRect.right + 50,
           y: circleRect.top + circleRect.height * 0.25,
           angle: -20,
         },
         tone: {
-          x: circleRect.left - 60,
+          x: circleRect.left - 30,
           y: circleRect.top + circleRect.height * 0.3,
           angle: -160,
         },
         barrierStrength: {
-          x: circleRect.left + circleRect.width * 0.2,
-          y: circleRect.bottom + 55,
-          angle: 210,
+          x: circleRect.left + circleRect.width * 0.2 - 50,
+          y: circleRect.bottom - 20,
+          angle: 160,
         },
         sensitivity: {
-          x: circleRect.right - circleRect.width * 0.2,
-          y: circleRect.bottom + 55,
+          x: circleRect.right - circleRect.width * 0.2 + 70,
+          y: circleRect.bottom - 30,
           angle: 330,
         },
       } satisfies Record<LayoutKey, { x: number; y: number; angle: number }>
@@ -83,7 +83,7 @@ const ScanMetricsPanel = ({ metrics }: { metrics: ScanMetrics }) => {
     updatePositions()
     window.addEventListener('resize', updatePositions)
     return () => window.removeEventListener('resize', updatePositions)
-  }, [])
+  })
 
   return (
     <div ref={overlayRef} className="scan-metrics scan-metrics--overlay" aria-hidden>

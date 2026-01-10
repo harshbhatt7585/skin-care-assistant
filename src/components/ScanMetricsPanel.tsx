@@ -118,7 +118,7 @@ const ScanMetricsPanel = ({ metrics }: { metrics: ScanMetrics }) => {
     updatePositions()
     window.addEventListener('resize', updatePositions)
     return () => window.removeEventListener('resize', updatePositions)
-  })
+  }, [])
 
   return (
     <div ref={overlayRef} className="scan-metrics scan-metrics--overlay" aria-hidden>

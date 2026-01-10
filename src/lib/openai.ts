@@ -67,7 +67,7 @@ export const runInitialWorkflowSequenced = async ({
   )
 
   await promptAndRespond(
-    'Using that assessment, fetch current shopping options with links and thumbnails for the AM/PM plan. Use tools if needed and return markdown with inline product cards.',
+    'Using that assessment, fetch current shopping options with links and thumbnails for the AM/PM plan. Use tools if needed and return markdown with inline product cards. Format the response in this format: ```json\n{\n  "products": [\n    {\n      "title": "Example Product Title",\n      "source": "ExampleSource.com",\n      "link": "https://example.com/product-page",\n      "price": "$0.00",\n      "imageUrl": "https://example.com/product-image.jpg",\n      "rating": 0,\n      "ratingCount": 0,\n      "productId": "123456789",\n      "position": 1\n    }\n  ]\n}\n```',
     callbacks?.onShopping,
   )
 

@@ -13,22 +13,20 @@ export type ProductSection = {
   entries: ProductEntry[]
 }
 
+export type ShoppingProduct = {
+  title: string
+  link: string
+  source?: string
+  price?: string
+  imageUrl?: string
+  rating?: number
+  ratingCount?: number
+  productId?: string
+  position?: number
+}
+
 export type ShoppingPayload = {
-  knowledgeGraph?: {
-    title?: string
-    type?: string
-    website?: string
-    imageUrl?: string
-    description?: string
-    descriptionLink?: string
-    attributes?: Record<string, string>
-  }
-  organic?: Array<{
-    title?: string
-    link?: string
-    snippet?: string
-    position?: number
-  }>
+  products: ShoppingProduct[]
 }
 
 type ParsedEntry = ProductEntry & { lineIndexes: number[] }
@@ -161,11 +159,94 @@ export const parseShoppingPayload = (
     return null
   }
 
-  const payload = parsed as ShoppingPayload
+  const raw = parsed as Record<string, unknown>
 
-  if (!payload.knowledgeGraph && !payload.organic) {
+  const toProduct = (value: Record<string, unknown> | undefined): ShoppingProduct | null => {
+    if (!value) return null
+    const getString = (...candidates: unknown[]) => {
+      for (const candidate of candidates) {
+        if (typeof candidate === 'string' && candidate.trim()) {
+          return candidate.trim()
+        }
+      }
+      return undefined
+    }
+
+    const getNumber = (...candidates: unknown[]) => {
+      for (const candidate of candidates) {
+        if (typeof candidate === 'number' && Number.isFinite(candidate)) {
+          return candidate
+        }
+        if (typeof candidate === 'string') {
+          const normalized = candidate.replace(/[,\s]+/g, '')
+          const parsedValue = Number(normalized)
+          if (!Number.isNaN(parsedValue)) {
+            return parsedValue
+          }
+        }
+      }
+      return undefined
+    }
+
+    const title = getString(value['title'], value['name'])
+    const link = getString(value['link'], value['website'], (value as any)?.url)
+    if (!title || !link) return null
+
+    const product: ShoppingProduct = { title, link }
+
+    const source = getString(value['source'], value['retailer'], value['store'])
+    if (source) product.source = source
+
+    const price = getString(value['price'], value['offer'], value['cost'])
+    if (price) product.price = price
+
+    const imageUrl = getString(value['imageUrl'], value['thumbnail'], value['image'])
+    if (imageUrl) product.imageUrl = imageUrl
+
+    const rating = getNumber(value['rating'])
+    if (rating !== undefined) product.rating = rating
+
+    const ratingCount = getNumber(value['ratingCount'], value['reviews'])
+    if (ratingCount !== undefined) product.ratingCount = ratingCount
+
+    const productId = getString(value['productId'], value['id'])
+    if (productId) product.productId = productId
+
+    const position = getNumber(value['position'])
+    if (position !== undefined) product.position = position
+
+    return product
+  }
+
+  const products: ShoppingProduct[] = []
+
+  const directProducts = Array.isArray((raw as any).products)
+    ? ((raw as any).products as Array<Record<string, unknown>>)
+        .map((entry) => toProduct(entry))
+        .filter((entry): entry is ShoppingProduct => Boolean(entry))
+    : []
+
+  if (directProducts.length) {
+    products.push(...directProducts)
+  }
+
+  if (!products.length && raw.knowledgeGraph && typeof raw.knowledgeGraph === 'object') {
+    const hero = toProduct(raw.knowledgeGraph as Record<string, unknown>)
+    if (hero) products.push(hero)
+  }
+
+  if (!products.length && Array.isArray((raw as any).organic)) {
+    const organicEntries = ((raw as any).organic as Array<Record<string, unknown>>).map((entry) =>
+      toProduct(entry),
+    )
+    products.push(...organicEntries.filter((entry): entry is ShoppingProduct => Boolean(entry)))
+  }
+
+  if (!products.length) {
     return null
   }
+
+  const payload: ShoppingPayload = { products }
 
   const remainder = codeMatch
     ? content.replace(codeMatch[0], '').trim()

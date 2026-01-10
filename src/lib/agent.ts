@@ -10,6 +10,7 @@ type AgentMessage = {
   content: string
 }
 
+
 type ToolHandler<TArgs = any> = (args: TArgs) => Promise<string>
 
 type ToolSpec<TArgs = any> = {

@@ -1,77 +1,77 @@
 import type { ShoppingPayload } from '../lib/parsers'
 
-const ShoppingPreview = ({ data }: { data: ShoppingPayload }) => {
-  const organic = data.organic?.slice(0, 6) ?? []
-  const hero = data.knowledgeGraph
+const stageLabel = (index: number) => (index % 2 === 0 ? 'AM ritual' : 'PM ritual')
 
-  if (!hero && organic.length === 0) {
+const formatRating = (value?: number) => {
+  if (typeof value !== 'number') return undefined
+  const trimmed = value.toFixed(1).replace(/\.0$/, '')
+  return trimmed
+}
+
+const ShoppingPreview = ({ data }: { data: ShoppingPayload }) => {
+  const products = data.products?.slice(0, 8) ?? []
+  if (products.length === 0) {
     return null
   }
 
   return (
-    <div className="shopping-preview">
-      {hero && (
-        <div className="shopping-hero">
-          {hero.imageUrl && (
-            <div className="shopping-hero__image">
-              <img src={hero.imageUrl} alt={hero.title || 'Preview'} loading="lazy" />
-            </div>
-          )}
-          <div className="shopping-hero__body">
-            <p className="shopping-hero__eyebrow">Live shopping pulse</p>
-            <h3>{hero.title}</h3>
-            {hero.type && <span className="shopping-hero__type">{hero.type}</span>}
-            {hero.description && (
-              <p className="shopping-hero__description">{hero.description}</p>
-            )}
-            {hero.attributes && (
-              <dl className="shopping-hero__attributes">
-                {Object.entries(hero.attributes)
-                  .slice(0, 4)
-                  .map(([label, value]) => (
-                    <div key={label}>
-                      <dt>{label}</dt>
-                      <dd>{value}</dd>
-                    </div>
-                  ))}
-              </dl>
-            )}
-            {hero.website && (
-              <a
-                href={hero.website}
-                className="shopping-hero__cta"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Visit site ↗
-              </a>
-            )}
-          </div>
+    <div className="shopping-preview shopping-preview--products">
+      <div className="shopping-preview__header">
+        <div>
+          <p className="shopping-preview__eyebrow">Curated kit</p>
         </div>
-      )}
+        <span className="shopping-preview__hint">Tap a tile to open the product</span>
+      </div>
 
-      {organic.length > 0 && (
-        <div className="shopping-cards">
-          {organic.map((item, index) => (
+      <div className="shopping-products">
+        {products.map((product, index) => {
+          const stage = stageLabel(index)
+          const rating = formatRating(product.rating)
+          const ratingCount = typeof product.ratingCount === 'number' ? product.ratingCount : undefined
+          const badgeValue = (product.position ?? index + 1).toString().padStart(2, '0')
+
+          return (
             <a
-              key={`${item.link}-${index}`}
-              href={item.link}
+              key={`${product.link}-${index}`}
+              href={product.link}
               target="_blank"
               rel="noreferrer"
-              className="shopping-card"
-              style={{ animationDelay: `${index * 0.03}s` }}
+              className="shopping-product"
+              style={{ animationDelay: `${index * 0.04}s` }}
             >
-              <div className="shopping-card__header">
-                <span className="shopping-card__index">
-                  {(item.position ?? index + 1).toString().padStart(2, '0')}
-                </span>
-                <p className="shopping-card__title">{item.title}</p>
+              <span className="shopping-product__badge">{badgeValue}</span>
+              <div
+                className={`shopping-product__thumb${product.imageUrl ? '' : ' shopping-product__thumb--placeholder'}`}
+              >
+                {product.imageUrl ? (
+                  <img src={product.imageUrl} alt={product.title} loading="lazy" />
+                ) : (
+                  <span>No image</span>
+                )}
               </div>
-              {item.snippet && <p className="shopping-card__snippet">{item.snippet}</p>}
+              <div className="shopping-product__meta">
+                <p className="shopping-product__window">
+                  {stage}
+                  {product.source && <span className="shopping-product__source"> · {product.source}</span>}
+                </p>
+                <h4>{product.title}</h4>
+                {(product.price || rating) && (
+                  <div className="shopping-product__stats">
+                    {product.price && <span className="shopping-product__price">{product.price}</span>}
+                    {rating && (
+                      <span className="shopping-product__rating">
+                        ★ {rating}
+                        {ratingCount ? <span className="shopping-product__rating-count"> ({ratingCount})</span> : null}
+                      </span>
+                    )}
+                  </div>
+                )}
+                <span className="shopping-product__cta">View product ↗</span>
+              </div>
             </a>
-          ))}
-        </div>
-      )}
+          )
+        })}
+      </div>
     </div>
   )
 }

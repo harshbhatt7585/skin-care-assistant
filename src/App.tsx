@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import './App.css'
 import ScanVisualization from './components/ScanVisualization'
 import ScanMetricsPanel, { type ScanMetrics } from './components/ScanMetricsPanel'
@@ -25,6 +25,10 @@ function App() {
   const [isLoading, setLoading] = useState(false)
   const [scanMetrics, setScanMetrics] = useState<ScanMetrics | null>(null)
   const [country, setCountry] = useState<string | null>(null)
+  const [isCaptureActive, setCaptureActive] = useState(false)
+  const [cameraReady, setCameraReady] = useState(false)
+  const videoRef = useRef<HTMLVideoElement | null>(null)
+  const streamRef = useRef<MediaStream | null>(null)
 
   function getLocation() {
     if (!navigator.geolocation) {
@@ -78,16 +82,73 @@ function App() {
     getLocation()
   }, [])
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
+  const stopCamera = () => {
+    streamRef.current?.getTracks().forEach((track) => track.stop())
+    streamRef.current = null
+    if (videoRef.current) {
+      videoRef.current.srcObject = null
+    }
+    setCameraReady(false)
+  }
 
+  useEffect(() => {
+    return () => {
+      stopCamera()
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!isCaptureActive) {
+      stopCamera()
+      return
+    }
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setError('Camera capture is not supported in this browser.')
+      setCaptureActive(false)
+      return
+    }
+
+    let cancelled = false
+
+    const enableCamera = async () => {
+      try {
+        setCameraReady(false)
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } })
+        if (cancelled) {
+          stream.getTracks().forEach((track) => track.stop())
+          return
+        }
+        streamRef.current = stream
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : 'Unable to access the camera. Please check permissions.',
+          )
+          setCaptureActive(false)
+        }
+      }
+    }
+
+    enableCamera()
+
+    return () => {
+      cancelled = true
+      stopCamera()
+    }
+  }, [isCaptureActive])
+
+  const processPhotoDataUrl = async (dataUrl: string) => {
     setError(null)
     setStatus('Analyzing face…')
     setLoading(true)
 
     try {
-      const dataUrl = await readFileAsDataUrl(file)
       setPhoto(dataUrl)
       setStatus('Consulting the cosmetist...')
       await runInitialWorkflowSequenced({
@@ -129,6 +190,18 @@ function App() {
       setStatus('Upload a clear photo to begin.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    try {
+      const dataUrl = await readFileAsDataUrl(file)
+      await processPhotoDataUrl(dataUrl)
+    } finally {
+      event.target.value = ''
     }
   }
 
@@ -188,6 +261,26 @@ function App() {
     }
   }
 
+  const handleCapture = async () => {
+    if (!videoRef.current || !cameraReady || isLoading) return
+
+    const video = videoRef.current
+    const canvas = document.createElement('canvas')
+    canvas.width = video.videoWidth || 640
+    canvas.height = video.videoHeight || 480
+    const context = canvas.getContext('2d')
+    if (!context) {
+      setError('Unable to capture that frame. Please try again.')
+      return
+    }
+
+    context.drawImage(video, 0, 0, canvas.width, canvas.height)
+    const dataUrl = canvas.toDataURL('image/png')
+    stopCamera()
+    setCaptureActive(false)
+    await processPhotoDataUrl(dataUrl)
+  }
+
   const handleSend = async (event: React.FormEvent) => {
     event.preventDefault()
     if (!input.trim() || !photo || isLoading) return
@@ -222,10 +315,41 @@ function App() {
           <section className="upload-panel">
             <h2>Upload a photo</h2>
             <p>Natural light, no heavy makeup. Everything stays on-device.</p>
-            <label className="dropzone">
-              <span>Choose photo</span>
-              <input type="file" accept="image/*" onChange={handleFileUpload} />
-            </label>
+            <div className="input-actions">
+              <label className="dropzone">
+                <span>Upload photo</span>
+                <input type="file" accept="image/*" onChange={handleFileUpload} />
+              </label>
+              <button
+                type="button"
+                className="capture-button"
+                onClick={() => setCaptureActive(true)}
+                disabled={isLoading}
+              >
+                Capture
+              </button>
+            </div>
+
+            {isCaptureActive && (
+              <div className="camera-panel">
+                <video
+                  ref={videoRef}
+                  className="camera-preview"
+                  autoPlay
+                  playsInline
+                  muted
+                  onLoadedMetadata={() => setCameraReady(true)}
+                />
+                <div className="camera-actions">
+                  <button type="button" onClick={handleCapture} disabled={!cameraReady || isLoading}>
+                    {cameraReady ? 'Capture photo' : 'Initializing camera…'}
+                  </button>
+                  <button type="button" onClick={() => setCaptureActive(false)}>
+                    Close camera
+                  </button>
+                </div>
+              </div>
+            )}
             {error && <p className="text-error">{error}</p>}
           </section>
         ) : (

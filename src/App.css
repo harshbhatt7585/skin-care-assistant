@@ -205,6 +205,87 @@ a {
   box-shadow: 0 30px 70px rgba(0, 0, 0, 0.4);
 }
 
+.input-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+}
+
+.capture-button {
+  border: none;
+  border-radius: 999px;
+  padding: 1rem 2rem;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(247, 251, 255, 0.85);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.capture-button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-3px);
+}
+
+.capture-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.camera-panel {
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(4, 6, 7, 0.9);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+.camera-preview {
+  width: 100%;
+  max-width: 420px;
+  aspect-ratio: 3 / 4;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #000;
+  object-fit: cover;
+}
+
+.camera-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.camera-actions button {
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  padding: 0.8rem 1.4rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.camera-actions button:first-of-type {
+  background: linear-gradient(135deg, #72ffe6 0%, #5ed9c3 100%);
+  color: #041417;
+  border: none;
+  box-shadow: 0 6px 18px rgba(114, 255, 230, 0.35);
+}
+
+.camera-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
 .upload-panel p {
   color: rgba(247, 251, 255, 0.7);
   margin-top: 0;

@@ -45,6 +45,7 @@ const safeJsonParse = (value: unknown) => {
   return value
 }
 
+
 export class Agent {
   private client: OpenAI
   private systemPrompt: string
@@ -186,9 +187,8 @@ export const createCosmetistAgent = (photoDataUrl: string) =>
     maxTurns: 6,
     systemPrompt: [
       'You are a licensed aesthetician and cosmetic chemist.',
-      `Here is the facial photo as a data URI: ${photoDataUrl}. Analyze it directly (do not ask the user to describe it).`,
-      'Chat naturally using markdown. When the user asks for products or shopping links, call the serper tool with a focused query and return your reply with markdown bullets that include links and ![alt](image_url) thumbnails.',
-      'Always remind them to patch test.',
+      `Here is the facial photo as a data URI: ${photoDataUrl}`,
+      'Chat naturally using markdown. When the user asks for products or shopping links, call the serper tool with a focused query and return your reply with markdown bullets that include links and thumbnails.',
     ].join(' '),
     tools: [serperTool],
   })

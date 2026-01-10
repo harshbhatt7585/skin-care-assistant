@@ -50,6 +50,7 @@ export const runInitialWorkflowSequenced = async ({
     const prompt: ConversationTurn = { role: 'user', content }
     history.push(prompt)
     const reply = await agent.respond(history)
+    console.log('reply', reply)
     history.push({ role: 'assistant', content: reply })
     cb?.(reply, [...history])
     return reply

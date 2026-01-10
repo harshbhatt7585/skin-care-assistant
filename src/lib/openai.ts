@@ -8,11 +8,12 @@ type ConversationTurn = {
 export const runChatTurn = async ({
   photoDataUrl,
   history,
+  country,
 }: {
   photoDataUrl: string
   history: ConversationTurn[]
 }): Promise<string> => {
-  const agent = createCosmetistAgent(photoDataUrl)
+  const agent = createCosmetistAgent(photoDataUrl, country)
   const conversation = history.length
     ? history
     : [
@@ -36,11 +37,12 @@ export const runInitialWorkflowSequenced = async ({
   callbacks,
 }: {
   photoDataUrl: string
+  country: string
   callbacks?: WorkflowCallbacks
 }): Promise<{
   history: ConversationTurn[]
 }> => {
-  const agent = createCosmetistAgent(photoDataUrl)
+  const agent = createCosmetistAgent(photoDataUrl, country)
   const history: ConversationTurn[] = []
 
   const promptAndRespond = async (

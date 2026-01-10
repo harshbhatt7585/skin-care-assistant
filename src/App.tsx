@@ -48,6 +48,7 @@ function App() {
 
           const data = await res.json();
           const foundCountry = data?.address?.country_code;
+          console.log('foundCountry', foundCountry)
           if (!foundCountry) {
             setCountry('us');
             return;
@@ -91,7 +92,6 @@ function App() {
       setStatus('Consulting the cosmetist...')
       await runInitialWorkflowSequenced({
         photoDataUrl: dataUrl,
-        country: country ?? 'us',
         callbacks: {
           onAnalysis: (analysis, historySnapshot) => {
             setMessages([{ id: crypto.randomUUID(), role: 'assistant', content: analysis }])

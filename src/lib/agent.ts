@@ -50,6 +50,7 @@ const safeJsonParse = (value: unknown) => {
 
 export class Agent {
   private client: OpenAI
+  private gl: string
   private systemPrompt: string
   private model: string
   private maxTurns: number
@@ -59,6 +60,7 @@ export class Agent {
   constructor(options: AgentOptions) {
     this.client = createClient()
     this.systemPrompt = options.systemPrompt
+    this.gl = options.gl ?? 'us'
     this.model = options.model ?? 'gpt-5-mini'
     this.maxTurns = options.maxTurns ?? 6
     this.photoDataUrl = options.photoDataUrl
@@ -162,12 +164,11 @@ const serperTool: ToolSpec<{ q: string; gl?: string }> = {
     type: 'object',
     properties: {
       q: { type: 'string', description: 'Search query describing the desired products' },
-      gl: { type: 'string', description: 'Country code (e.g., us, in)' },
     },
     required: ['q'],
     additionalProperties: false,
   },
-  handler: async ({ q, gl = 'us' }) => {
+  handler: async ({ q }) => {
     const apiKey = import.meta.env.VITE_SERPER_API_KEY
     if (!apiKey) {
       throw new Error('Missing VITE_SERPER_API_KEY for serper tool call.')
@@ -179,7 +180,7 @@ const serperTool: ToolSpec<{ q: string; gl?: string }> = {
         'Content-Type': 'application/json',
         'X-API-KEY': apiKey,
       },
-      body: JSON.stringify({ q, gl, num: 20 }),
+      body: JSON.stringify({ q, gl: this.gl, num: 20 }),
     })
 
     if (!response.ok) {
@@ -196,9 +197,10 @@ const serperTool: ToolSpec<{ q: string; gl?: string }> = {
   },
 }
 
-export const createCosmetistAgent = (photoDataUrl: string) =>
+export const createCosmetistAgent = (photoDataUrl: string, gl: string) =>
   new Agent({
     model: 'gpt-5-mini',
+    gl: gl,
     maxTurns: 6,
     photoDataUrl,
     systemPrompt: [

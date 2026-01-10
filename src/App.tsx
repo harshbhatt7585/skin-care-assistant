@@ -24,7 +24,7 @@ function App() {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setLoading] = useState(false)
   const [scanMetrics, setScanMetrics] = useState<ScanMetrics | null>(null)
-  const [location, setLocation] = useState<{ lat: number, lon: number } | null>(null)
+  const [country, setCountry] = useState<string | null>(null)
 
   function getLocation() {
     if (!navigator.geolocation) {
@@ -34,18 +34,43 @@ function App() {
     }
   
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const lat = position.coords.latitude;
-        const lon = position.coords.longitude;
-  
-        console.log(`Latitude: ${lat}, Longitude: ${lon}`);
-        setLocation({ lat, lon })
+      async (pos) => {
+        try {
+          const lat = pos.coords.latitude;
+          const lon = pos.coords.longitude;
+
+          // Reverse geocode (OpenStreetMap Nominatim)
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`
+          );
+
+          if (!res.ok) throw new Error("Reverse geocoding failed");
+
+          const data = await res.json();
+          const foundCountry = data?.address?.country_code;
+          if (!foundCountry) {
+            setCountry('us');
+            return;
+          }
+
+          setCountry(foundCountry);
+        } catch (e) {
+          setError(e instanceof Error ? e.message : "Something went wrong");
+        } finally {
+          setLoading(false);
+        }
       },
-      (error) => {
-        console.log("Permission denied or error occurred.");
-        setLocation(null)
-      }
+      (err) => {
+        setLoading(false);
+        // Helpful error messages
+        if (err.code === 1) setError("Permission denied. Please allow location access.");
+        else if (err.code === 2) setError("Position unavailable.");
+        else if (err.code === 3) setError("Location request timed out.");
+        else setError("Failed to get location.");
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
+
   }
 
   useEffect(() => {
@@ -66,6 +91,7 @@ function App() {
       setStatus('Consulting the cosmetist...')
       await runInitialWorkflowSequenced({
         photoDataUrl: dataUrl,
+        country: country ?? 'us',
         callbacks: {
           onAnalysis: (analysis, historySnapshot) => {
             setMessages([{ id: crypto.randomUUID(), role: 'assistant', content: analysis }])
@@ -137,7 +163,11 @@ function App() {
             ]
           : nextHistory
 
-      const reply = await runChatTurn({ photoDataUrl, history: baseHistory })
+      const reply = await runChatTurn({
+        photoDataUrl,
+        history: baseHistory,
+        country: country ?? 'us',
+      })
       console.log('reply', reply)
       const finalHistory: ConversationTurn[] = [...baseHistory, { role: 'assistant', content: reply }]
       setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: reply }])

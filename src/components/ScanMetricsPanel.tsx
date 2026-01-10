@@ -9,11 +9,46 @@ export type ScanMetrics = {
 }
 
 const layout = [
-  { label: 'Hydration', key: 'hydration', angle: -90, className: 'scan-metrics__item--hydration' },
-  { label: 'Oil Balance', key: 'oilBalance', angle: -20, className: 'scan-metrics__item--oil' },
-  { label: 'Tone', key: 'tone', angle: -160, className: 'scan-metrics__item--tone' },
-  { label: 'Barrier', key: 'barrierStrength', angle: 210, className: 'scan-metrics__item--barrier' },
-  { label: 'Sensitivity', key: 'sensitivity', angle: 330, className: 'scan-metrics__item--sensitivity' },
+  {
+    label: 'Hydration',
+    key: 'hydration',
+    angle: -90,
+    className: 'scan-metrics__item--hydration',
+    floatDelay: 0,
+    floatDuration: 5.2,
+  },
+  {
+    label: 'Oil Balance',
+    key: 'oilBalance',
+    angle: -20,
+    className: 'scan-metrics__item--oil',
+    floatDelay: 0.6,
+    floatDuration: 6.1,
+  },
+  {
+    label: 'Tone',
+    key: 'tone',
+    angle: -160,
+    className: 'scan-metrics__item--tone',
+    floatDelay: 1.1,
+    floatDuration: 5.6,
+  },
+  {
+    label: 'Barrier',
+    key: 'barrierStrength',
+    angle: 210,
+    className: 'scan-metrics__item--barrier',
+    floatDelay: 0.2,
+    floatDuration: 6.4,
+  },
+  {
+    label: 'Sensitivity',
+    key: 'sensitivity',
+    angle: 330,
+    className: 'scan-metrics__item--sensitivity',
+    floatDelay: 0.9,
+    floatDuration: 5.8,
+  },
 ] as const
 
 type LayoutKey = (typeof layout)[number]['key']
@@ -95,7 +130,12 @@ const ScanMetricsPanel = ({ metrics }: { metrics: ScanMetrics }) => {
           <div
             key={entry.label}
             className={`scan-metrics__item ${entry.className}`}
-            style={{ left: pos.left, top: pos.top }}
+            style={{
+              left: pos.left,
+              top: pos.top,
+              animationDelay: `${entry.floatDelay}s`,
+              animationDuration: `${entry.floatDuration}s`,
+            }}
           >
             <span>{entry.label}</span>
             <strong>{metricValue}/5</strong>

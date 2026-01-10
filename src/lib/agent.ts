@@ -50,7 +50,6 @@ const safeJsonParse = (value: unknown) => {
 
 export class Agent {
   private client: OpenAI
-  private gl: string
   private systemPrompt: string
   private model: string
   private maxTurns: number
@@ -60,7 +59,6 @@ export class Agent {
   constructor(options: AgentOptions) {
     this.client = createClient()
     this.systemPrompt = options.systemPrompt
-    this.gl = options.gl ?? 'us'
     this.model = options.model ?? 'gpt-5-mini'
     this.maxTurns = options.maxTurns ?? 6
     this.photoDataUrl = options.photoDataUrl
@@ -157,7 +155,7 @@ export class Agent {
   }
 }
 
-const serperTool: ToolSpec<{ q: string; gl?: string }> = {
+const createSerperTool = (gl: string): ToolSpec<{ q: string }> => ({
   name: 'serper',
   description: 'Fetch shopping search results for skincare recommendations.',
   parameters: {
@@ -174,13 +172,15 @@ const serperTool: ToolSpec<{ q: string; gl?: string }> = {
       throw new Error('Missing VITE_SERPER_API_KEY for serper tool call.')
     }
 
+    console.log('gl', gl)
+
     const response = await fetch('https://google.serper.dev/shopping', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-API-KEY': apiKey,
       },
-      body: JSON.stringify({ q, gl: this.gl, num: 20 }),
+      body: JSON.stringify({ q, gl, num: 20 }),
     })
 
     if (!response.ok) {
@@ -188,19 +188,14 @@ const serperTool: ToolSpec<{ q: string; gl?: string }> = {
     }
 
     const payload = (await response.json()) as Record<string, unknown>
-    const shoppingPayload = {
-      knowledgeGraph: payload.knowledgeGraph,
-      organic: payload.organic,
-    }
-
-    return JSON.stringify(shoppingPayload)
+    console.log('payload', payload)
+    return JSON.stringify(payload.shopping)
   },
-}
+})
 
 export const createCosmetistAgent = (photoDataUrl: string, gl: string) =>
   new Agent({
     model: 'gpt-5-mini',
-    gl: gl,
     maxTurns: 6,
     photoDataUrl,
     systemPrompt: [
@@ -208,5 +203,5 @@ export const createCosmetistAgent = (photoDataUrl: string, gl: string) =>
       'You can see the provided bare-face scan image via the companion user message. Never claim you cannot view it; describe what you observe and avoid asking for re-uploads.',
       'Chat naturally using markdown. When the user asks for products or shopping links, call the serper tool with a focused query and return your reply with markdown bullets that include links and thumbnails.',
     ].join(' '),
-    tools: [serperTool],
+    tools: [createSerperTool(gl)],
   })

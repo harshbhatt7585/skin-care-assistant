@@ -92,6 +92,7 @@ function App() {
       setStatus('Consulting the cosmetist...')
       await runInitialWorkflowSequenced({
         photoDataUrl: dataUrl,
+        country: country ?? 'us',
         callbacks: {
           onAnalysis: (analysis, historySnapshot) => {
             setMessages([{ id: crypto.randomUUID(), role: 'assistant', content: analysis }])

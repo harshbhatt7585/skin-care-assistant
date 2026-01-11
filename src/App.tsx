@@ -150,6 +150,14 @@ function App() {
     setLoading(true)
 
     try {
+      const faceDetected = await detectFaceFromDataUrl(dataUrl)
+      console.log(`[mediapipe] Face detected: ${faceDetected}`)
+      if (!faceDetected) {
+        setError('No face detected. Please upload a clear front-facing photo.')
+        setStatus('Upload a clear photo to begin.')
+        return
+      }
+
       setPhoto(dataUrl)
       setStatus('Consulting the cosmetist...')
       await runInitialWorkflowSequenced({
@@ -200,12 +208,6 @@ function App() {
 
     try {
       const dataUrl = await readFileAsDataUrl(file)
-      try {
-        const faceDetected = await detectFaceFromDataUrl(dataUrl)
-        console.log(`[mediapipe] Face detected: ${faceDetected}`)
-      } catch (detectError) {
-        console.error('Failed to run Mediapipe face detection.', detectError)
-      }
       await processPhotoDataUrl(dataUrl)
     } finally {
       event.target.value = ''

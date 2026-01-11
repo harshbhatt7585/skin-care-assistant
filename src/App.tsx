@@ -16,7 +16,7 @@ type ChatMessage = {
 
 type ConversationTurn = { role: 'user' | 'assistant'; content: string }
 
-const FACE_ERROR_MESSAGE = 'Face not detected! Upload face image'
+const FACE_ERROR_MESSAGE = 'Face not detected, upload Face image'
 
 function App() {
   const [photo, setPhoto] = useState<string | null>(null)
@@ -147,7 +147,7 @@ function App() {
     }
   }, [isCaptureActive])
 
-  const processPhotoDataUrl = async (dataUrl: string) => {
+  const processPhotoDataUrl = async (dataUrl: string): Promise<boolean> => {
     setError(null)
     setStatus('Analyzing face…')
     setLoading(true)
@@ -158,7 +158,7 @@ function App() {
       if (!faceDetected) {
         setError(FACE_ERROR_MESSAGE)
         setStatus('Upload a clear photo to begin.')
-        return
+        return false
       }
 
       setPhoto(dataUrl)
@@ -196,10 +196,12 @@ function App() {
         },
       })
       setStatus('Done. Ask anything else or upload again to iterate.')
+      return true
     } catch (err) {
       console.error(err)
       setError(err instanceof Error ? err.message : 'Could not process that image. Try another one.')
       setStatus('Upload a clear photo to begin.')
+      return false
     } finally {
       setLoading(false)
     }
@@ -288,9 +290,11 @@ function App() {
 
     context.drawImage(video, 0, 0, canvas.width, canvas.height)
     const dataUrl = canvas.toDataURL('image/png')
-    stopCamera()
-    setCaptureActive(false)
-    await processPhotoDataUrl(dataUrl)
+    const success = await processPhotoDataUrl(dataUrl)
+    if (success) {
+      stopCamera()
+      setCaptureActive(false)
+    }
   }
 
   const handleSend = async (event: React.FormEvent) => {

@@ -19,7 +19,7 @@ type ConversationTurn = { role: 'user' | 'assistant'; content: string }
 const FACE_ERROR_MESSAGE = 'Face not detected, upload Face image'
 
 function App() {
-  const [photo, setPhoto] = useState<string | null>(null)
+  const [photos, setPhotos] = useState<string[]>([])
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [history, setHistory] = useState<ConversationTurn[]>([])
   const [input, setInput] = useState('')
@@ -161,7 +161,7 @@ function App() {
         return false
       }
 
-      setPhoto(dataUrl)
+      setPhotos((prev) => [...prev, dataUrl])
       setStatus('Consulting the cosmetist...')
       await runInitialWorkflowSequenced({
         photoDataUrl: dataUrl,

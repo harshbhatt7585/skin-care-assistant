@@ -6,6 +6,7 @@ import ProductShowcase from './components/ProductShowcase'
 import ShoppingPreview from './components/ShoppingPreview'
 import { parseProductSections, parseShoppingPayload, stripToolArtifacts } from './lib/parsers'
 import { runChatTurn, runInitialWorkflowSequenced } from './lib/openai'
+import { detectFaceFromDataUrl } from './lib/faceDetection'
 
 type ChatMessage = {
   id: string
@@ -199,6 +200,12 @@ function App() {
 
     try {
       const dataUrl = await readFileAsDataUrl(file)
+      try {
+        const faceDetected = await detectFaceFromDataUrl(dataUrl)
+        console.log(`[mediapipe] Face detected: ${faceDetected}`)
+      } catch (detectError) {
+        console.error('Failed to run Mediapipe face detection.', detectError)
+      }
       await processPhotoDataUrl(dataUrl)
     } finally {
       event.target.value = ''

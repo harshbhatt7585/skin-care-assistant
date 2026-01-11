@@ -16,6 +16,8 @@ type ChatMessage = {
 
 type ConversationTurn = { role: 'user' | 'assistant'; content: string }
 
+const FACE_ERROR_MESSAGE = 'Face not detected! Upload face image'
+
 function App() {
   const [photo, setPhoto] = useState<string | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -30,6 +32,7 @@ function App() {
   const [cameraReady, setCameraReady] = useState(false)
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
+  const isFaceError = error === FACE_ERROR_MESSAGE
 
   function getLocation() {
     if (!navigator.geolocation) {
@@ -153,7 +156,7 @@ function App() {
       const faceDetected = await detectFaceFromDataUrl(dataUrl)
       console.log(`[mediapipe] Face detected: ${faceDetected}`)
       if (!faceDetected) {
-        setError('No face detected. Please upload a clear front-facing photo.')
+        setError(FACE_ERROR_MESSAGE)
         setStatus('Upload a clear photo to begin.')
         return
       }
@@ -339,6 +342,8 @@ function App() {
               </button>
             </div>
 
+            {isFaceError && <p className="face-error">{FACE_ERROR_MESSAGE}</p>}
+
             {isCaptureActive && (
               <div className="camera-panel">
                 <video
@@ -359,7 +364,6 @@ function App() {
                 </div>
               </div>
             )}
-            {error && <p className="text-error">{error}</p>}
           </section>
         ) : (
           <section className="analysis-stack">
@@ -448,7 +452,6 @@ function App() {
                   Send
                 </button>
               </form>
-              {error && <p className="text-error">{error}</p>}
             </div>
           </section>
         )}

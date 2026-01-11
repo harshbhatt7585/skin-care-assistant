@@ -291,6 +291,18 @@ a {
   margin-top: 0;
 }
 
+.face-error {
+  margin: 16px 0 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+p.face-error {
+  margin-top: 50px;
+  color: #ff6565;
+  font-size: 1.2rem
+
+}
+
 .dropzone {
   display: inline-flex;
   gap: 12px;
@@ -899,12 +911,6 @@ a {
 .chat-input button:not(:disabled):hover {
   transform: translateY(-2px) scale(1.02);
   box-shadow: 0 12px 32px rgba(114, 255, 230, 0.4);
-}
-
-.text-error {
-  color: #ff9aa6;
-  font-size: 0.9rem;
-  margin-top: 12px;
 }
 
 .hidden {

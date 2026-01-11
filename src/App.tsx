@@ -218,12 +218,14 @@ function App() {
   }
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
+    const files = event.target.files
+    if (!files?.length) return
 
     try {
-      const dataUrl = await readFileAsDataUrl(file)
-      await processPhotoDataUrl(dataUrl)
+      for (const file of Array.from(files)) {
+        const dataUrl = await readFileAsDataUrl(file)
+        await processPhotoDataUrl(dataUrl)
+      }
     } finally {
       event.target.value = ''
     }
@@ -344,7 +346,7 @@ function App() {
             <div className="input-actions">
               <label className="dropzone">
                 <span>Upload photo</span>
-                <input type="file" accept="image/*" onChange={handleFileUpload} />
+                <input type="file" accept="image/*" multiple onChange={handleFileUpload} />
               </label>
               <button
                 type="button"

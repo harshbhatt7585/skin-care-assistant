@@ -6,15 +6,18 @@ type ConversationTurn = {
 }
 
 export const runChatTurn = async ({
-  photoDataUrl,
+  photoDataUrls,
   history,
   country,
 }: {
-  photoDataUrl: string
+  photoDataUrls: string[]
   history: ConversationTurn[]
   country: string
 }): Promise<string> => {
-  const agent = createCosmetistAgent(photoDataUrl, country)
+  if (!photoDataUrls.length) {
+    throw new Error('runChatTurn requires at least one photo.')
+  }
+  const agent = createCosmetistAgent(photoDataUrls, country)
   const conversation = history.length
     ? history
     : [
@@ -34,17 +37,20 @@ type WorkflowCallbacks = {
 }
 
 export const runInitialWorkflowSequenced = async ({
-  photoDataUrl,
+  photoDataUrls,
   country,
   callbacks,
 }: {
-  photoDataUrl: string
+  photoDataUrls: string[]
   country: string
   callbacks?: WorkflowCallbacks
 }): Promise<{
   history: ConversationTurn[]
 }> => {
-  const agent = createCosmetistAgent(photoDataUrl, country)
+  if (!photoDataUrls.length) {
+    throw new Error('runInitialWorkflowSequenced requires at least one photo.')
+  }
+  const agent = createCosmetistAgent(photoDataUrls, country)
   const history: ConversationTurn[] = []
 
   const promptAndRespond = async (

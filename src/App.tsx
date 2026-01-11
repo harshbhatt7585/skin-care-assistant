@@ -33,6 +33,16 @@ function App() {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const isFaceError = error === FACE_ERROR_MESSAGE
+  const latestPhoto = photos.length ? photos[photos.length - 1] : null
+
+  const appendPhoto = (dataUrl: string) => {
+    let nextPhotos: string[] | undefined
+    setPhotos((prev) => {
+      nextPhotos = [...prev, dataUrl]
+      return nextPhotos
+    })
+    return nextPhotos ?? [dataUrl]
+  }
 
   function getLocation() {
     if (!navigator.geolocation) {
@@ -161,10 +171,10 @@ function App() {
         return false
       }
 
-      setPhotos((prev) => [...prev, dataUrl])
+      const nextPhotos = appendPhoto(dataUrl)
       setStatus('Consulting the cosmetist...')
       await runInitialWorkflowSequenced({
-        photoDataUrl: dataUrl,
+        photoDataUrls: nextPhotos,
         country: country ?? 'us',
         callbacks: {
           onAnalysis: (analysis, historySnapshot) => {
@@ -234,7 +244,7 @@ function App() {
     })
 
   const runAgentTurn = async (
-    photoDataUrl: string,
+    photoDataUrls: string[],
     nextHistory: ConversationTurn[],
   ): Promise<ConversationTurn[] | undefined> => {
     try {
@@ -252,7 +262,7 @@ function App() {
           : nextHistory
 
       const reply = await runChatTurn({
-        photoDataUrl,
+        photoDataUrls,
         history: baseHistory,
         country: country ?? 'us',
       })
@@ -299,14 +309,14 @@ function App() {
 
   const handleSend = async (event: React.FormEvent) => {
     event.preventDefault()
-    if (!input.trim() || !photo || isLoading) return
+    if (!input.trim() || !photos.length || isLoading) return
 
     const userTurn = { role: 'user' as const, content: input.trim() }
     const nextHistory = [...history, userTurn]
     setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'user', content: userTurn.content }])
     setHistory(nextHistory)
     setInput('')
-    await runAgentTurn(photo, nextHistory)
+    await runAgentTurn(photos, nextHistory)
   }
 
   return (
@@ -327,7 +337,7 @@ function App() {
       )}
 
       <main className="simple-main">
-        {!photo ? (
+        {!photos.length ? (
           <section className="upload-panel">
             <h2>Upload a photo</h2>
             <p>Natural light, no heavy makeup. Everything stays on-device.</p>
@@ -372,7 +382,7 @@ function App() {
         ) : (
           <section className="analysis-stack">
             <div className="analysis-visual">
-              <ScanVisualization photo={photo} isLoading={isLoading} />
+              <ScanVisualization photo={latestPhoto} isLoading={isLoading} />
               {scanMetrics && <ScanMetricsPanel metrics={scanMetrics} />}
               <p className="analysis-copy">
                 {status}

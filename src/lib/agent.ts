@@ -25,7 +25,7 @@ type AgentOptions = {
   tools?: ToolSpec[]
   model?: string
   maxTurns?: number
-  photoDataUrl?: string
+  photoDataUrls?: string[]
 }
 
 const createClient = () => {
@@ -53,7 +53,7 @@ export class Agent {
   private systemPrompt: string
   private model: string
   private maxTurns: number
-  private photoDataUrl?: string
+  private photoDataUrls?: string[]
   private toolMap: Map<string, ToolSpec>
 
   constructor(options: AgentOptions) {
@@ -61,7 +61,7 @@ export class Agent {
     this.systemPrompt = options.systemPrompt
     this.model = options.model ?? 'gpt-5-mini'
     this.maxTurns = options.maxTurns ?? 6
-    this.photoDataUrl = options.photoDataUrl
+    this.photoDataUrls = options.photoDataUrls
     this.toolMap = new Map()
     ;(options.tools ?? []).forEach((tool) => this.toolMap.set(tool.name, tool))
   }
@@ -81,12 +81,16 @@ export class Agent {
   async respond(messages: AgentMessage[]): Promise<string> {
     const compiled: ChatCompletionMessageParam[] = [{ role: 'system', content: this.systemPrompt }]
 
-    if (this.photoDataUrl) {
+    if (this.photoDataUrls?.length) {
+      const text =
+        this.photoDataUrls.length > 1
+          ? 'Here are the bare-face scan images to analyze.'
+          : 'Here is the bare-face scan image to analyze.'
       compiled.push({
         role: 'user',
         content: [
-          { type: 'text', text: 'Here is the bare-face scan image to analyze.' },
-          { type: 'image_url', image_url: { url: this.photoDataUrl } },
+          { type: 'text', text },
+          ...this.photoDataUrls.map((url) => ({ type: 'image_url', image_url: { url } })),
         ],
       } as ChatCompletionMessageParam)
     }
@@ -193,11 +197,11 @@ const createSerperTool = (gl: string): ToolSpec<{ q: string }> => ({
   },
 })
 
-export const createCosmetistAgent = (photoDataUrl: string, gl: string) =>
+export const createCosmetistAgent = (photoDataUrls: string[], gl: string) =>
   new Agent({
     model: 'gpt-5-mini',
     maxTurns: 6,
-    photoDataUrl,
+    photoDataUrls,
     systemPrompt: [
       'You are a licensed aesthetician and cosmetic chemist.',
       'You can see the provided bare-face scan image via the companion user message. Never claim you cannot view it; describe what you observe and avoid asking for re-uploads.',

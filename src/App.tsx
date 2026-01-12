@@ -18,6 +18,11 @@ type ConversationTurn = { role: 'user' | 'assistant'; content: string }
 
 const FACE_ERROR_MESSAGE = 'Face not detected, upload Face image'
 const MIN_PHOTOS_REQUIRED = 3
+const CAPTURE_INSTRUCTIONS = [
+  'Capture front face',
+  'Capture left side of the face',
+  'Capture right side of the face',
+]
 const AGENT_STEP_COPY: Record<AgentWorkflowStep, string> = {
   verifying: 'Verifying required front + side angles…',
   scanning: 'Scanning photos for visible concerns…',
@@ -37,9 +42,20 @@ function App() {
   const [country, setCountry] = useState<string | null>(null)
   const [isCaptureActive, setCaptureActive] = useState(false)
   const [cameraReady, setCameraReady] = useState(false)
+  const [captureStep, setCaptureStep] = useState(0)
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const [agentStep, setAgentStep] = useState<AgentWorkflowStep | null>(null)
+
+  const activateCapture = () => {
+    setCaptureStep(0)
+    setCaptureActive(true)
+  }
+
+  const deactivateCapture = () => {
+    setCaptureActive(false)
+    setCaptureStep(0)
+  }
 
   const formatRemainingPhotosMessage = (remaining: number) =>
     `upload (${remaining}) more photo${remaining === 1 ? '' : 's'}`
@@ -114,12 +130,13 @@ function App() {
   useEffect(() => {
     if (!isCaptureActive) {
       stopCamera()
+      setCaptureStep(0)
       return
     }
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       setError('Camera capture is not supported in this browser.')
-      setCaptureActive(false)
+      deactivateCapture()
       return
     }
 
@@ -144,7 +161,7 @@ function App() {
               ? err.message
               : 'Unable to access the camera. Please check permissions.',
           )
-          setCaptureActive(false)
+          deactivateCapture()
         }
       }
     }
@@ -157,7 +174,9 @@ function App() {
     }
   }, [isCaptureActive])
 
-  const processPhotoDataUrl = async (dataUrl: string): Promise<boolean> => {
+  const processPhotoDataUrl = async (
+    dataUrl: string,
+  ): Promise<{ stored: boolean; completed: boolean }> => {
     setError(null)
     setStatus('Analyzing face…')
     setLoading(true)
@@ -168,7 +187,7 @@ function App() {
       if (!faceDetected) {
         setError(FACE_ERROR_MESSAGE)
         setStatus('Upload a clear photo to begin.')
-        return false
+        return { stored: false, completed: false }
       }
       const nextPhotos = [...photos, dataUrl]
       setPhotos((prev) => [...prev, dataUrl])
@@ -178,7 +197,7 @@ function App() {
         const message = formatRemainingPhotosMessage(remaining)
         setError(message)
         setStatus('Add front and side photos for a better analysis.')
-        return false
+        return { stored: true, completed: false }
       }
 
 
@@ -218,12 +237,12 @@ function App() {
         },
       })
       setStatus('Done. Ask anything else or upload again to iterate.')
-      return true
+      return { stored: true, completed: true }
     } catch (err) {
       console.error(err)
       setError(err instanceof Error ? err.message : 'Could not process that image. Try another one.')
       setStatus('Upload a clear photo to begin.')
-      return false
+      return { stored: false, completed: false }
     } finally {
       setAgentStep(null)
       setLoading(false)
@@ -313,12 +332,19 @@ function App() {
       return
     }
 
+    context.save()
+    context.translate(canvas.width, 0)
+    context.scale(-1, 1)
     context.drawImage(video, 0, 0, canvas.width, canvas.height)
+    context.restore()
     const dataUrl = canvas.toDataURL('image/png')
-    const success = await processPhotoDataUrl(dataUrl)
-    if (success) {
+    const result = await processPhotoDataUrl(dataUrl)
+    if (result.stored) {
+      setCaptureStep((prev) => Math.min(prev + 1, CAPTURE_INSTRUCTIONS.length))
+    }
+    if (result.completed) {
       stopCamera()
-      setCaptureActive(false)
+      deactivateCapture()
     }
   }
 
@@ -363,7 +389,7 @@ function App() {
               <button
                 type="button"
                 className="capture-button"
-                onClick={() => setCaptureActive(true)}
+                onClick={activateCapture}
                 disabled={isLoading}
               >
                 Capture
@@ -374,6 +400,11 @@ function App() {
 
             {isCaptureActive && (
               <div className="camera-panel">
+                {captureStep < CAPTURE_INSTRUCTIONS.length && (
+                  <p className="capture-instruction">
+                    Step {captureStep + 1} of {CAPTURE_INSTRUCTIONS.length}: {CAPTURE_INSTRUCTIONS[captureStep]}
+                  </p>
+                )}
                 <video
                   ref={videoRef}
                   className="camera-preview"
@@ -386,7 +417,7 @@ function App() {
                   <button type="button" onClick={handleCapture} disabled={!cameraReady || isLoading}>
                     {cameraReady ? 'Capture photo' : 'Initializing camera…'}
                   </button>
-                  <button type="button" onClick={() => setCaptureActive(false)}>
+                  <button type="button" onClick={deactivateCapture}>
                     Close camera
                   </button>
                 </div>

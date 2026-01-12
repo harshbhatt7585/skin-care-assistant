@@ -17,6 +17,7 @@ type ChatMessage = {
 type ConversationTurn = { role: 'user' | 'assistant'; content: string }
 
 const FACE_ERROR_MESSAGE = 'Face not detected, upload Face image'
+const MIN_PHOTOS_REQUIRED = 3
 
 function App() {
   const [photos, setPhotos] = useState<string[]>([])
@@ -32,17 +33,14 @@ function App() {
   const [cameraReady, setCameraReady] = useState(false)
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
-  const isFaceError = error === FACE_ERROR_MESSAGE
-  const latestPhoto = photos.length ? photos[photos.length - 1] : null
 
   const appendPhoto = (dataUrl: string) => {
-    let nextPhotos: string[] | undefined
-    setPhotos((prev) => {
-      nextPhotos = [...prev, dataUrl]
-      return nextPhotos
-    })
-    return nextPhotos ?? [dataUrl]
+    setPhotos((prev) => [...prev, dataUrl])
+    return [...photos, dataUrl]
   }
+
+  const formatRemainingPhotosMessage = (remaining: number) =>
+    `upload ${remaining} more photo${remaining === 1 ? '' : 's'}`
 
   function getLocation() {
     if (!navigator.geolocation) {
@@ -172,6 +170,16 @@ function App() {
       }
 
       const nextPhotos = appendPhoto(dataUrl)
+      if (nextPhotos.length < MIN_PHOTOS_REQUIRED) {
+        const remaining = MIN_PHOTOS_REQUIRED - photos.length
+        const message = formatRemainingPhotosMessage(remaining)
+        
+        setError(message)
+        setStatus('Add front and side photos for a better analysis.')
+        return false
+      }
+
+      setError(null)
       setStatus('Consulting the cosmetist...')
       await runInitialWorkflowSequenced({
         photoDataUrls: nextPhotos,
@@ -311,7 +319,7 @@ function App() {
 
   const handleSend = async (event: React.FormEvent) => {
     event.preventDefault()
-    if (!input.trim() || !photos.length || isLoading) return
+    if (!input.trim() || photos.length < MIN_PHOTOS_REQUIRED || isLoading) return
 
     const userTurn = { role: 'user' as const, content: input.trim() }
     const nextHistory = [...history, userTurn]
@@ -339,7 +347,7 @@ function App() {
       )}
 
       <main className="simple-main">
-        {!photos.length ? (
+        {photos.length < MIN_PHOTOS_REQUIRED ? (
           <section className="upload-panel">
             <h2>Upload a photo</h2>
             <p>Natural light, no heavy makeup. Everything stays on-device.</p>
@@ -358,7 +366,7 @@ function App() {
               </button>
             </div>
 
-            {isFaceError && <p className="face-error">{FACE_ERROR_MESSAGE}</p>}
+            {error && <p className="face-error">{error}</p>}
 
             {isCaptureActive && (
               <div className="camera-panel">
@@ -383,8 +391,9 @@ function App() {
           </section>
         ) : (
           <section className="analysis-stack">
+            {error && <p className="face-error">{error}</p>}
             <div className="analysis-visual">
-              <ScanVisualization photo={latestPhoto} isLoading={isLoading} />
+              <ScanVisualization photos={photos} isLoading={isLoading} />
               {scanMetrics && <ScanMetricsPanel metrics={scanMetrics} />}
               <p className="analysis-copy">
                 {status}

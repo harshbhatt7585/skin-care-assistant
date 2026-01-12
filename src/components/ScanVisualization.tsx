@@ -1,19 +1,21 @@
 import { useEffect, useRef } from 'react'
 
 type Props = {
-  photo: string | null
+  photos: string[]
   isLoading: boolean
 }
 
-const ScanVisualization = ({ photo, isLoading }: Props) => {
+const ScanVisualization = ({ photos, isLoading }: Props) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
-    if (!photo) return
+    if (!photos.length) return
+
     const canvas = canvasRef.current
     const container = containerRef.current
     if (!canvas || !container) return
+
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
@@ -25,10 +27,13 @@ const ScanVisualization = ({ photo, isLoading }: Props) => {
     const resize = () => {
       const rect = container.getBoundingClientRect()
       const dpr = window.devicePixelRatio || 1
+
       canvas.width = Math.floor(rect.width * dpr)
       canvas.height = Math.floor(rect.height * dpr)
       canvas.style.width = `${rect.width}px`
       canvas.style.height = `${rect.height}px`
+
+      // draw in CSS pixels
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
     }
 
@@ -66,6 +71,7 @@ const ScanVisualization = ({ photo, isLoading }: Props) => {
       makeStars()
     }
 
+    // If not loading, ensure canvas cleared and no animation running
     if (!isLoading) {
       resize()
       const rect = container.getBoundingClientRect()
@@ -79,31 +85,32 @@ const ScanVisualization = ({ photo, isLoading }: Props) => {
 
     return () => {
       window.removeEventListener('resize', handleResize)
-      if (animationFrameId) {
-        window.cancelAnimationFrame(animationFrameId)
-      }
+      if (animationFrameId != null) window.cancelAnimationFrame(animationFrameId)
     }
-  }, [photo, isLoading])
+  }, [photos, isLoading])
 
-  if (!photo) {
-    return null
-  }
+  if (!photos.length) return null
 
   return (
-    <div className="scan-visual" aria-live="polite">
-      <div
-        ref={containerRef}
-        className="scan-visual__circle"
-        style={{ backgroundImage: `url(${photo})` }}
-      >
-        <div className="scan-visual__glass" aria-hidden="true" />
-        <canvas ref={canvasRef} className="scan-visual__canvas" aria-hidden="true" />
-        {isLoading && (
-          <div className="scan-visual__status">
-            <span className="scan-visual__dot" />
+    <div className="scan-visual" aria-live="polite" ref={containerRef}>
+      <div className="scan-visual__grid">
+        {photos.map((photo, index) => (
+          <div
+            key={`${index}-${photo}`}
+            className="scan-visual__circle"
+            style={{ backgroundImage: `url(${photo})` }}
+          >
+            <div className="scan-visual__glass" aria-hidden="true" />
           </div>
-        )}
+        ))}
       </div>
+
+      <canvas ref={canvasRef} className="scan-visual__canvas" aria-hidden="true" />
+      {isLoading && (
+        <div className="scan-visual__status">
+          <span className="scan-visual__dot" />
+        </div>
+      )}
     </div>
   )
 }

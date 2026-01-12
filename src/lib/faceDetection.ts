@@ -1,8 +1,12 @@
 import { FaceDetection } from '@mediapipe/face_detection'
+import type { InputImage, Results } from '@mediapipe/face_detection'
 
 let detectorPromise: Promise<FaceDetection> | null = null
+let hasResultsHandler = false
+const detectionListeners = new Set<(results: Results) => void>()
+let sendQueue: Promise<void> = Promise.resolve()
 
-const createFaceDetector = async () => {
+const buildFaceDetector = async () => {
   const detector = new FaceDetection({
     locateFile: (file) => `/mediapipe/face_detection/${file}`,
   })
@@ -18,12 +22,41 @@ const createFaceDetector = async () => {
 
 const getFaceDetector = () => {
   if (!detectorPromise) {
-    detectorPromise = createFaceDetector().catch((error) => {
+    detectorPromise = buildFaceDetector().catch((error) => {
       detectorPromise = null
       throw error
     })
   }
   return detectorPromise
+}
+
+const ensureDetectorReady = async () => {
+  const detector = await getFaceDetector()
+  if (!hasResultsHandler) {
+    detector.onResults((results) => {
+      detectionListeners.forEach((listener) => listener(results))
+    })
+    hasResultsHandler = true
+  }
+  return detector
+}
+
+const addDetectionListener = (listener: (results: Results) => void) => {
+  detectionListeners.add(listener)
+  return () => detectionListeners.delete(listener)
+}
+
+export const subscribeToFaceDetections = async (
+  listener: (results: Results) => void,
+): Promise<() => void> => {
+  await ensureDetectorReady()
+  return addDetectionListener(listener)
+}
+
+export const runFaceDetection = async (image: InputImage) => {
+  const detector = await ensureDetectorReady()
+  sendQueue = sendQueue.then(() => detector.send({ image }))
+  return sendQueue
 }
 
 const loadImage = (dataUrl: string) =>
@@ -35,16 +68,30 @@ const loadImage = (dataUrl: string) =>
   })
 
 export const detectFaceFromDataUrl = async (dataUrl: string): Promise<boolean> => {
-  const [detector, image] = await Promise.all([getFaceDetector(), loadImage(dataUrl)])
+  const image = await loadImage(dataUrl)
 
   return new Promise<boolean>((resolve, reject) => {
-    detector.onResults((results) => {
+    let unsubscribe: (() => void) | null = null
+    const cleanup = () => {
+      unsubscribe?.()
+      window.clearTimeout(timeoutId)
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      cleanup()
+      reject(new Error('Face detection timed out.'))
+    }, 5000)
+
+    subscribeToFaceDetections((results) => {
+      cleanup()
       resolve(Boolean(results.detections?.length))
     })
-
-    detector
-      .send({ image })
+      .then((remove) => {
+        unsubscribe = remove
+        return runFaceDetection(image)
+      })
       .catch((error) => {
+        cleanup()
         reject(error)
       })
   })

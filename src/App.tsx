@@ -4,6 +4,7 @@ import ScanVisualization from './components/ScanVisualization'
 import ScanMetricsPanel, { type ScanMetrics } from './components/ScanMetricsPanel'
 import ProductShowcase from './components/ProductShowcase'
 import ShoppingPreview from './components/ShoppingPreview'
+import CaptureGuidance from './components/CaptureGuidance'
 import { parseProductSections, parseShoppingPayload, stripToolArtifacts } from './lib/parsers'
 import { runChatTurn, runInitialWorkflowSequenced, type AgentWorkflowStep } from './lib/openai'
 import { detectFaceFromDataUrl } from './lib/faceDetection'
@@ -411,14 +412,23 @@ function App() {
                     Step {captureStep + 1} of {CAPTURE_INSTRUCTIONS.length}: {CAPTURE_INSTRUCTIONS[captureStep]}
                   </p>
                 )}
-                <video
-                  ref={videoRef}
-                  className="camera-preview"
-                  autoPlay
-                  playsInline
-                  muted
-                  onLoadedMetadata={() => setCameraReady(true)}
-                />
+                <div className="camera-preview__wrapper">
+                  <video
+                    ref={videoRef}
+                    className="camera-preview"
+                    autoPlay
+                    playsInline
+                    muted
+                    onLoadedMetadata={() => setCameraReady(true)}
+                  />
+                  {captureStep < CAPTURE_INSTRUCTIONS.length && (
+                    <CaptureGuidance
+                      videoRef={videoRef}
+                      instruction={CAPTURE_INSTRUCTIONS[captureStep]}
+                      isActive={isCaptureActive}
+                    />
+                  )}
+                </div>
                 <div className="camera-actions">
                   <button type="button" onClick={handleCapture} disabled={!cameraReady || isLoading}>
                     {cameraReady ? 'Capture photo' : 'Initializing camera…'}

@@ -34,10 +34,7 @@ function App() {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
 
-  const appendPhoto = (dataUrl: string) => {
-    setPhotos((prev) => [...prev, dataUrl])
-    return [...photos, dataUrl]
-  }
+
 
   const formatRemainingPhotosMessage = (remaining: number) =>
     `upload ${remaining} more photo${remaining === 1 ? '' : 's'}`
@@ -168,16 +165,18 @@ function App() {
         setStatus('Upload a clear photo to begin.')
         return false
       }
-
-      const nextPhotos = appendPhoto(dataUrl)
+      let nextPhotos = [...photos, dataUrl]
+      setPhotos((prev) => [...prev, dataUrl])
+      
       if (nextPhotos.length < MIN_PHOTOS_REQUIRED) {
-        const remaining = MIN_PHOTOS_REQUIRED - photos.length
+        const remaining = MIN_PHOTOS_REQUIRED - nextPhotos.length
         const message = formatRemainingPhotosMessage(remaining)
         
         setError(message)
         setStatus('Add front and side photos for a better analysis.')
         return false
       }
+
 
       setError(null)
       setStatus('Consulting the cosmetist...')

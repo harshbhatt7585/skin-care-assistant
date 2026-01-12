@@ -8,6 +8,7 @@ import { parseProductSections, parseShoppingPayload, stripToolArtifacts } from '
 import { runChatTurn, runInitialWorkflowSequenced, type AgentWorkflowStep } from './lib/openai'
 import { detectFaceFromDataUrl } from './lib/faceDetection'
 
+
 type ChatMessage = {
   id: string
   role: 'user' | 'assistant'
@@ -46,7 +47,6 @@ function App() {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const [agentStep, setAgentStep] = useState<AgentWorkflowStep | null>(null)
-
   const activateCapture = () => {
     setCaptureStep(0)
     setCaptureActive(true)

@@ -119,6 +119,37 @@ const drawScanLine = (
   ctx.restore()
 }
 
+// Helper to get animated point position with floating effect
+const getAnimatedPoint = (
+  point: GuidePoint,
+  index: number,
+  time: number,
+  width: number,
+  height: number,
+) => {
+  // Each point has a unique phase offset based on index
+  const phase = index * 0.8
+  // Gentle floating motion
+  const floatX = Math.sin(time * 0.001 + phase) * 3
+  const floatY = Math.cos(time * 0.0008 + phase) * 2
+  // Breathing scale effect (centered on the skeleton)
+  const breathe = 1 + Math.sin(time * 0.0015) * 0.008
+  
+  const centerX = width * 0.5
+  const centerY = height * 0.5
+  const baseX = point.x * width
+  const baseY = point.y * height
+  
+  // Apply breathing scale from center
+  const scaledX = centerX + (baseX - centerX) * breathe
+  const scaledY = centerY + (baseY - centerY) * breathe
+  
+  return {
+    x: scaledX + floatX,
+    y: scaledY + floatY,
+  }
+}
+
 const drawGuide = (
   canvas: HTMLCanvasElement,
   pose: PoseKey,
@@ -135,28 +166,68 @@ const drawGuide = (
   drawScanLine(ctx, width, height, time)
 
   const glow = 0.6 + 0.4 * Math.sin(time * 0.0012)
-  ctx.lineWidth = 2
-  ctx.strokeStyle = `rgba(114,255,230,${0.45 + glow * 0.35})`
+  
+  // Pre-calculate animated positions for all points
+  const animatedPoints = points.map((point, index) => 
+    getAnimatedPoint(point, index, time, width, height)
+  )
+
+  // Draw connection lines with shimmer effect
   ctx.shadowColor = 'rgba(114,255,230,0.35)'
   ctx.shadowBlur = 10
 
-  GUIDE_CONNECTIONS[pose]?.forEach(([startIndex, endIndex]) => {
-    const start = points[startIndex]
-    const end = points[endIndex]
+  GUIDE_CONNECTIONS[pose]?.forEach(([startIndex, endIndex], lineIndex) => {
+    const start = animatedPoints[startIndex]
+    const end = animatedPoints[endIndex]
     if (!start || !end) return
 
+    // Create gradient along the line for shimmer effect
+    const lineGradient = ctx.createLinearGradient(start.x, start.y, end.x, end.y)
+    
+    // Shimmer travels along the line
+    const shimmerPos = ((time * 0.001 + lineIndex * 0.3) % 1)
+    const shimmerWidth = 0.15
+    
+    const baseOpacity = 0.45 + glow * 0.35
+    lineGradient.addColorStop(0, `rgba(114,255,230,${baseOpacity})`)
+    lineGradient.addColorStop(Math.max(0, shimmerPos - shimmerWidth), `rgba(114,255,230,${baseOpacity})`)
+    lineGradient.addColorStop(shimmerPos, `rgba(200,255,250,${Math.min(1, baseOpacity + 0.4)})`)
+    lineGradient.addColorStop(Math.min(1, shimmerPos + shimmerWidth), `rgba(114,255,230,${baseOpacity})`)
+    lineGradient.addColorStop(1, `rgba(114,255,230,${baseOpacity})`)
+
+    ctx.strokeStyle = lineGradient
+    ctx.lineWidth = 2
     ctx.beginPath()
-    ctx.moveTo(start.x * width, start.y * height)
-    ctx.lineTo(end.x * width, end.y * height)
+    ctx.moveTo(start.x, start.y)
+    ctx.lineTo(end.x, end.y)
     ctx.stroke()
   })
 
   ctx.shadowBlur = 0
 
-  points.forEach((landmark) => {
-    const x = landmark.x * width
-    const y = landmark.y * height
-    const radius = 8 + landmark.depth * 8 + Math.sin(time * 0.002 + landmark.depth) * 2
+  // Draw points with staggered pulsing
+  points.forEach((landmark, index) => {
+    const { x, y } = animatedPoints[index]
+    
+    // Staggered pulse - each point pulses at different times
+    const pulsePhase = index * 0.5
+    const pulse = Math.sin(time * 0.003 + pulsePhase)
+    
+    const baseRadius = 8 + landmark.depth * 8
+    const radius = baseRadius + pulse * 3
+    
+    // Outer glow ring
+    const outerRadius = radius * 1.8 + pulse * 2
+    const outerGradient = ctx.createRadialGradient(x, y, radius, x, y, outerRadius)
+    outerGradient.addColorStop(0, `rgba(114,255,230,${0.2 + pulse * 0.1})`)
+    outerGradient.addColorStop(1, 'rgba(114,255,230,0)')
+    
+    ctx.beginPath()
+    ctx.fillStyle = outerGradient
+    ctx.arc(x, y, outerRadius, 0, Math.PI * 2)
+    ctx.fill()
+    
+    // Main point gradient
     const gradient = ctx.createRadialGradient(x, y, radius * 0.15, x, y, radius)
     gradient.addColorStop(0, 'rgba(255,255,255,0.95)')
     gradient.addColorStop(0.5, `rgba(114,255,230,${0.65 + glow * 0.2})`)

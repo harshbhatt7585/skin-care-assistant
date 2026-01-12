@@ -78,6 +78,47 @@ const determinePose = (instruction?: string): PoseKey => {
   return 'front'
 }
 
+const drawScanLine = (
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  time: number,
+) => {
+  // Scan line moves from top to bottom in a loop (3 second cycle)
+  const scanSpeed = 0.0004
+  const progress = (time * scanSpeed) % 1
+  const scanY = progress * height
+
+  // Scan line glow gradient (fades above the line)
+  const trailHeight = height * 0.15
+  const gradient = ctx.createLinearGradient(0, scanY - trailHeight, 0, scanY + 4)
+  gradient.addColorStop(0, 'rgba(114, 255, 230, 0)')
+  gradient.addColorStop(0.7, 'rgba(114, 255, 230, 0.08)')
+  gradient.addColorStop(1, 'rgba(114, 255, 230, 0.25)')
+
+  // Draw the trail (full width)
+  ctx.fillStyle = gradient
+  ctx.fillRect(0, scanY - trailHeight, width, trailHeight + 4)
+
+  // Main scan line (full width)
+  ctx.save()
+  ctx.shadowColor = 'rgba(114, 255, 230, 0.8)'
+  ctx.shadowBlur = 15
+  
+  const lineGradient = ctx.createLinearGradient(0, 0, width, 0)
+  lineGradient.addColorStop(0, 'rgba(114, 255, 230, 0.6)')
+  lineGradient.addColorStop(0.5, 'rgba(255, 255, 255, 1)')
+  lineGradient.addColorStop(1, 'rgba(114, 255, 230, 0.6)')
+
+  ctx.strokeStyle = lineGradient
+  ctx.lineWidth = 2
+  ctx.beginPath()
+  ctx.moveTo(0, scanY)
+  ctx.lineTo(width, scanY)
+  ctx.stroke()
+  ctx.restore()
+}
+
 const drawGuide = (
   canvas: HTMLCanvasElement,
   pose: PoseKey,
@@ -89,6 +130,9 @@ const drawGuide = (
   const width = canvas.width
   const height = canvas.height
   ctx.clearRect(0, 0, width, height)
+
+  // Draw scan line first (behind everything)
+  drawScanLine(ctx, width, height, time)
 
   const glow = 0.6 + 0.4 * Math.sin(time * 0.0012)
   ctx.lineWidth = 2

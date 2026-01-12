@@ -23,8 +23,9 @@ const GUIDE_PRESETS: Record<PoseKey, GuidePoint[]> = {
     { label: 'right eye', x: 0.68, y: 0.38, depth: -0.2 },
     { label: 'nose', x: 0.5, y: 0.55, depth: 0.8 },
     { label: 'chin', x: 0.5, y: 0.78, depth: -0.1 },
-    { label: 'right jaw', x: 0.75, y: 0.6, depth: -0.1 },
-    { label: 'left jaw', x: 0.25, y: 0.6, depth: -0.1 },
+    { label: 'right jaw', x: 0.75, y: 0.6, depth: -0.4 },
+    { label: 'left jaw', x: 0.25, y: 0.6, depth: -0.4 },
+    { label: 'head', x: 0.5, y: 0.28, depth: -0.2 },
   ],
   left: [
     { label: 'eye', x: 0.62, y: 0.38, depth: -0.2 },
@@ -97,6 +98,7 @@ const drawGuide = (
     const start = points[startIndex]
     const end = points[endIndex]
     if (!start || !end) return
+
     ctx.beginPath()
     ctx.moveTo(start.x * width, start.y * height)
     ctx.lineTo(end.x * width, end.y * height)

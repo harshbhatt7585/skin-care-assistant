@@ -353,7 +353,7 @@ function App() {
             <div className="input-actions">
               <label className="dropzone">
                 <span>Upload photo</span>
-                <input type="file" accept="image/*" multiple onChange={handleFileUpload} />
+                <input type="file" accept="image/*" onChange={handleFileUpload} />
               </label>
               <button
                 type="button"

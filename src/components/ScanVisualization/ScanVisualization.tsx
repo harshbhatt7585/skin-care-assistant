@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import './ScanVisualization.css'
 
 type Props = {
   photos: string[]

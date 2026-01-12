@@ -1,4 +1,5 @@
-import type { ShoppingPayload } from '../lib/parsers'
+import type { ShoppingPayload } from '../../lib/parsers'
+import './ShoppingPreview.css'
 
 const stageLabel = (index: number) => (index % 2 === 0 ? 'AM ritual' : 'PM ritual')
 

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import './ScanMetricsPanel.css'
 
 export type ScanMetrics = {
   hydration: number

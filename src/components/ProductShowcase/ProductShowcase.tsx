@@ -1,4 +1,5 @@
-import type { ProductSection } from '../lib/parsers'
+import type { ProductSection } from '../../lib/parsers'
+import './ProductShowcase.css'
 
 const ProductShowcase = ({ sections }: { sections: ProductSection[] }) => (
   <div className="product-showcase">

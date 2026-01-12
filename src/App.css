@@ -372,8 +372,8 @@ p.face-error {
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: rgba(114, 255, 230, 0.95);
-  animation: agentStepFlash 0.9s ease-in-out infinite alternate;
   align-self: flex-start;
+  animation: agentStepFade 0.8s ease-in-out infinite alternate;
 }
 
 .agent-step__flash {
@@ -382,7 +382,7 @@ p.face-error {
   border-radius: 50%;
   background: rgba(114, 255, 230, 0.9);
   box-shadow: 0 0 14px rgba(114, 255, 230, 0.8);
-  animation: flashPulse 1s ease-in-out infinite;
+  animation: flashFade 0.8s ease-in-out infinite;
 }
 
 .scan-visual {
@@ -514,25 +514,21 @@ p.face-error {
   animation: pulse 1.2s infinite ease-in-out;
 }
 
-@keyframes flashPulse {
+@keyframes flashFade {
   0% {
-    transform: scale(0.9);
-    opacity: 0.6;
+    opacity: 0.45;
   }
   100% {
-    transform: scale(1.15);
     opacity: 1;
   }
 }
 
-@keyframes agentStepFlash {
+@keyframes agentStepFade {
   0% {
-    opacity: 0.65;
-    letter-spacing: 0.04em;
+    opacity: 0.55;
   }
   100% {
     opacity: 1;
-    letter-spacing: 0.08em;
   }
 }
 

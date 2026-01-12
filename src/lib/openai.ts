@@ -30,10 +30,13 @@ export const runChatTurn = async ({
   return agent.respond(conversation)
 }
 
+export type AgentWorkflowStep = 'verifying' | 'scanning' | 'analyzing' | 'shopping'
+
 type WorkflowCallbacks = {
   onAnalysis?: (analysis: string, history: ConversationTurn[]) => void
   onRatings?: (ratings: string, history: ConversationTurn[]) => void
   onShopping?: (shopping: string, history: ConversationTurn[]) => void
+  onStepChange?: (step: AgentWorkflowStep | null) => void
 }
 
 export const runInitialWorkflowSequenced = async ({
@@ -66,6 +69,7 @@ export const runInitialWorkflowSequenced = async ({
     return reply
   }
 
+  callbacks?.onStepChange?.('verifying')
   const reply = await promptAndRespond(
     "Here are 3 images of human front face, and two side face. If you find that the required images are not present, give negative response and ask tell the user what they are missing in simple and less words. give response in json like {success: false/true, message: '...'}"
   )
@@ -74,20 +78,25 @@ export const runInitialWorkflowSequenced = async ({
     throw new Error(jsonReply.message)
   }
 
+  callbacks?.onStepChange?.('scanning')
   await promptAndRespond(
     'Please analyze my bare-face photo. List bullet-point concerns (acne, pigmentation, redness, wrinkles, etc.) and rate Hydration, Oil Balance, Tone, Barrier Strength, and Sensitivity on a 1–5 scale. Keep it concise.',
     callbacks?.onAnalysis,
   )
 
+  callbacks?.onStepChange?.('analyzing')
   await promptAndRespond(
     'From that analysis, output a JSON object with keys hydration, oilBalance, tone, barrierStrength, sensitivity (numbers 1-5). No prose.',
     callbacks?.onRatings,
   )
 
+  callbacks?.onStepChange?.('shopping')
   await promptAndRespond(
     'Using that assessment, fetch current shopping options with links and thumbnails for the AM/PM plan. Use tools if needed and return markdown with inline product cards. Format the response in this format: ```json\n{\n  "products": [\n    {\n      "title": "Example Product Title",\n      "source": "ExampleSource.com",\n      "link": "https://example.com/product-page",\n      "price": "$0.00",\n      "imageUrl": "https://example.com/product-image.jpg",\n      "rating": 0,\n      "ratingCount": 0,\n      "productId": "123456789",\n      "position": 1\n    }\n  ]\n}\n```',
     callbacks?.onShopping,
   )
+
+  callbacks?.onStepChange?.(null)
 
   return { history }
 }

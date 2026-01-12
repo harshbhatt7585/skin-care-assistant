@@ -5,7 +5,7 @@ import ScanMetricsPanel, { type ScanMetrics } from './components/ScanMetricsPane
 import ProductShowcase from './components/ProductShowcase'
 import ShoppingPreview from './components/ShoppingPreview'
 import { parseProductSections, parseShoppingPayload, stripToolArtifacts } from './lib/parsers'
-import { runChatTurn, runInitialWorkflowSequenced } from './lib/openai'
+import { runChatTurn, runInitialWorkflowSequenced, type AgentWorkflowStep } from './lib/openai'
 import { detectFaceFromDataUrl } from './lib/faceDetection'
 
 type ChatMessage = {
@@ -18,6 +18,12 @@ type ConversationTurn = { role: 'user' | 'assistant'; content: string }
 
 const FACE_ERROR_MESSAGE = 'Face not detected, upload Face image'
 const MIN_PHOTOS_REQUIRED = 3
+const AGENT_STEP_COPY: Record<AgentWorkflowStep, string> = {
+  verifying: 'Verifying required front + side angles…',
+  scanning: 'Scanning photos for visible concerns…',
+  analyzing: 'Scoring hydration, tone, and barrier health…',
+  shopping: 'Finding matching AM/PM products…',
+}
 
 function App() {
   const [photos, setPhotos] = useState<string[]>([])
@@ -33,11 +39,10 @@ function App() {
   const [cameraReady, setCameraReady] = useState(false)
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
-
-
+  const [agentStep, setAgentStep] = useState<AgentWorkflowStep | null>(null)
 
   const formatRemainingPhotosMessage = (remaining: number) =>
-    `upload ${remaining} more photo${remaining === 1 ? '' : 's'}`
+    `upload (${remaining}) more photo${remaining === 1 ? '' : 's'}`
 
   function getLocation() {
     if (!navigator.geolocation) {
@@ -165,13 +170,12 @@ function App() {
         setStatus('Upload a clear photo to begin.')
         return false
       }
-      let nextPhotos = [...photos, dataUrl]
+      const nextPhotos = [...photos, dataUrl]
       setPhotos((prev) => [...prev, dataUrl])
-      
+
       if (nextPhotos.length < MIN_PHOTOS_REQUIRED) {
         const remaining = MIN_PHOTOS_REQUIRED - nextPhotos.length
         const message = formatRemainingPhotosMessage(remaining)
-        
         setError(message)
         setStatus('Add front and side photos for a better analysis.')
         return false
@@ -184,6 +188,7 @@ function App() {
         photoDataUrls: nextPhotos,
         country: country ?? 'us',
         callbacks: {
+          onStepChange: setAgentStep,
           onAnalysis: (analysis, historySnapshot) => {
             setMessages([{ id: crypto.randomUUID(), role: 'assistant', content: analysis }])
             setHistory(historySnapshot)
@@ -220,6 +225,7 @@ function App() {
       setStatus('Upload a clear photo to begin.')
       return false
     } finally {
+      setAgentStep(null)
       setLoading(false)
     }
   }
@@ -393,6 +399,12 @@ function App() {
             {error && <p className="face-error">{error}</p>}
             <div className="analysis-visual">
               <ScanVisualization photos={photos} isLoading={isLoading} />
+              {agentStep && (
+                <p className="agent-step" aria-live="assertive">
+                  <span className="agent-step__flash" aria-hidden="true" />
+                  {AGENT_STEP_COPY[agentStep]}
+                </p>
+              )}
               {scanMetrics && <ScanMetricsPanel metrics={scanMetrics} />}
               <p className="analysis-copy">
                 {status}

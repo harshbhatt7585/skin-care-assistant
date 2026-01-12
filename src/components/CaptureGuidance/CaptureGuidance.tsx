@@ -23,8 +23,8 @@ const GUIDE_PRESETS: Record<PoseKey, GuidePoint[]> = {
     { label: 'right eye', x: 0.68, y: 0.38, depth: -0.2 },
     { label: 'nose', x: 0.5, y: 0.55, depth: 0.8 },
     { label: 'chin', x: 0.5, y: 0.78, depth: -0.1 },
-    { label: 'right jaw', x: 0.2, y: 0.65, depth: -0.1 },
-    { label: 'left jaw', x: 0.8, y: 0.65, depth: -0.1 },
+    { label: 'right jaw', x: 0.75, y: 0.6, depth: -0.1 },
+    { label: 'left jaw', x: 0.25, y: 0.6, depth: -0.1 },
   ],
   left: [
     { label: 'eye', x: 0.62, y: 0.38, depth: -0.2 },
@@ -45,11 +45,14 @@ const GUIDE_PRESETS: Record<PoseKey, GuidePoint[]> = {
 const GUIDE_CONNECTIONS: Record<PoseKey, Array<[number, number]>> = {
   front: [
     [0, 1],
-    [0, 4],
-    [1, 5],
+    [0, 2],
+    [1, 2],
+    [0, 5],
+    [1, 4],
+    [2, 4],
+    [2, 5],
     [4, 3],
     [3, 5],
-    [2, 3],
   ],
   left: [
     [0, 1],

@@ -66,9 +66,13 @@ export const runInitialWorkflowSequenced = async ({
     return reply
   }
 
-  await promptAndRespond(
+  const reply = await promptAndRespond(
     "Here are 3 images of human front face, and two side face. If you find that the required images are not present, give negative response and ask tell the user what they are missing. give response in json like {success: false/true, message: '...'}"
   )
+  const jsonReply = await JSON.parse(reply)
+  if (!jsonReply.success) {
+    throw new Error(jsonReply.message)
+  }
 
   await promptAndRespond(
     'Please analyze my bare-face photo. List bullet-point concerns (acne, pigmentation, redness, wrinkles, etc.) and rate Hydration, Oil Balance, Tone, Barrier Strength, and Sensitivity on a 1–5 scale. Keep it concise.',

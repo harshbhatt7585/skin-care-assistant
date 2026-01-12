@@ -340,7 +340,6 @@ function App() {
         <div className="hero__text">
           <p className="hero__eyebrow">Skin Care Copilot</p>
           <h1>Drop a bare-face photo.</h1>
-          <p>{status}</p>
         </div>
       </header>
 
@@ -406,9 +405,6 @@ function App() {
                 </p>
               )}
               {scanMetrics && <ScanMetricsPanel metrics={scanMetrics} />}
-              <p className="analysis-copy">
-                {status}
-              </p>
             </div>
 
             <div className="chat-thread">

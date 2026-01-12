@@ -66,11 +66,15 @@ const ScanMetricsPanel = ({ metrics }: { metrics: ScanMetrics }) => {
   useEffect(() => {
     const updatePositions = () => {
       const overlay = overlayRef.current
-      const circle = document.querySelector('.scan-visual__circle') as HTMLElement | null
-      if (!overlay || !circle) return
+      if (!overlay) return
+
+      const circles = document.querySelectorAll('.scan-visual__grid .scan-visual__circle')
+      const targetIndex = Math.floor(circles.length / 2)
+      const targetCircle = circles[targetIndex] as HTMLElement | undefined
+      if (!targetCircle) return
 
       const overlayRect = overlay.getBoundingClientRect()
-      const circleRect = circle.getBoundingClientRect()
+      const circleRect = targetCircle.getBoundingClientRect()
 
       const base = {
         hydration: {

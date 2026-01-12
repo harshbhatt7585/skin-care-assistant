@@ -174,6 +174,12 @@ function App() {
     }
   }, [isCaptureActive])
 
+  useEffect(() => {
+    if (isCaptureActive && streamRef.current && videoRef.current) {
+      videoRef.current.srcObject = streamRef.current
+    }
+  }, [isCaptureActive, photos.length])
+
   const processPhotoDataUrl = async (
     dataUrl: string,
   ): Promise<{ stored: boolean; completed: boolean }> => {

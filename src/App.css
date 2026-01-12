@@ -236,8 +236,6 @@ a {
 
 .camera-panel {
   border-radius: 28px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(4, 6, 7, 0.9);
   padding: 20px;
   display: flex;
   flex-direction: column;

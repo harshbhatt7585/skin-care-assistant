@@ -71,7 +71,7 @@ export const runInitialWorkflowSequenced = async ({
 
   callbacks?.onStepChange?.('verifying')
   const reply = await promptAndRespond(
-    "Here are 3 images of human front face, and two side face. If you find that the required images are not present, give negative response and ask tell the user what they are missing in simple and less words. give response in json like {success: false/true, message: '...'}"
+    "Here are 3 images of human face. requires images to be front face, left side face, and right side face. If you find that the required images are not present, give negative response and ask tell the user what they are missing in simple and less words. give response in json like {success: false/true, message: '...'}"
   )
   const jsonReply = await JSON.parse(reply)
   if (!jsonReply.success) {

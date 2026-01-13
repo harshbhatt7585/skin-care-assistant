@@ -305,10 +305,6 @@ const CaptureGuidance = ({ videoRef, instruction, isActive }: Props) => {
   return (
     <div className="capture-guidance">
       <canvas ref={canvasRef} className="capture-guidance__canvas" aria-hidden="true" />
-      <div className="capture-guidance__tip">
-        <p>Align your face</p>
-        <strong>{instruction}</strong>
-      </div>
     </div>
   )
 }

@@ -372,7 +372,7 @@ function App() {
       <header className="hero">
         <div className="hero__text">
           <p className="hero__eyebrow">Skin Care Copilot</p>
-          <h1>Drop a bare-face photo.</h1>
+          <h1>Get a perfect skin care plan</h1>
         </div>
       </header>
 

@@ -256,34 +256,6 @@ function App() {
     }
   }
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files
-    if (!files?.length) return
-
-    try {
-      for (const file of Array.from(files)) {
-        const dataUrl = await readFileAsDataUrl(file)
-        await processPhotoDataUrl(dataUrl)
-      }
-    } finally {
-      event.target.value = ''
-    }
-  }
-
-  const readFileAsDataUrl = (file: File): Promise<string> =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onerror = () => reject(new Error('Unable to read that file.'))
-      reader.onload = () => {
-        if (typeof reader.result !== 'string') {
-          reject(new Error('Unexpected file format.'))
-          return
-        }
-        resolve(reader.result)
-      }
-      reader.readAsDataURL(file)
-    })
-
   const runAgentTurn = async (
     photoDataUrls: string[],
     nextHistory: ConversationTurn[],
@@ -389,22 +361,19 @@ function App() {
       <main className="simple-main">
         {photos.length < MIN_PHOTOS_REQUIRED ? (
           <section className="upload-panel">
-            <h2>Upload a photo</h2>
-            <p>Natural light, no heavy makeup. Everything stays on-device.</p>
-            <div className="input-actions">
-              <label className="dropzone">
-                <span>Upload photo</span>
-                <input type="file" accept="image/*" onChange={handleFileUpload} />
-              </label>
-              <button
-                type="button"
-                className="capture-button"
-                onClick={activateCapture}
-                disabled={isLoading}
-              >
-                Capture
-              </button>
-            </div>
+            <button
+              type="button"
+              className="cta-elegant"
+              onClick={activateCapture}
+              disabled={isLoading}
+            >
+              <span className="cta-elegant__text">Get Started</span>
+              <span className="cta-elegant__icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+              </span>
+            </button>
 
             {error && <p className="face-error">{error}</p>}
 

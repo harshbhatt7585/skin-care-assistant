@@ -371,8 +371,11 @@ function App() {
     <div className="page">
       <header className="hero">
         <div className="hero__text">
-          <p className="hero__eyebrow">Skin Care Copilot</p>
-          <h1>Get a perfect skin care plan</h1>
+          <h1 className="brand-logo">
+            <span className="brand-logo__glow" aria-hidden="true">Glowly</span>
+            <span className="brand-logo__text">Glowly</span>
+          </h1>
+          <p className="hero__tagline">Your AI-powered skin care companion</p>
         </div>
       </header>
 

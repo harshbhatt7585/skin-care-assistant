@@ -144,10 +144,6 @@ const ScanMetricsPanel = ({ metrics }: { metrics: ScanMetrics }) => {
           >
             <span>{entry.label}</span>
             <strong>{metricValue}/5</strong>
-            <span
-              className="scan-metrics__arrow"
-              style={{ transform: `rotate(${pos.angle}deg)` }}
-            />
           </div>
         )
       })}

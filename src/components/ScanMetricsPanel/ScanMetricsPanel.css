@@ -62,14 +62,6 @@
   color: rgba(114, 255, 230, 0.95);
 }
 
-.scan-metrics__arrow {
-  width: 32px;
-  height: 1px;
-  background: linear-gradient(90deg, rgba(114, 255, 230, 0), rgba(114, 255, 230, 0.9));
-  display: block;
-  margin-top: 8px;
-}
-
 @keyframes metricFloat {
   0% {
     transform: translate(-50%, -50%) translate3d(0, 0, 0) rotate(-1deg);

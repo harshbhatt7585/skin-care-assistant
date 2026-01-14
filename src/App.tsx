@@ -2,20 +2,12 @@ import { useState, useEffect, useRef } from 'react'
 import './App.css'
 import ScanVisualization from './components/ScanVisualization'
 import ScanMetricsPanel, { type ScanMetrics } from './components/ScanMetricsPanel'
-import ProductShowcase from './components/ProductShowcase'
-import ShoppingPreview from './components/ShoppingPreview'
 import CaptureGuidance from './components/CaptureGuidance'
-import { parseProductSections, parseShoppingPayload, stripToolArtifacts } from './lib/parsers'
+import ChatInterface, { type ChatMessage } from './components/ChatInterface'
 import { runChatTurn, runInitialWorkflowSequenced, type AgentWorkflowStep } from './lib/openai'
 import { detectFaceFromDataUrl } from './lib/faceDetection'
 import { getAuth, signOut, type User } from 'firebase/auth'
 
-
-type ChatMessage = {
-  id: string
-  role: 'user' | 'assistant'
-  content: string
-}
 
 type ConversationTurn = { role: 'user' | 'assistant'; content: string }
 
@@ -487,99 +479,18 @@ function App({ user }: AppProps) {
               {scanMetrics && <ScanMetricsPanel metrics={scanMetrics} />}
             </div>
 
-            <div className="chat-thread">
-              <div className="messages">
-                {messages.map((message) => {
-                  if (message.role === 'user') {
-                    return (
-                      <article
-                        key={message.id}
-                        className="bubble bubble--user"
-                        dangerouslySetInnerHTML={{ __html: escapeHtml(message.content) }}
-                      />
-                    )
-                  }
-
-                  const parsedShopping = parseShoppingPayload(message.content)
-                  if (parsedShopping) {
-                    const { payload, remainder } = parsedShopping
-                    return (
-                      <article key={message.id} className="bubble">
-                        {remainder && (
-                          <div
-                            dangerouslySetInnerHTML={{
-                              __html: formatAssistantContent(remainder),
-                            }}
-                          />
-                        )}
-                        <ShoppingPreview data={payload} />
-                      </article>
-                    )
-                  }
-
-                  const parsedProducts = parseProductSections(message.content)
-                  if (parsedProducts) {
-                    const { sections, remainder } = parsedProducts
-                    return (
-                      <article key={message.id} className="bubble">
-                        {remainder && (
-                          <div
-                            dangerouslySetInnerHTML={{
-                              __html: formatAssistantContent(remainder),
-                            }}
-                          />
-                        )}
-                        <ProductShowcase sections={sections} />
-                      </article>
-                    )
-                  }
-
-                  return (
-                    <article
-                      key={message.id}
-                      className="bubble"
-                      dangerouslySetInnerHTML={{
-                        __html: formatAssistantContent(message.content),
-                      }}
-                    />
-                  )
-                })}
-                {isLoading && (
-                  <div className="typing" aria-live="polite" aria-label="Assistant is replying">
-                    <span />
-                    <span />
-                    <span />
-                  </div>
-                )}
-              </div>
-
-              <form className="chat-input" onSubmit={handleSend}>
-                <input
-                  type="text"
-                  placeholder="Ask about substitutions, layering, travel routines..."
-                  value={input}
-                  onChange={(event) => setInput(event.target.value)}
-                />
-                <button type="submit" disabled={isLoading || !input.trim()}>
-                  Send
-                </button>
-              </form>
-            </div>
+            <ChatInterface
+              messages={messages}
+              inputValue={input}
+              isLoading={isLoading}
+              onInputChange={(value) => setInput(value)}
+              onSubmit={handleSend}
+            />
           </section>
         )}
       </main>
     </div>
   )
 }
-
-const escapeHtml = (input: string) =>
-  input
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-
-const formatAssistantContent = (content: string) => stripToolArtifacts(content)
 
 export default App

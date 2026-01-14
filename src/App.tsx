@@ -8,6 +8,7 @@ import CaptureGuidance from './components/CaptureGuidance'
 import { parseProductSections, parseShoppingPayload, stripToolArtifacts } from './lib/parsers'
 import { runChatTurn, runInitialWorkflowSequenced, type AgentWorkflowStep } from './lib/openai'
 import { detectFaceFromDataUrl } from './lib/faceDetection'
+import { getAuth, signOut, type User } from 'firebase/auth'
 
 
 type ChatMessage = {
@@ -17,6 +18,10 @@ type ChatMessage = {
 }
 
 type ConversationTurn = { role: 'user' | 'assistant'; content: string }
+
+type AppProps = {
+  user: User | null
+}
 
 const FACE_ERROR_MESSAGE = 'Face not detected, upload Face image'
 const MIN_PHOTOS_REQUIRED = 3
@@ -32,7 +37,7 @@ const AGENT_STEP_COPY: Record<AgentWorkflowStep, string> = {
   shopping: 'Finding matching AM/PM products…',
 }
 
-function App() {
+function App({ user }: AppProps) {
   const [photos, setPhotos] = useState<string[]>([])
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [history, setHistory] = useState<ConversationTurn[]>([])
@@ -48,6 +53,7 @@ function App() {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const [agentStep, setAgentStep] = useState<AgentWorkflowStep | null>(null)
+  const [showUserMenu, setShowUserMenu] = useState(false)
   const activateCapture = () => {
     setCaptureStep(0)
     setCaptureActive(true)
@@ -112,6 +118,20 @@ function App() {
   useEffect(() => {
     getLocation()
   }, [])
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showUserMenu) {
+        const target = event.target as HTMLElement
+        if (!target.closest('.account-menu')) {
+          setShowUserMenu(false)
+        }
+      }
+    }
+
+    document.addEventListener('click', handleClickOutside)
+    return () => document.removeEventListener('click', handleClickOutside)
+  }, [showUserMenu])
 
   const stopCamera = () => {
     streamRef.current?.getTracks().forEach((track) => track.stop())
@@ -339,6 +359,20 @@ function App() {
     await runAgentTurn(photos, nextHistory)
   }
 
+  const handleSignOut = async () => {
+    try {
+      const auth = getAuth()
+      await signOut(auth)
+    } catch (err) {
+      console.error('Sign out error:', err)
+    }
+  }
+
+  const getUserDisplayName = () => {
+    if (!user) return ''
+    return user.displayName || user.email?.split('@')[0] || 'User'
+  }
+
   return (
     <div className="page">
       <header className="hero">
@@ -348,6 +382,33 @@ function App() {
             <span className="brand-logo__text">Glowly</span>
           </h1>
           <p className="hero__tagline">Your AI-powered skin care companion</p>
+        </div>
+        <div className="account-menu">
+          <button
+            className="account-button"
+            onClick={() => setShowUserMenu(!showUserMenu)}
+            aria-label="Account menu"
+          >
+            <span className="account-button__avatar">
+              {getUserDisplayName().charAt(0).toUpperCase()}
+            </span>
+          </button>
+          {showUserMenu && (
+            <div className="account-dropdown">
+              <div className="account-dropdown__info">
+                <p className="account-dropdown__name">{getUserDisplayName()}</p>
+                {user?.email && (
+                  <p className="account-dropdown__email">{user.email}</p>
+                )}
+              </div>
+              <button
+                className="account-dropdown__signout"
+                onClick={handleSignOut}
+              >
+                Sign Out
+              </button>
+            </div>
+          )}
         </div>
       </header>
 

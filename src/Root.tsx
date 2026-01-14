@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { getAuth, onAuthStateChanged, type User } from 'firebase/auth'
 import App from './App'
 import SignIn from './components/SignIn'
+import Landing from './components/Landing'
 
 type RouteProps = {
   user: User | null
@@ -18,7 +19,7 @@ const ProtectedRoute = ({ user, children }: RouteProps) => {
 
 const PublicRoute = ({ user, children }: RouteProps) => {
   if (user) {
-    return <Navigate to="/" replace />
+    return <Navigate to="/home" replace />
   }
   return <>{children}</>
 }
@@ -50,6 +51,14 @@ const Root = () => {
     <BrowserRouter>
       <Routes>
         <Route
+          path="/"
+          element={
+            <PublicRoute user={user}>
+              <Landing />
+            </PublicRoute>
+          }
+        />
+        <Route
           path="/signin"
           element={
             <PublicRoute user={user}>
@@ -58,12 +67,16 @@ const Root = () => {
           }
         />
         <Route
-          path="/*"
+          path="/home"
           element={
             <ProtectedRoute user={user}>
-              <App />
+              <App user={user} />
             </ProtectedRoute>
           }
+        />
+        <Route
+          path="*"
+          element={<Navigate to={user ? "/home" : "/"} replace />}
         />
       </Routes>
     </BrowserRouter>

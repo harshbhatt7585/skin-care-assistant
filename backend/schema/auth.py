@@ -10,7 +10,6 @@ class UserPersonal(BaseModel):
 
 class User(BaseModel):
     personal: UserPersonal
-    skin_type: str
     last_scanned: datetime
     last_chat: datetime
     created_at: datetime

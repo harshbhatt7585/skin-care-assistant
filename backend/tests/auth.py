@@ -8,18 +8,19 @@ from app import app
 from routers import auth as auth_router
 
 
-
 @pytest.mark.asyncio
 async def test_register_new_user(monkeypatch):
     """Test registering a new user successfully."""
 
     class DummyDocSnapshot:
         """Mock for document snapshot returned by .get()"""
+
         def __init__(self, exists: bool):
             self.exists = exists
 
     class DummyDocRef:
         """Mock for document reference returned by .document()"""
+
         def __init__(self, exists: bool = False):
             self._exists = exists
 
@@ -31,6 +32,7 @@ async def test_register_new_user(monkeypatch):
 
     class DummyCollection:
         """Mock for collection reference returned by .collection()"""
+
         def __init__(self, doc_ref: DummyDocRef):
             self._doc_ref = doc_ref
 
@@ -42,9 +44,11 @@ async def test_register_new_user(monkeypatch):
     dummy_collection = DummyCollection(dummy_doc_ref)
 
     # Monkeypatch the db.collection method
-    monkeypatch.setattr(auth_router, "db", type("MockDB", (), {
-        "collection": lambda self, name: dummy_collection
-    })())
+    monkeypatch.setattr(
+        auth_router,
+        "db",
+        type("MockDB", (), {"collection": lambda self, name: dummy_collection})(),
+    )
 
     # Monkeypatch firebase auth methods
     def mock_get_user(uid):
@@ -55,7 +59,9 @@ async def test_register_new_user(monkeypatch):
 
     monkeypatch.setattr(auth_router.auth, "get_user", mock_get_user)
     monkeypatch.setattr(auth_router.auth, "create_user", mock_create_user)
-    monkeypatch.setattr(auth_router.auth, "UserNotFoundError", firebase_auth.UserNotFoundError)
+    monkeypatch.setattr(
+        auth_router.auth, "UserNotFoundError", firebase_auth.UserNotFoundError
+    )
 
     # Create test payload
     now = datetime.now()
@@ -81,7 +87,6 @@ async def test_register_new_user(monkeypatch):
         assert response.status_code == 200
         assert response.json()["uid"] == "test_uid"
         assert response.json()["message"] == "User registered"
-    
 
 
 @pytest.mark.asyncio
@@ -128,9 +133,11 @@ async def test_get_user(monkeypatch):
     dummy_doc_ref = DummyDocRef(exists=True, data=user_data)
     dummy_collection = DummyCollection(dummy_doc_ref)
 
-    monkeypatch.setattr(auth_router, "db", type("MockDB", (), {
-        "collection": lambda self, name: dummy_collection
-    })())
+    monkeypatch.setattr(
+        auth_router,
+        "db",
+        type("MockDB", (), {"collection": lambda self, name: dummy_collection})(),
+    )
 
     payload = GetUser(uid="test_uid")
     transport = ASGITransport(app=app)

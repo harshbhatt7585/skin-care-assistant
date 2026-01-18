@@ -28,10 +28,6 @@ async def register(payload: User):
     return {"uid": payload.personal.uid, "message": "User registered"}
 
 
-
-
-
-
 @auth_router.post("/get-user")
 async def get_user(payload: GetUser):
     uid = payload.uid

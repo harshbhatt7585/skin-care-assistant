@@ -16,4 +16,6 @@ class User(BaseModel):
     created_at: datetime
 
 
-
+class GetUser(BaseModel):
+    uid: str
+    

@@ -14,3 +14,6 @@ class User(BaseModel):
     last_scanned: datetime
     last_chat: datetime
     created_at: datetime
+
+
+

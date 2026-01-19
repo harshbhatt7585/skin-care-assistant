@@ -29,7 +29,7 @@ if ENV_PATH.exists():
 
 
 INDEX_NAME = "glowly-memory"
-EMBEDDING_DIMENSIONS = 1536
+EMBEDDING_DIMENSIONS = 768
 
 
 @lru_cache(maxsize=1)

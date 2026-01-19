@@ -3,12 +3,12 @@ from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 from azure.core.credentials import AzureKeyCredential
 from azure.search.documents import SearchClient
-from azure.search.documents.models import VectorSearchQuery, VectorQuery
+from azure.search.documents.models import VectorizedQuery
 from dotenv import load_dotenv
-from uuid import uuid4
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -59,22 +59,19 @@ def search_vector_db(
     client = get_search_client()
 
     filters = [f"uid eq '{_escape_filter_value(uid)}'"]
-    filters.append(f"timestamp le datetime'{_format_timestamp(timestamp)}'")
+    filters.append(f"timestamp le {_format_timestamp(timestamp)}")
     filter_expr = " and ".join(filters)
 
+    vector_query = VectorizedQuery(
+        vector=embedding,
+        k_nearest_neighbors=top_k,
+        fields="embedding",
+    )
+
     results = client.search(
-        search_text="*",
-        vector_search_query=VectorSearchQuery(
-            queries=[
-                VectorQuery(
-                    vector=embedding,
-                    k=top_k,
-                    fields="embedding",
-                )
-            ]
-        ),
+        search_text=None,
+        vector_queries=[vector_query],
         filter=filter_expr,
-        top=top_k,
         select=["id", "uid", "timestamp", "content"],
     )
 

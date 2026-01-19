@@ -21,7 +21,9 @@ async def search_vector_db(payload: SearchVectorDBRequest):
     uid = payload.uid
     timestamp = payload.timestamp
 
-    results = search_vector_db_util(query, uid, timestamp)
+    embedding = get_gemini_embedding(query)
+
+    results = search_vector_db_util(embedding, uid, timestamp)
     return SearchVectorDBResponse(results=results)
 
 

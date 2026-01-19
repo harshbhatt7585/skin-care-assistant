@@ -6,6 +6,7 @@ from typing import Any
 
 from azure.core.credentials import AzureKeyCredential
 from azure.search.documents import SearchClient
+from azure.search.documents.models import VectorSearchQuery, VectorQuery
 from dotenv import load_dotenv
 from uuid import uuid4
 
@@ -49,7 +50,7 @@ def _format_timestamp(value: datetime) -> str:
 
 
 def search_vector_db(
-    query: str,
+    embedding: list[float],
     uid: str,
     timestamp: datetime,
     *,
@@ -58,18 +59,22 @@ def search_vector_db(
     client = get_search_client()
 
     filters = [f"uid eq '{_escape_filter_value(uid)}'"]
-    filters.append(f"timestamp le {_format_timestamp(timestamp)}")
+    filters.append(f"timestamp le datetime'{_format_timestamp(timestamp)}'")
     filter_expr = " and ".join(filters)
 
-    search_text = query.strip()
-    if not search_text:
-        search_text = "*"
-
     results = client.search(
-        search_text=search_text,
+        search_text="*",
+        vector_search_query=VectorSearchQuery(
+            queries=[
+                VectorQuery(
+                    vector=embedding,
+                    k=top_k,
+                    fields="embedding",
+                )
+            ]
+        ),
         filter=filter_expr,
         top=top_k,
-        order_by=["timestamp desc"],
         select=["id", "uid", "timestamp", "content"],
     )
 

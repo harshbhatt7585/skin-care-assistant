@@ -11,7 +11,7 @@ async def test_search_vector_db(monkeypatch):
     async def dummy_search(
         query: str, uid: str, timestamp: datetime, *, top_k: int = 20
     ):
-        assert query == "hydrating toner"
+        assert query == "What was my previous week analysis results?"
         assert uid == "user-123"
         assert timestamp == datetime(2024, 1, 1, tzinfo=timezone.utc)
 

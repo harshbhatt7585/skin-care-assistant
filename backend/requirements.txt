@@ -9,3 +9,5 @@ pytest-asyncio
 anyio
 pre-commit
 ruff
+azure-search-documents>=11.4.0
+azure-core>=1.30.0

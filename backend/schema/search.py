@@ -15,7 +15,6 @@ class SearchVectorDBResponse(BaseModel):
 class UploadVectorDBRequest(BaseModel):
     uid: str
     content: str
-    embedding: list[float]
     timestamp: datetime
 
 

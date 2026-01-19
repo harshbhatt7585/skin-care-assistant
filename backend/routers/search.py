@@ -9,6 +9,7 @@ from utils.search import (
     search_vector_db as search_vector_db_util,
     upload_documents as upload_documents_util,
 )
+from llm.gemini import get_gemini_embedding
 from fastapi import HTTPException
 
 search_router = APIRouter(prefix="/search", tags=["search"])
@@ -28,8 +29,9 @@ async def search_vector_db(payload: SearchVectorDBRequest):
 async def upload_vector_db(payload: UploadVectorDBRequest):
     uid = payload.uid
     content = payload.content
-    embedding = payload.embedding
     timestamp = payload.timestamp
+
+    embedding = get_gemini_embedding(content)
 
     try:
         response = upload_documents_util(uid, content, embedding, timestamp)

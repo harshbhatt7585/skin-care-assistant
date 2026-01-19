@@ -11,3 +11,5 @@ pre-commit
 ruff
 azure-search-documents>=11.4.0
 azure-core>=1.30.0
+google-genai>=0.4.0
+numpy

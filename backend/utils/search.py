@@ -7,6 +7,7 @@ from typing import Any
 from azure.core.credentials import AzureKeyCredential
 from azure.search.documents import SearchClient
 from dotenv import load_dotenv
+from uuid import uuid4
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -81,3 +82,24 @@ def search_vector_db(
         payload.append(data)
 
     return payload
+
+
+def upload_documents(
+    uid: str,
+    content: str,
+    embedding: list[float],
+    timestamp: datetime,
+) -> str:
+    client = get_search_client()
+    client.upload_documents(
+        documents=[
+            {
+                "id": str(uuid4()),
+                "uid": uid,
+                "timestamp": timestamp.isoformat(),
+                "content": content,
+                "embedding": embedding,
+            }
+        ]
+    )
+    return "Documents uploaded"

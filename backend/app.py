@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 
 import fastapi
+from fastapi.middleware.cors import CORSMiddleware
 
 from database.firebase import init_firebase
 from routers.auth import auth_router
@@ -14,6 +15,14 @@ async def lifespan(app: fastapi.FastAPI):
 
 
 app = fastapi.FastAPI(lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(auth_router)
 app.include_router(search_router)

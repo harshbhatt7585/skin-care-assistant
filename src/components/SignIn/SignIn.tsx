@@ -1,12 +1,24 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getAuth, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
+import { getAuth, GoogleAuthProvider, signInWithPopup, type User } from 'firebase/auth'
+import { registerUser, getUser,  } from '../../api/auth'
+import type { User as UserType } from '../../types/auth'
 import './SignIn.css'
 
 const SignIn = () => {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const navigate = useNavigate()
+
+
+  const checkUserExists = async (uid: string): Promise<User | false> => {
+    const response = await getUser(uid)
+    if (response.exists) {
+      return response.user
+    }
+    return false  
+  }
+
 
   const handleGoogleSignIn = async () => {
     setError(null)
@@ -15,6 +27,20 @@ const SignIn = () => {
       const auth = getAuth()
       const provider = new GoogleAuthProvider()
       await signInWithPopup(auth, provider)
+      let currentUser = auth.currentUser
+      const user = await checkUserExists(currentUser?.uid)
+      if (!user) {
+        const now = new Date().toISOString()
+        const userDetails: UserType  = {
+          personal: {
+            email: currentUser?.email,
+            name: currentUser?.displayName,
+            uid: currentUser?.uid,
+          },
+          created_at: now,
+        }
+        await registerUser(userDetails)
+      }
       // Navigation will be handled automatically by Root component
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unable to sign in with Google.'

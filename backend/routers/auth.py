@@ -29,11 +29,11 @@ async def register(payload: User):
 
 
 @auth_router.post("/get-user")
-async def get_user(payload: GetUser):
+async def get_user(payload: GetUser) -> User:
     uid = payload.uid
     doc_ref = db.collection("users").document(uid)
     if not doc_ref.get().exists:
         raise HTTPException(status_code=404, detail="User not found")
 
     user = doc_ref.get().to_dict()
-    return user
+    return User(**user)

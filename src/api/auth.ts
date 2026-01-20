@@ -14,5 +14,8 @@ export const getUser = async (uid: string) => {
         method: 'POST',
         body: JSON.stringify({ uid }),
     })
-    return response.json()
+    if (response.status === 404) {
+        return { exists: false }
+    }
+    return { exists: true, user: await response.json() }
 }

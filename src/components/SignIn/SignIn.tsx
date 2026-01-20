@@ -11,7 +11,7 @@ const SignIn = () => {
   const navigate = useNavigate()
 
 
-  const checkUserExists = async (uid: string): Promise<User | false> => {
+  const checkUserExists = async (uid: string): Promise<UserType | false> => {
     const response = await getUser(uid)
     if (response.exists) {
       return response.user

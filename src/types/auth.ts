@@ -17,3 +17,8 @@ export interface User {
 export interface GetUser {
   uid: string;
 }
+
+export interface GetUserResponse {
+  exists: boolean;
+  user?: User;
+}

@@ -1,5 +1,5 @@
 const BASE_URL = import.meta.env.VITE_API_URL
-import type { User } from '../types/auth'
+import type { User, GetUserResponse } from '../types/auth'
 
 export const registerUser = async (user: User) => {
     const response = await fetch(`${BASE_URL}/auth/register`, {
@@ -12,7 +12,7 @@ export const registerUser = async (user: User) => {
     return response.json()
 }
 
-export const getUser = async (uid: string) => {
+export const getUser = async (uid: string): Promise<GetUserResponse> => {
     const response = await fetch(`${BASE_URL}/auth/get-user`, {
         method: 'POST',
         headers: {
@@ -23,5 +23,9 @@ export const getUser = async (uid: string) => {
     if (response.status === 404) {
         return { exists: false }
     }
-    return { exists: true, user: await response.json() }
+    if (!response.ok) {
+        throw new Error(`Unable to fetch user (status ${response.status})`)
+    }
+    const user: User = await response.json()
+    return { exists: true, user }
 }

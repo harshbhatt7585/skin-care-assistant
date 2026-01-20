@@ -3,18 +3,17 @@ export interface UserPersonal {
   email: string;
   name: string;
   uid: string;
-  gender: string;
-  country: string;
+  gender?: string | null;
+  country?: string | null;
 }
 
 export interface User {
   personal: UserPersonal;
-  last_scanned: string;
-  last_chat: string;
+  last_scanned?: string | null;
+  last_chat?: string | null;
   created_at: string;
 }
 
 export interface GetUser {
   uid: string;
 }
-

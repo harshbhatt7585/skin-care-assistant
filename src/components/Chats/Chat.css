@@ -194,8 +194,99 @@
   box-shadow: 0 12px 32px rgba(114, 255, 230, 0.4);
 }
 
+/* New Scan Button */
+.new-scan-btn {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(10, 15, 18, 0.9);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  overflow: visible;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+}
+
+.new-scan-btn__ring {
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    #72ffe6 0deg,
+    #72ffe6 60deg,
+    #5ed9c3 90deg,
+    #a78bfa 120deg,
+    #f472b6 150deg,
+    #fb923c 180deg,
+    #facc15 210deg,
+    #4ade80 240deg,
+    #22d3ee 270deg,
+    #72ffe6 300deg,
+    #72ffe6 360deg
+  );
+  animation: ringRotate 4s linear infinite;
+  z-index: 0;
+}
+
+.new-scan-btn__ring::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: rgba(10, 15, 18, 0.95);
+}
+
+@keyframes ringRotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.new-scan-btn__icon {
+  position: relative;
+  z-index: 1;
+  width: 24px;
+  height: 24px;
+  color: #72ffe6;
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.new-scan-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 
+    0 0 20px rgba(114, 255, 230, 0.4),
+    0 0 40px rgba(114, 255, 230, 0.2);
+}
+
+.new-scan-btn:hover .new-scan-btn__icon {
+  transform: scale(1.1);
+  color: #fff;
+}
+
+.new-scan-btn:hover .new-scan-btn__ring {
+  animation-duration: 2s;
+}
+
+.new-scan-btn:active {
+  transform: scale(0.95);
+}
+
 @media (max-width: 820px) {
   .chat-input {
     flex-direction: column;
+  }
+  
+  .new-scan-btn {
+    align-self: center;
+    order: -1;
   }
 }

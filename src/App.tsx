@@ -37,7 +37,6 @@ function App({ user }: AppProps) {
   const [scanMetrics, setScanMetrics] = useState<ScanMetrics | null>(null)
   const [country, setCountry] = useState<string | null>(null)
   const [persistedMessages, setPersistedMessages] = useState<PersistedChatMessage[] | null>(null)
-  const [isGetStarted, setIsGetStarted] = useState(false)
   const [isCaptureActive, setCaptureActive] = useState(false)
   const [cameraReady, setCameraReady] = useState(false)
   const [captureStep, setCaptureStep] = useState(0)
@@ -55,9 +54,6 @@ function App({ user }: AppProps) {
   const deactivateCapture = () => {
     setCaptureActive(false)
     setCaptureStep(0)
-    if ((persistedMessages?.length ?? 0) > 0) {
-      setIsGetStarted(false)
-    }
   }
 
   const formatRemainingPhotosMessage = (remaining: number) =>
@@ -117,7 +113,6 @@ function App({ user }: AppProps) {
 
   useEffect(() => {
     chatsRef.current?.reset()
-    setIsGetStarted(false)
   }, [user?.uid])
 
   useEffect(() => {
@@ -342,7 +337,15 @@ function App({ user }: AppProps) {
   }
 
   const handleNewScan = () => {
-    setIsGetStarted(true)
+    setPersistedMessages([])
+    setPhotos([])
+    setScanMetrics(null)
+    setError(null)
+    setStatus('Upload a clear photo to begin.')
+    setCaptureStep(0)
+    stopCamera()
+    setCameraReady(false)
+    setCaptureActive(true)
   }
 
   const getUserDisplayName = () => {
@@ -352,14 +355,13 @@ function App({ user }: AppProps) {
 
   const hasPersistedMessages = (persistedMessages?.length ?? 0) > 0
   const isLoadingPersistedMessages = Boolean(user?.uid) && persistedMessages === null
-  const shouldShowCapture = !hasPersistedMessages || isGetStarted
+  const shouldShowCapture = !hasPersistedMessages
 
   const handlePersistedMessages = (messages: PersistedChatMessage[]) => {
     setPersistedMessages((prev) => {
       const base = prev ?? []
       return [...base, ...messages]
     })
-    setIsGetStarted(false)
   }
 
   const handleVideoReady = () => setCameraReady(true)

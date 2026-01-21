@@ -3,7 +3,12 @@
 from fastapi import APIRouter
 
 from database.firebase import init_firebase
-from schema.chat import StoreMessageRequest, StoreMessageResponse
+from schema.chat import (
+    StoreMessageRequest,
+    StoreMessageResponse,
+    GetMessagesRequest,
+    GetMessagesResponse,
+)
 
 chat_router = APIRouter(prefix="/chat", tags=["chat"])
 db = init_firebase()
@@ -30,3 +35,22 @@ async def store_message(payload: StoreMessageRequest) -> StoreMessageResponse:
     )
 
     return StoreMessageResponse(message="Message stored")
+
+
+@chat_router.get("/get-messages")
+async def get_messages(payload: GetMessagesRequest) -> GetMessagesResponse:
+    if payload.chat_id:
+        snapshot = db.collection("chats").document(payload.chat_id).get()
+    else:
+        query = db.collection("chats").where("uid", "==", payload.uid).limit(1)
+        results = list(query.stream())
+        if not results:
+            return GetMessagesResponse(messages=[])
+        snapshot = results[0]
+
+    if not snapshot.exists:
+        return GetMessagesResponse(messages=[])
+
+    doc_data = snapshot.to_dict() or {}
+    messages = doc_data.get("messages", [])
+    return GetMessagesResponse(messages=messages)

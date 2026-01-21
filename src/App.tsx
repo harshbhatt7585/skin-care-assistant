@@ -417,19 +417,47 @@ function App({ user }: AppProps) {
             </div>
           </section>
         ) : shouldShowCapture ? (
-          <Capture
-            isLoading={isLoading}
-            error={error}
-            isCaptureActive={isCaptureActive}
-            captureStep={captureStep}
-            captureInstructions={CAPTURE_INSTRUCTIONS}
-            videoRef={videoRef}
-            cameraReady={cameraReady}
-            onActivateCapture={activateCapture}
-            onDeactivateCapture={deactivateCapture}
-            onCapture={handleCapture}
-            onVideoReady={handleVideoReady}
-          />
+          <section className="capture-panel">
+            {!isCaptureActive && (
+              <>
+                <button
+                  type="button"
+                  className="cta-elegant"
+                  onClick={activateCapture}
+                  disabled={isLoading}
+                >
+                  <span className="cta-elegant__text">Get Started</span>
+                  <span className="cta-elegant__icon" aria-hidden="true">
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                  </span>
+                </button>
+                {error && <p className="face-error">{error}</p>}
+              </>
+            )}
+            {isCaptureActive && error && <p className="face-error">{error}</p>}
+            <Capture
+              isLoading={isLoading}
+              isCaptureActive={isCaptureActive}
+              captureStep={captureStep}
+              captureInstructions={CAPTURE_INSTRUCTIONS}
+              videoRef={videoRef}
+              cameraReady={cameraReady}
+              onDeactivateCapture={deactivateCapture}
+              onCapture={handleCapture}
+              onVideoReady={handleVideoReady}
+            />
+          </section>
         ) : (
           <section className="analysis-stack">
             {error && <p className="face-error">{error}</p>}

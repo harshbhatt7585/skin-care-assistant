@@ -37,6 +37,7 @@ function App({ user }: AppProps) {
   const [scanMetrics, setScanMetrics] = useState<ScanMetrics | null>(null)
   const [country, setCountry] = useState<string | null>(null)
   const [persistedMessages, setPersistedMessages] = useState<PersistedChatMessage[] | null>(null)
+  const [isGetStarted, setIsGetStarted] = useState(false)
   const [isCaptureActive, setCaptureActive] = useState(false)
   const [cameraReady, setCameraReady] = useState(false)
   const [captureStep, setCaptureStep] = useState(0)
@@ -53,6 +54,9 @@ function App({ user }: AppProps) {
   const deactivateCapture = () => {
     setCaptureActive(false)
     setCaptureStep(0)
+    if ((persistedMessages?.length ?? 0) > 0) {
+      setIsGetStarted(false)
+    }
   }
 
   const formatRemainingPhotosMessage = (remaining: number) =>
@@ -112,6 +116,7 @@ function App({ user }: AppProps) {
 
   useEffect(() => {
     chatsRef.current?.reset()
+    setIsGetStarted(false)
   }, [user?.uid])
 
   useEffect(() => {
@@ -143,6 +148,7 @@ function App({ user }: AppProps) {
       cancelled = true
     }
   }, [user?.uid])
+
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -335,7 +341,7 @@ function App({ user }: AppProps) {
   }
 
   const handleNewScan = () => {
-    // TODO: Implement new scan flow
+    setIsGetStarted(true)
   }
 
   const getUserDisplayName = () => {
@@ -343,9 +349,17 @@ function App({ user }: AppProps) {
     return user.displayName || user.email?.split('@')[0] || 'User'
   }
 
-  const hasPersistedChat = (persistedMessages?.length ?? 0) > 0
-  const shouldShowChatExperience = photos.length >= MIN_PHOTOS_REQUIRED || hasPersistedChat
+  const hasPersistedMessages = (persistedMessages?.length ?? 0) > 0
   const isLoadingPersistedMessages = Boolean(user?.uid) && persistedMessages === null
+  const shouldShowCapture = !hasPersistedMessages || isGetStarted
+
+  const handlePersistedMessages = (messages: PersistedChatMessage[]) => {
+    setPersistedMessages((prev) => {
+      const base = prev ?? []
+      return [...base, ...messages]
+    })
+    setIsGetStarted(false)
+  }
 
   const handleVideoReady = () => setCameraReady(true)
 
@@ -402,7 +416,7 @@ function App({ user }: AppProps) {
               <div className="messages-loader__shimmer" />
             </div>
           </section>
-        ) : !shouldShowChatExperience ? (
+        ) : shouldShowCapture ? (
           <Capture
             isLoading={isLoading}
             error={error}
@@ -442,6 +456,7 @@ function App({ user }: AppProps) {
               initialMessages={persistedMessages ?? undefined}
               uid={user?.uid ?? null}
               onNewScan={handleNewScan}
+              onPersistedMessages={handlePersistedMessages}
             />
           </section>
         )}

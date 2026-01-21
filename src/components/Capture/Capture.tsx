@@ -81,7 +81,13 @@ const Capture = ({
             )}
           </div>
           <div className="camera-actions">
-            <button type="button" onClick={onCapture} disabled={!cameraReady || isLoading}>
+            <button
+              type="button"
+              onClick={() => {
+                void onCapture()
+              }}
+              disabled={!cameraReady || isLoading}
+            >
               {cameraReady ? 'Capture photo' : 'Initializing camera…'}
             </button>
             <button type="button" onClick={onDeactivateCapture}>

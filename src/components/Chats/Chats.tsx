@@ -47,6 +47,7 @@ type ChatsProps = {
   uid: string | null
   chatId?: string | null
   onNewScan: () => void
+  onPersistedMessages?: (messages: PersistedChatMessage[]) => void
 }
 
 const Chats = forwardRef<ChatsHandle, ChatsProps>(
@@ -63,6 +64,7 @@ const Chats = forwardRef<ChatsHandle, ChatsProps>(
       uid,
       chatId,
       onNewScan,
+      onPersistedMessages,
     },
     ref,
   ) => {
@@ -98,6 +100,7 @@ const Chats = forwardRef<ChatsHandle, ChatsProps>(
           uid,
           messages: formatted,
         })
+        onPersistedMessages?.(formatted)
       } catch (err) {
         console.error('Failed to store chat messages', err)
       }

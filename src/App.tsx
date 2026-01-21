@@ -341,6 +341,7 @@ function App({ user }: AppProps) {
 
   const hasPersistedChat = (persistedMessages?.length ?? 0) > 0
   const shouldShowChatExperience = photos.length >= MIN_PHOTOS_REQUIRED || hasPersistedChat
+  const isLoadingPersistedMessages = Boolean(user?.uid) && persistedMessages === null
 
   return (
     <div className="page">
@@ -389,7 +390,13 @@ function App({ user }: AppProps) {
       )}
 
       <main className="simple-main">
-        {!shouldShowChatExperience ? (
+        {isLoadingPersistedMessages ? (
+          <section className="messages-loader" aria-busy="true" aria-live="polite">
+            <div className="messages-loader__visual">
+              <div className="messages-loader__shimmer" />
+            </div>
+          </section>
+        ) : !shouldShowChatExperience ? (
           <section className="upload-panel">
             <button
               type="button"

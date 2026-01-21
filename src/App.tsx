@@ -46,6 +46,7 @@ function App({ user }: AppProps) {
   const chatsRef = useRef<ChatsHandle | null>(null)
   const [agentStep, setAgentStep] = useState<AgentWorkflowStep | null>(null)
   const [showUserMenu, setShowUserMenu] = useState(false)
+
   const activateCapture = () => {
     setCaptureStep(0)
     setCaptureActive(true)
@@ -418,7 +419,7 @@ function App({ user }: AppProps) {
           </section>
         ) : shouldShowCapture ? (
           <section className="capture-panel">
-            {!isCaptureActive && (
+            {!isCaptureActive && persistedMessages?.length === 0 && (
               <>
                 <button
                   type="button"

@@ -337,15 +337,6 @@ function App({ user }: AppProps) {
   }
 
   const handleNewScan = () => {
-    setPersistedMessages([])
-    setPhotos([])
-    setScanMetrics(null)
-    setError(null)
-    setStatus('Upload a clear photo to begin.')
-    setCaptureStep(0)
-    stopCamera()
-    setCameraReady(false)
-    setCaptureActive(true)
   }
 
   const getUserDisplayName = () => {

@@ -1,11 +1,37 @@
-import { forwardRef, useImperativeHandle, useState, type Dispatch, type FormEvent, type SetStateAction } from 'react'
-import ChatInterface, { type ChatMessage } from '../ChatInterface'
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useState,
+  type Dispatch,
+  type FormEvent,
+  type SetStateAction,
+} from 'react'
+import ChatInterface, { type ChatMessage as UiChatMessage } from '../ChatInterface'
 import { runChatTurn, type ConversationTurn } from '../../lib/openai'
+import type { ChatMessage as PersistedChatMessage } from '../../types/chats'
 
 export type ChatsHandle = {
   replaceWithAssistantMessages: (messages: string[], historySnapshot: ConversationTurn[]) => void
   appendAssistantMessage: (message: string, historySnapshot: ConversationTurn[]) => void
   reset: () => void
+}
+
+const normalizePersistedMessages = (messages: PersistedChatMessage[]) => {
+  return messages.map((message) => {
+    const role = message.role === 'assistant' ? 'assistant' : 'user'
+    return {
+      ui: {
+        id: crypto.randomUUID(),
+        role,
+        content: message.content,
+      } satisfies UiChatMessage,
+      turn: {
+        role,
+        content: message.content,
+      } satisfies ConversationTurn,
+    }
+  })
 }
 
 type ChatsProps = {
@@ -16,13 +42,44 @@ type ChatsProps = {
   setStatus: Dispatch<SetStateAction<string>>
   setError: Dispatch<SetStateAction<string | null>>
   minPhotosRequired: number
+  initialMessages?: PersistedChatMessage[]
 }
 
 const Chats = forwardRef<ChatsHandle, ChatsProps>(
-  ({ photos, country, isLoading, setLoading, setStatus, setError, minPhotosRequired }, ref) => {
-    const [messages, setMessages] = useState<ChatMessage[]>([])
+  (
+    {
+      photos,
+      country,
+      isLoading,
+      setLoading,
+      setStatus,
+      setError,
+      minPhotosRequired,
+      initialMessages,
+    },
+    ref,
+  ) => {
+    const [messages, setMessages] = useState<UiChatMessage[]>([])
     const [history, setHistory] = useState<ConversationTurn[]>([])
     const [input, setInput] = useState('')
+
+    useEffect(() => {
+      if (!initialMessages) {
+        return
+      }
+
+      if (!initialMessages.length) {
+        setMessages([])
+        setHistory([])
+        setInput('')
+        return
+      }
+
+      const normalized = normalizePersistedMessages(initialMessages)
+      setMessages(normalized.map((entry) => entry.ui))
+      setHistory(normalized.map((entry) => entry.turn))
+      setInput('')
+    }, [initialMessages])
 
     useImperativeHandle(ref, () => ({
       replaceWithAssistantMessages(newAssistantMessages, historySnapshot) {

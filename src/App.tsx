@@ -7,6 +7,8 @@ import Chats, { type ChatsHandle } from './components/Chats'
 import { runInitialWorkflowSequenced, type AgentWorkflowStep } from './lib/openai'
 import { detectFaceFromDataUrl } from './lib/faceDetection'
 import { getAuth, signOut, type User } from 'firebase/auth'
+import { getMessages } from './api/chats'
+import type { ChatMessage as PersistedChatMessage } from './types/chats'
 
 
 type AppProps = {
@@ -34,6 +36,7 @@ function App({ user }: AppProps) {
   const [isLoading, setLoading] = useState(false)
   const [scanMetrics, setScanMetrics] = useState<ScanMetrics | null>(null)
   const [country, setCountry] = useState<string | null>(null)
+  const [persistedMessages, setPersistedMessages] = useState<PersistedChatMessage[] | null>(null)
   const [isCaptureActive, setCaptureActive] = useState(false)
   const [cameraReady, setCameraReady] = useState(false)
   const [captureStep, setCaptureStep] = useState(0)
@@ -106,6 +109,40 @@ function App({ user }: AppProps) {
   useEffect(() => {
     getLocation()
   }, [])
+
+  useEffect(() => {
+    chatsRef.current?.reset()
+  }, [user?.uid])
+
+  useEffect(() => {
+    if (!user?.uid) {
+      setPersistedMessages([])
+      return
+    }
+
+    setPersistedMessages(null)
+    let cancelled = false
+
+    const fetchMessages = async () => {
+      try {
+        const messages = await getMessages(user.uid)
+        if (!cancelled) {
+          setPersistedMessages(messages)
+        }
+      } catch (err) {
+        console.error('Failed to fetch chat messages', err)
+        if (!cancelled) {
+          setPersistedMessages([])
+        }
+      }
+    }
+
+    fetchMessages()
+
+    return () => {
+      cancelled = true
+    }
+  }, [user?.uid])
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -302,6 +339,9 @@ function App({ user }: AppProps) {
     return user.displayName || user.email?.split('@')[0] || 'User'
   }
 
+  const hasPersistedChat = (persistedMessages?.length ?? 0) > 0
+  const shouldShowChatExperience = photos.length >= MIN_PHOTOS_REQUIRED || hasPersistedChat
+
   return (
     <div className="page">
       <header className="hero">
@@ -349,7 +389,7 @@ function App({ user }: AppProps) {
       )}
 
       <main className="simple-main">
-        {photos.length < MIN_PHOTOS_REQUIRED ? (
+        {!shouldShowChatExperience ? (
           <section className="upload-panel">
             <button
               type="button"
@@ -425,6 +465,7 @@ function App({ user }: AppProps) {
               setStatus={setStatus}
               setError={setError}
               minPhotosRequired={MIN_PHOTOS_REQUIRED}
+              initialMessages={persistedMessages ?? undefined}
             />
           </section>
         )}

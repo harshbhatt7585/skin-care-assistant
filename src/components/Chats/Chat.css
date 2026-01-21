@@ -214,7 +214,7 @@
 
 .new-scan-btn__ring {
   position: absolute;
-  inset: -3px;
+  inset: -1px;
   border-radius: 50%;
   background: conic-gradient(
     from 0deg,

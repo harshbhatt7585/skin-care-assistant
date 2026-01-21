@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import './App.css'
 import ScanVisualization from './components/ScanVisualization'
 import ScanMetricsPanel, { type ScanMetrics } from './components/ScanMetricsPanel'
-import CaptureGuidance from './components/CaptureGuidance'
+import Capture from './components/Capture'
 import Chats, { type ChatsHandle } from './components/Chats'
 import { runInitialWorkflowSequenced, type AgentWorkflowStep } from './lib/openai'
 import { detectFaceFromDataUrl } from './lib/faceDetection'
@@ -347,6 +347,8 @@ function App({ user }: AppProps) {
   const shouldShowChatExperience = photos.length >= MIN_PHOTOS_REQUIRED || hasPersistedChat
   const isLoadingPersistedMessages = Boolean(user?.uid) && persistedMessages === null
 
+  const handleVideoReady = () => setCameraReady(true)
+
   return (
     <div className="page">
       <header className="hero">
@@ -401,58 +403,19 @@ function App({ user }: AppProps) {
             </div>
           </section>
         ) : !shouldShowChatExperience ? (
-          <section className="upload-panel">
-            <button
-              type="button"
-              className="cta-elegant"
-              onClick={activateCapture}
-              disabled={isLoading}
-            >
-              <span className="cta-elegant__text">Get Started</span>
-              <span className="cta-elegant__icon" aria-hidden="true">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M5 12h14M12 5l7 7-7 7"/>
-                </svg>
-              </span>
-            </button>
-
-            {error && <p className="face-error">{error}</p>}
-
-            {isCaptureActive && (
-              <div className="camera-panel">
-                {captureStep < CAPTURE_INSTRUCTIONS.length && (
-                  <p className="capture-instruction">
-                    Step {captureStep + 1} of {CAPTURE_INSTRUCTIONS.length}: {CAPTURE_INSTRUCTIONS[captureStep]}
-                  </p>
-                )}
-                <div className="camera-preview__wrapper">
-                  <video
-                    ref={videoRef}
-                    className="camera-preview"
-                    autoPlay
-                    playsInline
-                    muted
-                    onLoadedMetadata={() => setCameraReady(true)}
-                  />
-                  {captureStep < CAPTURE_INSTRUCTIONS.length && (
-                    <CaptureGuidance
-                      videoRef={videoRef}
-                      instruction={CAPTURE_INSTRUCTIONS[captureStep]}
-                      isActive={isCaptureActive}
-                    />
-                  )}
-                </div>
-                <div className="camera-actions">
-                  <button type="button" onClick={handleCapture} disabled={!cameraReady || isLoading}>
-                    {cameraReady ? 'Capture photo' : 'Initializing camera…'}
-                  </button>
-                  <button type="button" onClick={deactivateCapture}>
-                    Close camera
-                  </button>
-                </div>
-              </div>
-            )}
-          </section>
+          <Capture
+            isLoading={isLoading}
+            error={error}
+            isCaptureActive={isCaptureActive}
+            captureStep={captureStep}
+            captureInstructions={CAPTURE_INSTRUCTIONS}
+            videoRef={videoRef}
+            cameraReady={cameraReady}
+            onActivateCapture={activateCapture}
+            onDeactivateCapture={deactivateCapture}
+            onCapture={handleCapture}
+            onVideoReady={handleVideoReady}
+          />
         ) : (
           <section className="analysis-stack">
             {error && <p className="face-error">{error}</p>}

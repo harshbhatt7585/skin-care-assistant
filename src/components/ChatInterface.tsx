@@ -2,7 +2,7 @@ import type { FormEvent } from 'react'
 import ProductShowcase from './ProductShowcase'
 import ShoppingPreview from './ShoppingPreview'
 import { parseProductSections, parseShoppingPayload, stripToolArtifacts } from '../lib/parsers'
-import './ChatInterface.css'
+import './Chats/Chat.css'
 
 export type ChatMessage = {
   id: string

@@ -3,13 +3,11 @@ import './App.css'
 import ScanVisualization from './components/ScanVisualization'
 import ScanMetricsPanel, { type ScanMetrics } from './components/ScanMetricsPanel'
 import CaptureGuidance from './components/CaptureGuidance'
-import ChatInterface, { type ChatMessage } from './components/ChatInterface'
-import { runChatTurn, runInitialWorkflowSequenced, type AgentWorkflowStep } from './lib/openai'
+import Chats, { type ChatsHandle } from './components/Chats'
+import { runInitialWorkflowSequenced, type AgentWorkflowStep } from './lib/openai'
 import { detectFaceFromDataUrl } from './lib/faceDetection'
 import { getAuth, signOut, type User } from 'firebase/auth'
 
-
-type ConversationTurn = { role: 'user' | 'assistant'; content: string }
 
 type AppProps = {
   user: User | null
@@ -31,9 +29,6 @@ const AGENT_STEP_COPY: Record<AgentWorkflowStep, string> = {
 
 function App({ user }: AppProps) {
   const [photos, setPhotos] = useState<string[]>([])
-  const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [history, setHistory] = useState<ConversationTurn[]>([])
-  const [input, setInput] = useState('')
   const [status, setStatus] = useState('Upload a clear photo to begin.')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setLoading] = useState(false)
@@ -44,6 +39,7 @@ function App({ user }: AppProps) {
   const [captureStep, setCaptureStep] = useState(0)
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
+  const chatsRef = useRef<ChatsHandle | null>(null)
   const [agentStep, setAgentStep] = useState<AgentWorkflowStep | null>(null)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const activateCapture = () => {
@@ -228,8 +224,7 @@ function App({ user }: AppProps) {
         callbacks: {
           onStepChange: setAgentStep,
           onAnalysis: (analysis, historySnapshot) => {
-            setMessages([{ id: crypto.randomUUID(), role: 'assistant', content: analysis }])
-            setHistory(historySnapshot)
+            chatsRef.current?.replaceWithAssistantMessages([analysis], historySnapshot)
             setStatus('Reviewing concerns…')
           },
           onRatings: (ratings) => {
@@ -247,11 +242,7 @@ function App({ user }: AppProps) {
             }
           },
           onShopping: (shopping, historySnapshot) => {
-            setMessages((prev) => [
-              ...prev,
-              { id: crypto.randomUUID(), role: 'assistant', content: shopping },
-            ])
-            setHistory(historySnapshot)
+            chatsRef.current?.appendAssistantMessage(shopping, historySnapshot)
           },
         },
       })
@@ -264,48 +255,6 @@ function App({ user }: AppProps) {
       return { stored: false, completed: false }
     } finally {
       setAgentStep(null)
-      setLoading(false)
-    }
-  }
-
-  const runAgentTurn = async (
-    photoDataUrls: string[],
-    nextHistory: ConversationTurn[],
-  ): Promise<ConversationTurn[] | undefined> => {
-    try {
-      setLoading(true)
-      setStatus('Consulting the cosmetist...')
-      const baseHistory: ConversationTurn[] =
-        nextHistory.length === 0
-          ? [
-              {
-                role: 'user' as const,
-                content:
-                  'Please analyze my bare-face photo and outline AM/PM rituals. Write analysis in points, Write concerns if acne, pigmentation, dark spots, redness, wrinkles, etc. and give rating on these conditions: Hydration, Oil Balance, Tone, Barrier Strength, Sensitivity. Dont explain anything, just the points and ratings.',
-              },
-            ]
-          : nextHistory
-
-      const reply = await runChatTurn({
-        photoDataUrls,
-        history: baseHistory,
-        country: country ?? 'us',
-      })
-      console.log('reply', reply)
-      const finalHistory: ConversationTurn[] = [...baseHistory, { role: 'assistant', content: reply }]
-      setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: reply }])
-      setHistory(finalHistory)
-      setStatus('Done. Ask anything else or upload again to iterate.')
-      return finalHistory
-    } catch (err) {
-      console.error(err)
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Something went wrong while generating your plan. Try again.',
-      )
-      setStatus('Unable to finish. Fix the issue and retry.')
-    } finally {
       setLoading(false)
     }
   }
@@ -337,18 +286,6 @@ function App({ user }: AppProps) {
       stopCamera()
       deactivateCapture()
     }
-  }
-
-  const handleSend = async (event: React.FormEvent) => {
-    event.preventDefault()
-    if (!input.trim() || photos.length < MIN_PHOTOS_REQUIRED || isLoading) return
-
-    const userTurn = { role: 'user' as const, content: input.trim() }
-    const nextHistory = [...history, userTurn]
-    setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'user', content: userTurn.content }])
-    setHistory(nextHistory)
-    setInput('')
-    await runAgentTurn(photos, nextHistory)
   }
 
   const handleSignOut = async () => {
@@ -479,12 +416,15 @@ function App({ user }: AppProps) {
               {scanMetrics && <ScanMetricsPanel metrics={scanMetrics} />}
             </div>
 
-            <ChatInterface
-              messages={messages}
-              inputValue={input}
+            <Chats
+              ref={chatsRef}
+              photos={photos}
+              country={country}
               isLoading={isLoading}
-              onInputChange={(value) => setInput(value)}
-              onSubmit={handleSend}
+              setLoading={setLoading}
+              setStatus={setStatus}
+              setError={setError}
+              minPhotosRequired={MIN_PHOTOS_REQUIRED}
             />
           </section>
         )}

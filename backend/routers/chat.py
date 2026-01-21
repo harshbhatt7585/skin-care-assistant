@@ -1,6 +1,6 @@
 """Storing chat messages in the database endpoints."""
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from database.firebase import init_firebase
 from schema.chat import (
@@ -38,7 +38,9 @@ async def store_message(payload: StoreMessageRequest) -> StoreMessageResponse:
 
 
 @chat_router.get("/get-messages")
-async def get_messages(payload: GetMessagesRequest) -> GetMessagesResponse:
+async def get_messages(
+    payload: GetMessagesRequest = Depends(),
+) -> GetMessagesResponse:
     if payload.chat_id:
         snapshot = db.collection("chats").document(payload.chat_id).get()
     else:

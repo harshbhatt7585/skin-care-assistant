@@ -6,17 +6,14 @@ import type {
 } from '../types/chats'
 
 export async function getMessages(uid: string, chatId?: string): Promise<ChatMessage[]> {
-  const response = await fetch(`${BASE_URL}/chat/get-messages`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      uid,
-      chat_id: chatId ?? null,
-      timestamp: new Date().toISOString(),
-    }),
+  const params = new URLSearchParams({
+    uid,
   })
+  if (chatId) {
+    params.set('chat_id', chatId)
+  }
+
+  const response = await fetch(`${BASE_URL}/chat/get-messages?${params.toString()}`)
   if (!response.ok) {
     throw new Error(`Failed to fetch messages: ${response.statusText}`)
   }

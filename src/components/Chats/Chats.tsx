@@ -46,6 +46,7 @@ type ChatsProps = {
   initialMessages?: PersistedChatMessage[]
   uid: string | null
   chatId?: string | null
+  onNewScan: () => void
 }
 
 const Chats = forwardRef<ChatsHandle, ChatsProps>(
@@ -61,6 +62,7 @@ const Chats = forwardRef<ChatsHandle, ChatsProps>(
       initialMessages,
       uid,
       chatId,
+      onNewScan,
     },
     ref,
   ) => {
@@ -209,6 +211,7 @@ const Chats = forwardRef<ChatsHandle, ChatsProps>(
         isLoading={isLoading}
         onInputChange={setInput}
         onSubmit={handleSend}
+        onNewScan={onNewScan}
       />
     )
   },

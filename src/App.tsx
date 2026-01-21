@@ -334,6 +334,10 @@ function App({ user }: AppProps) {
     }
   }
 
+  const handleNewScan = () => {
+    // TODO: Implement new scan flow
+  }
+
   const getUserDisplayName = () => {
     if (!user) return ''
     return user.displayName || user.email?.split('@')[0] || 'User'
@@ -474,6 +478,7 @@ function App({ user }: AppProps) {
               minPhotosRequired={MIN_PHOTOS_REQUIRED}
               initialMessages={persistedMessages ?? undefined}
               uid={user?.uid ?? null}
+              onNewScan={handleNewScan}
             />
           </section>
         )}

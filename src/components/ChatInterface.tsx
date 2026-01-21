@@ -16,9 +16,10 @@ type ChatInterfaceProps = {
   isLoading: boolean
   onInputChange: (value: string) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
+  onNewScan: () => void
 }
 
-const ChatInterface = ({ messages, inputValue, isLoading, onInputChange, onSubmit }: ChatInterfaceProps) => {
+const ChatInterface = ({ messages, inputValue, isLoading, onInputChange, onSubmit, onNewScan }: ChatInterfaceProps) => {
   return (
     <div className="chat-thread">
       <div className="messages">
@@ -79,7 +80,7 @@ const ChatInterface = ({ messages, inputValue, isLoading, onInputChange, onSubmi
       </div>
 
       <form className="chat-input" onSubmit={onSubmit}>
-        <button type="button" className="new-scan-btn" aria-label="New Scan">
+        <button type="button" className="new-scan-btn" aria-label="New Scan" onClick={onNewScan}>
           <span className="new-scan-btn__ring" />
           <svg className="new-scan-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />

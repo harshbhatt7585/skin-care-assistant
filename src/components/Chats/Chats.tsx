@@ -10,6 +10,7 @@ import {
 import ChatInterface, { type ChatMessage as UiChatMessage } from '../ChatInterface'
 import { runChatTurn, type ConversationTurn } from '../../lib/openai'
 import type { ChatMessage as PersistedChatMessage } from '../../types/chats'
+import { storeMessage as storeMessageApi } from '../../api/chats'
 
 export type ChatsHandle = {
   replaceWithAssistantMessages: (messages: string[], historySnapshot: ConversationTurn[]) => void
@@ -43,6 +44,8 @@ type ChatsProps = {
   setError: Dispatch<SetStateAction<string | null>>
   minPhotosRequired: number
   initialMessages?: PersistedChatMessage[]
+  uid: string | null
+  chatId?: string | null
 }
 
 const Chats = forwardRef<ChatsHandle, ChatsProps>(
@@ -56,12 +59,47 @@ const Chats = forwardRef<ChatsHandle, ChatsProps>(
       setError,
       minPhotosRequired,
       initialMessages,
+      uid,
+      chatId,
     },
     ref,
   ) => {
     const [messages, setMessages] = useState<UiChatMessage[]>([])
     const [history, setHistory] = useState<ConversationTurn[]>([])
     const [input, setInput] = useState('')
+
+    const persistMessages = async (
+      entries: Array<{ role: ConversationTurn['role']; content: string }>,
+    ) => {
+      if (!uid || !entries.length) {
+        return
+      }
+
+      const chatIdentifier = (chatId ?? uid)?.trim()
+      if (!chatIdentifier) {
+        return
+      }
+
+      const formatted = entries.map(
+        ({ role, content }) =>
+          ({
+            role,
+            content,
+            timestamp: new Date().toISOString(),
+            content_type: 'text',
+          }) satisfies PersistedChatMessage,
+      )
+
+      try {
+        await storeMessageApi({
+          chat_id: chatIdentifier,
+          uid,
+          messages: formatted,
+        })
+      } catch (err) {
+        console.error('Failed to store chat messages', err)
+      }
+    }
 
     useEffect(() => {
       if (!initialMessages) {
@@ -91,10 +129,12 @@ const Chats = forwardRef<ChatsHandle, ChatsProps>(
           })),
         )
         setHistory(historySnapshot)
+        void persistMessages(newAssistantMessages.map((content) => ({ role: 'assistant', content })))
       },
       appendAssistantMessage(content, historySnapshot) {
         setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'assistant', content }])
         setHistory(historySnapshot)
+        void persistMessages([{ role: 'assistant', content }])
       },
       reset() {
         setMessages([])
@@ -131,6 +171,7 @@ const Chats = forwardRef<ChatsHandle, ChatsProps>(
         setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: reply }])
         setHistory(finalHistory)
         setStatus('Done. Ask anything else or upload again to iterate.')
+        void persistMessages([{ role: 'assistant', content: reply }])
         return finalHistory
       } catch (err) {
         console.error(err)
@@ -157,6 +198,7 @@ const Chats = forwardRef<ChatsHandle, ChatsProps>(
       setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'user', content: userTurn.content }])
       setHistory(nextHistory)
       setInput('')
+      void persistMessages([{ role: 'user', content: userTurn.content }])
       await runAgentTurn(photos, nextHistory)
     }
 

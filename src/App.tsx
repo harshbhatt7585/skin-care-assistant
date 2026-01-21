@@ -466,6 +466,7 @@ function App({ user }: AppProps) {
               setError={setError}
               minPhotosRequired={MIN_PHOTOS_REQUIRED}
               initialMessages={persistedMessages ?? undefined}
+              uid={user?.uid ?? null}
             />
           </section>
         )}

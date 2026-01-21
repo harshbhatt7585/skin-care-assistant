@@ -22,7 +22,6 @@ class StoreMessageResponse(BaseModel):
 class GetMessagesRequest(BaseModel):
     chat_id: str | None = None
     uid: str
-    timestamp: datetime
 
 
 class GetMessagesResponse(BaseModel):

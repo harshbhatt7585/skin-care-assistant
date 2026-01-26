@@ -1,13 +1,14 @@
 import json
 import os
 import re
-from typing import List, Dict, Any
+from datetime import datetime, timezone
+from typing import Dict, List
 
 import requests
 from dotenv import load_dotenv
-import faiss
-from sentence_transformers import SentenceTransformer
-import numpy as np
+
+from llm.gemini import get_gemini_embedding
+from utils.search import search_vector_db
 
 load_dotenv()
 
@@ -29,47 +30,28 @@ class Tools:
 
 
 class RAGTool(Tools):
-    """Tool for retrieving information from the RAG index."""
+    """Tool for retrieving information from the memory index."""
 
-    def __call__(self, query: str, k: int = 5) -> dict:
-        """Retrieve information from the RAG index."""
-        return retrieve_top_k_chunks(query, embedder, index, metadata, k)
+    def __init__(
+        self,
+        *,
+        uid: str,
+        timestamp: datetime,
+        default_k: int = 5,
+    ) -> None:
+        super().__init__(
+            name="RAGTool",
+            description="Retrieve information from the memory index.",
+            parameters={"query": str, "k": int},
+        )
+        self.uid = uid
+        self.timestamp = timestamp
+        self.default_k = default_k
 
-
-def load_embedder(model_name: str) -> SentenceTransformer:
-    return SentenceTransformer(model_name)
-
-
-def generate_embedding(
-    embedder: SentenceTransformer, text: str, faiss_index: faiss.Index
-) -> np.ndarray:
-    """Return embedding with batch dimension for Faiss search."""
-    encoding = embedder.encode(text)
-    return normalize_embedding(np.asarray(encoding, dtype=np.float32).reshape(1, -1))
-
-
-def normalize_embedding(embedding: np.ndarray) -> np.ndarray:
-    return embedding / np.linalg.norm(embedding)
-
-
-def load_faiss_index(index_path: str) -> faiss.Index:
-    return faiss.read_index(index_path)
-
-
-def search_faiss_index(index: faiss.Index, encoding: np.ndarray, k: int = 10) -> tuple:
-    """Return distances and indices from FAISS search."""
-    return index.search(encoding, k=k)
-
-
-def load_dataset(dataset_path: str):
-    with open(dataset_path, "r") as f:
-        return json.load(f)
-
-
-def load_metadata(metadata_path: str) -> dict:
-    """Load conversation metadata that maps chunk IDs to chunk data."""
-    with open(metadata_path, "r") as f:
-        return json.load(f)
+    def __call__(self, query: str, k: int = 5) -> list[dict]:
+        """Retrieve information from the vector index."""
+        top_k = k or self.default_k
+        return retrieve_top_k_chunks(query, self.uid, self.timestamp, k=top_k)
 
 
 def _get_api_key() -> str:
@@ -245,20 +227,21 @@ def parse_agent_response(response: str) -> dict:
 
 def retrieve_top_k_chunks(
     query: str,
-    embedder: SentenceTransformer,
-    index: faiss.Index,
-    metadata: dict,
+    uid: str,
+    timestamp: datetime,
+    *,
     k: int = 5,
 ) -> List[dict]:
-    encoding = generate_embedding(embedder, query, index)
-    distances, indices = search_faiss_index(index, encoding, k=k)
-    chunks = []
-    for i, (dist, idx) in enumerate(zip(distances[0], indices[0])):
-        if idx < len(metadata["chunks"]):
-            chunk_data = metadata["chunks"][idx].copy()
-            chunk_data["similarity_score"] = float(dist)
-            chunk_data["rank"] = i + 1
-            chunks.append(chunk_data)
+    """Retrieve top-k chunks from Azure AI Search for a user."""
+
+    embedding = get_gemini_embedding(query, task_type="RETRIEVAL_QUERY")
+    results = search_vector_db(embedding, uid, timestamp, top_k=k)
+
+    chunks: List[dict] = []
+    for i, result in enumerate(results, start=1):
+        entry = dict(result)
+        entry.setdefault("rank", i)
+        chunks.append(entry)
 
     return chunks
 
@@ -305,12 +288,15 @@ def remember_agent(question: str) -> str:
     return parsed_response.get("remember", "")
 
 
-def search_agent(question: str, chunks: List[dict]):
-    rag_tool = RAGTool(
-        name="RAGTool",
-        description="Retrieve information from the RAG index.",
-        parameters={"query": str, "k": int},
-    )
+def search_agent(
+    question: str,
+    *,
+    uid: str,
+    timestamp: datetime | None = None,
+    chunks: List[dict] | None = None,
+) -> dict:
+    timestamp = timestamp or datetime.now(timezone.utc)
+    rag_tool = RAGTool(uid=uid, timestamp=timestamp)
 
     system_prompt = """You are a search agent. Your task is to find answers in conversation history using RAGTool.
 
@@ -341,7 +327,7 @@ Rules:
         context_str = "\n".join(
             [
                 f"[Chunk {c.get('rank', i + 1)}]: {c.get('text', c.get('content', str(c)))}"
-                for i, c in enumerate(chunks[:5])  # Limit to top 5 chunks
+                for i, c in enumerate((chunks or [])[:5])
             ]
         )
     else:
@@ -374,29 +360,16 @@ Respond with JSON only:"""
         print("args: ", args)
         if args:
             print("calling RAGTool")
-            chunk = rag_tool(args["query"], args["k"])
+            desired_k = args.get("k") or 5
+            chunk = rag_tool(args["query"], desired_k)
 
-            return search_agent(question, chunk)
+            return search_agent(
+                question,
+                uid=uid,
+                timestamp=timestamp,
+                chunks=chunk,
+            )
         else:
             print("no args found")
 
     return parsed_response
-
-
-if __name__ == "__main__":
-    # Load resources once and reuse them for every question
-    dataset = load_dataset("dataset.json")
-
-    global embedder, index, metadata
-    embedder = load_embedder("sentence-transformers/all-MiniLM-L6-v2")
-    index = load_faiss_index("conversation.index")
-    metadata = load_metadata("conversation_metadata.json")
-
-    answers: List[Dict[str, Any]] = []
-    for item in dataset:
-        question = item["question"]
-        answer = search_agent(question, None)
-        answers.append({"question": question, "answer": answer})
-
-    with open("answer.json", "w") as f:
-        json.dump(answers, f, indent=4)

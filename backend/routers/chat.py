@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter, Depends
 
+from agents.memory import search_agent
 from database.firebase import init_firebase
 from schema.chat import (
     StoreMessageRequest,
@@ -9,6 +10,7 @@ from schema.chat import (
     GetMessagesRequest,
     GetMessagesResponse,
 )
+from schema.memory import MemorySearchRequest, MemorySearchResponse
 
 chat_router = APIRouter(prefix="/chat", tags=["chat"])
 db = init_firebase()
@@ -56,3 +58,13 @@ async def get_messages(
     doc_data = snapshot.to_dict() or {}
     messages = doc_data.get("messages", [])
     return GetMessagesResponse(messages=messages)
+
+
+@chat_router.post("/memory-search")
+async def memory_search(payload: MemorySearchRequest) -> MemorySearchResponse:
+    result = search_agent(
+        payload.question,
+        uid=payload.uid,
+        timestamp=payload.timestamp,
+    )
+    return MemorySearchResponse(result=result)

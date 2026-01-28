@@ -474,7 +474,6 @@ function App({ user }: AppProps) {
               setLoading={setLoading}
               setStatus={setStatus}
               setError={setError}
-              minPhotosRequired={MIN_PHOTOS_REQUIRED}
               initialMessages={persistedMessages ?? undefined}
               uid={user?.uid ?? null}
               onNewScan={handleNewScan}

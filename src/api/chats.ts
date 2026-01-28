@@ -3,6 +3,10 @@ import type {
   ChatMessage,
   StoreMessageRequest,
   StoreMessageResponse,
+  ChatTurnRequest,
+  ChatTurnResponse,
+  WorkflowRequest,
+  WorkflowResponse,
 } from '../types/chats'
 
 export async function getMessages(uid: string, chatId?: string): Promise<ChatMessage[]> {
@@ -35,4 +39,45 @@ export async function storeMessage(payload: StoreMessageRequest): Promise<StoreM
   }
 
   return (await response.json()) as StoreMessageResponse
+}
+
+/**
+ * Send a chat message and get AI response.
+ * Messages are automatically persisted on the backend.
+ */
+export async function chatTurn(payload: ChatTurnRequest): Promise<ChatTurnResponse> {
+  const response = await fetch(`${BASE_URL}/chat/turn`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  })
+
+  if (!response.ok) {
+    throw new Error(`Chat turn failed: ${response.statusText}`)
+  }
+
+  return (await response.json()) as ChatTurnResponse
+}
+
+/**
+ * Run the full initial skincare analysis workflow.
+ * Returns verification, analysis, ratings, and shopping recommendations.
+ * Messages are automatically persisted on the backend.
+ */
+export async function runWorkflow(payload: WorkflowRequest): Promise<WorkflowResponse> {
+  const response = await fetch(`${BASE_URL}/chat/workflow`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  })
+
+  if (!response.ok) {
+    throw new Error(`Workflow failed: ${response.statusText}`)
+  }
+
+  return (await response.json()) as WorkflowResponse
 }

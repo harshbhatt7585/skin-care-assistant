@@ -1,13 +1,14 @@
-from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel
 
+from schema.chat import ChatMessage
+
 
 class ConversationRequest(BaseModel):
+    messages: list[ChatMessage]
+    chat_id: str
     uid: str
-    question: str
-    timestamp: datetime | None = None
 
 
 class ConversationResponse(BaseModel):

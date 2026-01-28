@@ -8,9 +8,8 @@ import {
   type SetStateAction,
 } from 'react'
 import ChatInterface, { type ChatMessage as UiChatMessage } from '../ChatInterface'
-import { runChatTurn, type ConversationTurn } from '../../lib/openai'
-import type { ChatMessage as PersistedChatMessage } from '../../types/chats'
-import { storeMessage as storeMessageApi } from '../../api/chats'
+import type { ChatMessage as PersistedChatMessage, ConversationTurn } from '../../types/chats'
+import { chatTurn } from '../../api/chats'
 
 export type ChatsHandle = {
   replaceWithAssistantMessages: (messages: string[], historySnapshot: ConversationTurn[]) => void
@@ -42,7 +41,6 @@ type ChatsProps = {
   setLoading: Dispatch<SetStateAction<boolean>>
   setStatus: Dispatch<SetStateAction<string>>
   setError: Dispatch<SetStateAction<string | null>>
-  minPhotosRequired: number
   initialMessages?: PersistedChatMessage[]
   uid: string | null
   chatId?: string | null
@@ -59,7 +57,6 @@ const Chats = forwardRef<ChatsHandle, ChatsProps>(
       setLoading,
       setStatus,
       setError,
-      minPhotosRequired,
       initialMessages,
       uid,
       chatId,
@@ -71,40 +68,6 @@ const Chats = forwardRef<ChatsHandle, ChatsProps>(
     const [messages, setMessages] = useState<UiChatMessage[]>([])
     const [history, setHistory] = useState<ConversationTurn[]>([])
     const [input, setInput] = useState('')
-
-    const persistMessages = async (
-      entries: Array<{ role: ConversationTurn['role']; content: string }>,
-    ) => {
-      if (!uid || !entries.length) {
-        return
-      }
-
-      const chatIdentifier = (chatId ?? uid)?.trim()
-      if (!chatIdentifier) {
-        return
-      }
-
-      const formatted = entries.map(
-        ({ role, content }) =>
-          ({
-            role,
-            content,
-            timestamp: new Date().toISOString(),
-            content_type: 'text',
-          }) satisfies PersistedChatMessage,
-      )
-
-      try {
-        await storeMessageApi({
-          chat_id: chatIdentifier,
-          uid,
-          messages: formatted,
-        })
-        onPersistedMessages?.(formatted)
-      } catch (err) {
-        console.error('Failed to store chat messages', err)
-      }
-    }
 
     useEffect(() => {
       if (!initialMessages) {
@@ -134,12 +97,25 @@ const Chats = forwardRef<ChatsHandle, ChatsProps>(
           })),
         )
         setHistory(historySnapshot)
-        void persistMessages(newAssistantMessages.map((content) => ({ role: 'assistant', content })))
+        // Notify parent about new messages (backend already persisted them)
+        const formatted = newAssistantMessages.map((content) => ({
+          role: 'assistant' as const,
+          content,
+          timestamp: new Date().toISOString(),
+          content_type: 'text',
+        }))
+        onPersistedMessages?.(formatted)
       },
       appendAssistantMessage(content, historySnapshot) {
         setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'assistant', content }])
         setHistory(historySnapshot)
-        void persistMessages([{ role: 'assistant', content }])
+        // Notify parent about new message (backend already persisted it)
+        onPersistedMessages?.([{
+          role: 'assistant',
+          content,
+          timestamp: new Date().toISOString(),
+          content_type: 'text',
+        }])
       },
       reset() {
         setMessages([])
@@ -148,36 +124,42 @@ const Chats = forwardRef<ChatsHandle, ChatsProps>(
       },
     }))
 
-    const runAgentTurn = async (
-      photoDataUrls: string[],
-      nextHistory: ConversationTurn[],
-    ): Promise<ConversationTurn[] | undefined> => {
+    const handleSend = async (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault()
+      if (!input.trim() || isLoading) {
+        return
+      }
+
+      const userMessage = input.trim()
+      setInput('')
+
+      // Optimistically add user message to UI
+      setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'user', content: userMessage }])
+
       try {
         setLoading(true)
         setStatus('Consulting the cosmetist...')
-        const baseHistory: ConversationTurn[] =
-          nextHistory.length === 0
-            ? [
-                {
-                  role: 'user' as const,
-                  content:
-                    'Please analyze my bare-face photo and outline AM/PM rituals. Write analysis in points, Write concerns if acne, pigmentation, dark spots, redness, wrinkles, etc. and give rating on these conditions: Hydration, Oil Balance, Tone, Barrier Strength, Sensitivity. Dont explain anything, just the points and ratings.',
-                },
-              ]
-            : nextHistory
 
-        const reply = await runChatTurn({
-          photoDataUrls,
-          history: baseHistory,
+        // Call backend API
+        const response = await chatTurn({
+          uid: uid ?? '',
+          chat_id: chatId ?? uid ?? undefined,
+          photo_data_urls: photos,
+          history,
+          message: userMessage,
           country: country ?? 'us',
         })
 
-        const finalHistory: ConversationTurn[] = [...baseHistory, { role: 'assistant', content: reply }]
-        setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: reply }])
-        setHistory(finalHistory)
+        // Update UI with assistant response
+        setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: response.reply }])
+        setHistory(response.history)
         setStatus('Done. Ask anything else or upload again to iterate.')
-        void persistMessages([{ role: 'assistant', content: reply }])
-        return finalHistory
+
+        // Notify parent about persisted messages
+        onPersistedMessages?.([
+          { role: 'user', content: userMessage, timestamp: new Date().toISOString(), content_type: 'text' },
+          { role: 'assistant', content: response.reply, timestamp: new Date().toISOString(), content_type: 'text' },
+        ])
       } catch (err) {
         console.error(err)
         setError(
@@ -189,22 +171,6 @@ const Chats = forwardRef<ChatsHandle, ChatsProps>(
       } finally {
         setLoading(false)
       }
-    }
-
-    const handleSend = async (event: FormEvent<HTMLFormElement>) => {
-      event.preventDefault()
-      if (!input.trim() || photos.length < minPhotosRequired || isLoading) {
-        return
-      }
-
-      const userTurn: ConversationTurn = { role: 'user', content: input.trim() }
-      const nextHistory = [...history, userTurn]
-
-      setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'user', content: userTurn.content }])
-      setHistory(nextHistory)
-      setInput('')
-      void persistMessages([{ role: 'user', content: userTurn.content }])
-      await runAgentTurn(photos, nextHistory)
     }
 
     return (

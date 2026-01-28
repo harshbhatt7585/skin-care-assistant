@@ -360,13 +360,15 @@ Respond with JSON only:"""
             print("calling RAGTool")
             desired_k = args.get("k") or 5
             chunk = rag_tool(args["query"], desired_k)
+            print("chunk: ", chunk)
+            return None
 
-            return search_agent(
-                question,
-                uid=uid,
-                timestamp=timestamp,
-                chunks=chunk,
-            )
+            # return search_agent(
+            #     question,
+            #     uid=uid,
+            #     timestamp=timestamp,
+            #     chunks=chunk,
+            # )
         else:
             print("no args found")
 

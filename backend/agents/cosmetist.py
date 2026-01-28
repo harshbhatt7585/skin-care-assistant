@@ -169,6 +169,7 @@ def run_chat_turn(
     photo_data_urls: list[str],
     history: list[dict],
     country: str = "us",
+    memory: dict = None,
 ) -> str:
     """
     Run a single chat turn with the cosmetist agent.
@@ -183,6 +184,13 @@ def run_chat_turn(
     """
     messages: list[dict] = [{"role": "system", "content": COSMETIST_SYSTEM_PROMPT}]
 
+    # Format memory context if available
+    memory_context = ""
+    if memory and memory.get("found") and memory.get("answer"):
+        memory_context = (
+            f"\n\n[RELEVANT CONTEXT FROM USER'S HISTORY]: {memory['answer']}"
+        )
+
     # Add photo context if provided
     if photo_data_urls:
         text = (
@@ -194,12 +202,20 @@ def run_chat_turn(
             {
                 "role": "user",
                 "content": [
-                    {"type": "text", "text": text},
+                    {"type": "text", "text": f"{text}{memory_context}"},
                     *[
                         {"type": "image_url", "image_url": {"url": url}}
                         for url in photo_data_urls
                     ],
                 ],
+            }
+        )
+    elif memory_context:
+        # Add memory context as a system hint even without photos
+        messages.append(
+            {
+                "role": "system",
+                "content": f"Relevant context from user's previous conversations:{memory_context}",
             }
         )
 

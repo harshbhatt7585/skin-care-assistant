@@ -18,6 +18,7 @@ from schema.chat import (
 )
 from schema.memory import MemorySearchRequest, MemorySearchResponse
 from schema.conversation import ConversationRequest, ConversationResponse
+from agents.memory import search_agent
 
 chat_router = APIRouter(prefix="/chat", tags=["chat"])
 db = init_firebase()
@@ -105,11 +106,18 @@ async def chat_turn(payload: ChatTurnRequest) -> ChatTurnResponse:
     history = [{"role": t.role, "content": t.content} for t in payload.history]
     history.append({"role": "user", "content": payload.message})
 
+    memory = search_agent(
+        payload.message,
+        uid=payload.uid,
+        timestamp=None,
+    )
+
     # Get AI response
     reply = run_chat_turn(
         photo_data_urls=payload.photo_data_urls,
         history=history,
         country=payload.country,
+        memory=memory,
     )
 
     # Add assistant response to history

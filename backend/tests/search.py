@@ -22,7 +22,7 @@ async def test_search_vector_db(monkeypatch):
             }
         ]
 
-    monkeypatch.setattr("routers.search.search_vector_db_util", dummy_search)
+    monkeypatch.setattr("services.search.search_memories", dummy_search)
 
     payload = {
         "query": "hydrating toner",
@@ -64,6 +64,9 @@ async def test_upload_vector_db(monkeypatch):
         assert timestamp == datetime(2024, 1, 1, tzinfo=timezone.utc)
         return "Documents uploaded"
 
+    monkeypatch.setattr(
+        "routers.search.get_gemini_embedding", lambda content: [0.1] * 1536
+    )
     monkeypatch.setattr("routers.search.upload_documents_util", dummy_upload)
     payload = {
         "uid": "user-123",

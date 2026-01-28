@@ -1,6 +1,7 @@
 """Chat endpoints for message storage and AI chat turns."""
 
-from datetime import datetime
+import logging
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends
 
@@ -19,6 +20,9 @@ from schema.chat import (
 from schema.memory import MemorySearchRequest, MemorySearchResponse
 from schema.conversation import ConversationRequest, ConversationResponse
 from agents.memory import search_agent
+from services.search import store_memory
+
+logger = logging.getLogger(__name__)
 
 chat_router = APIRouter(prefix="/chat", tags=["chat"])
 db = init_firebase()
@@ -119,6 +123,15 @@ async def chat_turn(payload: ChatTurnRequest) -> ChatTurnResponse:
         country=payload.country,
         memory=memory,
     )
+
+    try:
+        store_memory(
+            uid=payload.uid,
+            content=f"User: {payload.message}\nAssistant: {reply}",
+            timestamp=datetime.now(timezone.utc),
+        )
+    except Exception as exc:
+        logger.warning("Failed to store memory entry: %s", exc)
 
     # Add assistant response to history
     history.append({"role": "assistant", "content": reply})

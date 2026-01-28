@@ -7,8 +7,7 @@ from typing import Dict, List
 import requests
 from dotenv import load_dotenv
 
-from llm.gemini import get_gemini_embedding
-from utils.search import search_vector_db
+from services.search import search_memories
 
 load_dotenv()
 
@@ -232,10 +231,9 @@ def retrieve_top_k_chunks(
     *,
     k: int = 5,
 ) -> List[dict]:
-    """Retrieve top-k chunks from Azure AI Search for a user."""
+    """Retrieve top-k chunks using the shared search service."""
 
-    embedding = get_gemini_embedding(query, task_type="RETRIEVAL_QUERY")
-    results = search_vector_db(embedding, uid, timestamp, top_k=k)
+    results = search_memories(query, uid, timestamp, top_k=k)
 
     chunks: List[dict] = []
     for i, result in enumerate(results, start=1):

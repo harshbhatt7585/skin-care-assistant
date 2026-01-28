@@ -5,12 +5,10 @@ from schema.search import (
     UploadVectorDBRequest,
     UploadVectorDBResponse,
 )
-from utils.search import (
-    search_vector_db as search_vector_db_util,
-    upload_documents as upload_documents_util,
-)
+from utils.search import upload_documents as upload_documents_util
 from llm.gemini import get_gemini_embedding
 from fastapi import HTTPException
+from services.search import search_memories
 
 search_router = APIRouter(prefix="/search", tags=["search"])
 
@@ -21,9 +19,7 @@ async def search_vector_db(payload: SearchVectorDBRequest):
     uid = payload.uid
     timestamp = payload.timestamp
 
-    embedding = get_gemini_embedding(query)
-
-    results = search_vector_db_util(embedding, uid, timestamp)
+    results = search_memories(query, uid, timestamp)
     return SearchVectorDBResponse(results=results)
 
 

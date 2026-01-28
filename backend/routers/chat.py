@@ -10,6 +10,7 @@ from schema.chat import (
     GetMessagesResponse,
 )
 from schema.memory import MemorySearchRequest, MemorySearchResponse
+from schema.conversation import ConversationRequest, ConversationResponse
 
 chat_router = APIRouter(prefix="/chat", tags=["chat"])
 db = init_firebase()
@@ -69,3 +70,17 @@ async def memory_search(payload: MemorySearchRequest) -> MemorySearchResponse:
         timestamp=payload.timestamp,
     )
     return MemorySearchResponse(result=result)
+
+
+@chat_router.post("/conversation")
+async def conversation_endpoint(
+    payload: ConversationRequest,
+) -> ConversationResponse:
+    from agents.memory import search_agent
+
+    result = search_agent(
+        payload.question,
+        uid=payload.uid,
+        timestamp=payload.timestamp,
+    )
+    return ConversationResponse(result=result)

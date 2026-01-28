@@ -41,24 +41,9 @@ const Root = () => {
 
   if (checking) {
     return (
-      <div className="page auth-checking">
-        <div className="auth-loader">
-          <div className="auth-loader__orb">
-            <div className="auth-loader__ring" />
-            <div className="auth-loader__ring" />
-            <div className="auth-loader__ring" />
-            <div className="auth-loader__glow" />
-          </div>
-          <h1 className="auth-loader__brand">
-            <span className="auth-loader__brand-glow" aria-hidden="true">Glowly</span>
-            <span className="auth-loader__brand-text">Glowly</span>
-          </h1>
-          <p className="auth-loader__status">Preparing your experience…</p>
-          <div className="auth-loader__dots">
-            <span />
-            <span />
-            <span />
-          </div>
+      <div className="page loading-page">
+        <div className="loader">
+          <div className="loader__spinner" />
         </div>
       </div>
     )

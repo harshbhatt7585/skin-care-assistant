@@ -405,10 +405,8 @@ function App({ user }: AppProps) {
 
       <main className="simple-main">
         {isLoadingPersistedMessages ? (
-          <section className="messages-loader" aria-busy="true" aria-live="polite">
-            <div className="messages-loader__visual">
-              <div className="messages-loader__shimmer" />
-            </div>
+          <section className="loader" aria-busy="true" aria-live="polite">
+            <div className="loader__spinner" />
           </section>
         ) : shouldShowCapture ? (
           <section className="capture-panel">

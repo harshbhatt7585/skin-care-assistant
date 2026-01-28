@@ -1,4 +1,4 @@
-import type { FormEvent } from 'react'
+import { useEffect, type FormEvent } from 'react'
 import ProductShowcase from './ProductShowcase'
 import ShoppingPreview from './ShoppingPreview'
 import { parseProductSections, parseShoppingPayload, stripToolArtifacts } from '../lib/parsers'
@@ -20,6 +20,11 @@ type ChatInterfaceProps = {
 }
 
 const ChatInterface = ({ messages, inputValue, isLoading, onInputChange, onSubmit, onNewScan }: ChatInterfaceProps) => {
+  // Scroll window to bottom
+  useEffect(() => {
+    window.scrollTo(0, document.body.scrollHeight)
+  }, [messages, isLoading])
+
   return (
     <div className="chat-thread">
       <div className="messages">

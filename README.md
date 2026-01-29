@@ -4,14 +4,15 @@ Lightweight Vite + React experience where you upload a bare-faced photo, we run 
 
 ## Getting Started
 
+### Frontend
+
 1. Install dependencies:
    ```bash
    npm install
    ```
-2. Create `.env.local` (never commit it), add your OpenAI key, and (optionally) Serper key + Firebase project settings:
+2. Create `.env.local` (never commit it), add your Firebase settings, and point the app at your local API:
    ```env
-   VITE_OPENAI_API_KEY=sk-your-key
-   VITE_SERPER_API_KEY=serper-your-key
+   VITE_API_URL=http://localhost:8000
    VITE_FIREBASE_API_KEY=your-firebase-api-key
    VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
    VITE_FIREBASE_PROJECT_ID=your-project-id
@@ -26,11 +27,30 @@ Lightweight Vite + React experience where you upload a bare-faced photo, we run 
    ```
 4. Visit the printed URL, upload a clear photo, and let the assistant generate a ritual + shoppable suggestions.
 
+### Backend API
+
+1. Create a virtualenv and install dependencies:
+   ```bash
+   cd backend
+   pip install -r requirements.txt
+   ```
+2. Create `backend/.env` with your keys (never commit it):
+   ```env
+   OPENAI_API_KEY=sk-your-key
+   SERPER_API_KEY=serper-your-key
+   GEMINI_API_KEY=gemini-your-key
+   ```
+   > Firebase credentials continue to load from `firebase-service.json` as before.
+3. Run the API locally:
+   ```bash
+   uvicorn app:app --reload
+   ```
+
 ## How It Works
 
-- The image never leaves the browser; we use a hidden `<canvas>` to capture pixel data and build heuristics for hydration, oil balance, tone, barrier strength, and sensitivity.
-- Those heuristics seed an OpenAI Responses run (`gpt-4o-mini`) that returns markdown with AM/PM rituals *and* a concise search query.
-- We send that query to Serper (Google Shopping) to fetch live product listings and surface them with links so you can review/buy directly.
+- The browser still uses a hidden `<canvas>` to capture pixel data, but the base64 payload is now streamed to the backend where the cosmetic agent lives.
+- The backend cosmetist agent (OpenAI `gpt-5-mini` + Serper tool call) emits progress events for verification, scanning, analyzing, and shopping so the UI can show live status updates as it works.
+- Shopping payloads are still sourced from Serper (Google Shopping) and returned in a normalized JSON format for the React UI to render.
 
 ## Scripts
 
@@ -40,5 +60,5 @@ Lightweight Vite + React experience where you upload a bare-faced photo, we run 
 
 ## Security Notes
 
-- The OpenAI key is injected client-side (`dangerouslyAllowBrowser`). For real deployments, proxy calls through your own backend and never expose secrets directly to browsers.
+- All OpenAI/Serper calls now originate from the backend service so secrets stay server-side. Keep `backend/.env` private and rotate keys regularly.
 - Image analysis is heuristic and for educational use only. Always prompt users to patch test and consult licensed professionals for medical questions.

@@ -8,7 +8,8 @@ import {
   type SetStateAction,
 } from 'react'
 import ChatInterface, { type ChatMessage as UiChatMessage } from '../ChatInterface'
-import { runChatTurn, type ConversationTurn } from '../../lib/openai'
+import { runChatTurn } from '../../lib/openai'
+import type { ConversationTurn } from '../../types/conversation'
 import type { ChatMessage as PersistedChatMessage } from '../../types/chats'
 import { storeMessage as storeMessageApi } from '../../api/chats'
 

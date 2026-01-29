@@ -1,9 +1,5 @@
-import { createCosmetistAgent } from './agent'
-
-export type ConversationTurn = {
-  role: 'user' | 'assistant'
-  content: string
-}
+import type { ConversationTurn } from '../types/conversation'
+import { runBackendChatTurn, streamScanWorkflow } from '../api/scan'
 
 export const runChatTurn = async ({
   photoDataUrls,
@@ -17,17 +13,22 @@ export const runChatTurn = async ({
   if (!photoDataUrls.length) {
     throw new Error('runChatTurn requires at least one photo.')
   }
-  const agent = createCosmetistAgent(photoDataUrls, country)
-  const conversation = history.length
-    ? history
-    : [
-        {
-          role: 'user' as const,
-          content:
-            'Please analyze my scan and outline AM/PM rituals. Ask if I want shopping links before calling any tools.',
-        },
-      ]
-  return agent.respond(conversation)
+  const seededHistory =
+    history.length > 0
+      ? history
+      : [
+          {
+            role: 'user' as const,
+            content:
+              'Please analyze my scan and outline AM/PM rituals. Ask if I want shopping links before calling any tools.',
+          },
+        ]
+  const { reply } = await runBackendChatTurn({
+    photoDataUrls,
+    country,
+    history: seededHistory,
+  })
+  return reply
 }
 
 export type AgentWorkflowStep = 'verifying' | 'scanning' | 'analyzing' | 'shopping'
@@ -53,50 +54,66 @@ export const runInitialWorkflowSequenced = async ({
   if (!photoDataUrls.length) {
     throw new Error('runInitialWorkflowSequenced requires at least one photo.')
   }
-  const agent = createCosmetistAgent(photoDataUrls, country)
-  const history: ConversationTurn[] = []
 
-  const promptAndRespond = async (
-    content: string,
-    cb?: (reply: string, historySnapshot: ConversationTurn[]) => void,
-  ) => {
-    const prompt: ConversationTurn = { role: 'user', content }
-    history.push(prompt)
-    const reply = await agent.respond(history)
-    console.log('reply', reply)
-    history.push({ role: 'assistant', content: reply })
-    cb?.(reply, [...history])
-    return reply
+  const controller = new AbortController()
+  let finalHistory: ConversationTurn[] = []
+  let workflowError: string | null = null
+
+  await streamScanWorkflow({
+    photoDataUrls,
+    country,
+    signal: controller.signal,
+    onEvent: (event) => {
+      if (event.step === 'error' || event.status === 'failed') {
+        workflowError = event.error ?? event.message ?? 'Scan failed.'
+        controller.abort()
+        callbacks?.onStepChange?.(null)
+        return
+      }
+
+      if (event.step === 'complete') {
+        finalHistory = event.history ?? []
+        callbacks?.onStepChange?.(null)
+        return
+      }
+
+      const step = event.step as AgentWorkflowStep
+
+      if (event.status === 'in_progress') {
+        callbacks?.onStepChange?.(step)
+        return
+      }
+
+      if (event.status === 'failed') {
+        workflowError = event.message ?? 'Scan failed.'
+        controller.abort()
+        callbacks?.onStepChange?.(null)
+        return
+      }
+
+      if (step === 'scanning' && event.analysis) {
+        callbacks?.onAnalysis?.(event.analysis, event.history ?? [])
+        return
+      }
+
+      if (step === 'analyzing' && event.ratings) {
+        callbacks?.onRatings?.(event.ratings, event.history ?? [])
+        return
+      }
+
+      if (step === 'shopping' && event.shopping) {
+        callbacks?.onShopping?.(event.shopping, event.history ?? [])
+      }
+    },
+  }).catch((error) => {
+    if (!controller.signal.aborted) {
+      throw error
+    }
+  })
+
+  if (workflowError) {
+    throw new Error(workflowError)
   }
 
-  callbacks?.onStepChange?.('verifying')
-  const reply = await promptAndRespond(
-    "Here are 3 images of human face. requires images to be front face, left side face, and right side face. If you find that the required images are not present, give negative response and ask tell the user what they are missing in simple and less words. give response in json like {success: false/true, message: '...'}"
-  )
-  const jsonReply = await JSON.parse(reply)
-  if (!jsonReply.success) {
-    throw new Error(jsonReply.message)
-  }
-
-  callbacks?.onStepChange?.('scanning')
-  await promptAndRespond(
-    'Please analyze my bare-face photo. List bullet-point concerns (acne, pigmentation, redness, wrinkles, etc.) and rate Hydration, Oil Balance, Tone, Barrier Strength, and Sensitivity on a 1–5 scale. Keep it concise.',
-    callbacks?.onAnalysis,
-  )
-
-  callbacks?.onStepChange?.('analyzing')
-  await promptAndRespond(
-    'From that analysis, output a JSON object with keys hydration, oilBalance, tone, barrierStrength, sensitivity (numbers 1-5). No prose.',
-    callbacks?.onRatings,
-  )
-
-  callbacks?.onStepChange?.('shopping')
-  await promptAndRespond(
-    'Using that assessment, fetch current shopping options with links and thumbnails for the AM/PM plan. Use tools if needed and return markdown with inline product cards. Format the response in this format: ```json\n{\n  "products": [\n    {\n      "title": "Example Product Title",\n      "source": "ExampleSource.com",\n      "link": "https://example.com/product-page",\n      "price": "$0.00",\n      "imageUrl": "https://example.com/product-image.jpg",\n      "rating": 0,\n      "ratingCount": 0,\n      "productId": "123456789",\n      "position": 1\n    }\n  ]\n}\n```',
-    callbacks?.onShopping,
-  )
-
-  callbacks?.onStepChange?.(null)
-
-  return { history }
+  return { history: finalHistory }
 }

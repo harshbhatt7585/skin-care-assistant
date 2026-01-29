@@ -346,7 +346,7 @@ function App({ user }: AppProps) {
 
   const hasPersistedMessages = (persistedMessages?.length ?? 0) > 0
   const isLoadingPersistedMessages = Boolean(user?.uid) && persistedMessages === null
-  const shouldShowCapture = !hasPersistedMessages
+  const shouldShowCapture = !hasPersistedMessages && photos.length < MIN_PHOTOS_REQUIRED
 
   const handlePersistedMessages = (messages: PersistedChatMessage[]) => {
     setPersistedMessages((prev) => {

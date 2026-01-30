@@ -12,6 +12,9 @@ node_modules
 dist
 dist-ssr
 *.local
+test_outputs/
+inputs/
+scripts/.matplotlib-cache/
 
 # Editor directories and files
 .vscode/*

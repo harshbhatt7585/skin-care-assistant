@@ -57,3 +57,13 @@ class DeleteScanRequest(BaseModel):
 
 class DeleteScanResponse(BaseModel):
     success: bool
+
+
+class StoreScanPayload(BaseModel):
+    uid: str
+    scan_id: str
+    data: dict[str, Any]
+
+
+class StoreScanResponse(BaseModel):
+    success: bool

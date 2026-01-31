@@ -8,6 +8,8 @@ from schema.scan import (
     GetUserScansResponse,
     DeleteScanRequest,
     DeleteScanResponse,
+    StoreScanPayload,
+    StoreScanResponse,
 )
 
 scan_router = APIRouter(prefix="/scan", tags=["scan"])
@@ -35,3 +37,9 @@ def get_user_scans(payload: GetUserScansRequest = Depends()) -> GetUserScansResp
 def delete_scan(payload: DeleteScanRequest) -> DeleteScanResponse:
     # Placeholder—implement deletion when scan schema is finalized
     return DeleteScanResponse(success=True)
+
+
+@scan_router.post("/store-scan", response_model=StoreScanResponse)
+def store_scan(payload: StoreScanPayload) -> StoreScanResponse:
+    # Placeholder—persist to Firestore when schema finalized
+    return StoreScanResponse(success=True)

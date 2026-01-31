@@ -13,7 +13,7 @@ from schema.scan import (
     ScanWorkflowRequest,
 )
 
-scan_router = APIRouter(prefix="/scan", tags=["scan"])
+agent_router = APIRouter(prefix="/agent", tags=["agent"])
 
 
 async def _agent_prompt(agent, history: List[dict], content: str):
@@ -27,7 +27,7 @@ def _serialize_event(payload: dict) -> bytes:
     return f"data: {json.dumps(payload)}\n\n".encode("utf-8")
 
 
-@scan_router.post("/workflow")
+@agent_router.post("/workflow")
 async def run_workflow(payload: ScanWorkflowRequest) -> StreamingResponse:
     agent = create_cosmetist_agent(
         payload.photo_data_urls, (payload.country or "us").lower()
@@ -139,7 +139,7 @@ async def run_workflow(payload: ScanWorkflowRequest) -> StreamingResponse:
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 
 
-@scan_router.post("/chat-turn", response_model=ScanChatTurnResponse)
+@agent_router.post("/chat-turn", response_model=ScanChatTurnResponse)
 async def run_chat_turn(payload: ScanChatTurnRequest) -> ScanChatTurnResponse:
     agent = create_cosmetist_agent(payload.photo_data_urls, payload.country.lower())
     reply = await asyncio.to_thread(

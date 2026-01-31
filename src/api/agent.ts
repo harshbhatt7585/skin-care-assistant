@@ -30,7 +30,7 @@ export async function streamScanWorkflow({
     throw new Error('At least one photo is required to start the workflow.')
   }
 
-  const response = await fetch(`${BASE_URL}/scan/workflow`, {
+  const response = await fetch(`${BASE_URL}/agent/workflow`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -40,7 +40,7 @@ export async function streamScanWorkflow({
   })
 
   if (!response.ok || !response.body) {
-    throw new Error('Failed to start scan workflow.')
+    throw new Error('Failed to start agent workflow.')
   }
 
   const reader = response.body.getReader()
@@ -101,7 +101,7 @@ export async function runBackendChatTurn({
   if (!photoDataUrls.length) {
     throw new Error('runBackendChatTurn requires at least one photo.')
   }
-  const response = await fetch(`${BASE_URL}/scan/chat-turn`, {
+  const response = await fetch(`${BASE_URL}/agent/chat-turn`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

@@ -7,7 +7,7 @@ from database.firebase import init_firebase
 from routers.auth import auth_router
 from routers.search import search_router
 from routers.chat import chat_router
-from routers.scan import scan_router
+from routers.agent import agent_router
 
 
 @asynccontextmanager
@@ -29,7 +29,7 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(search_router)
 app.include_router(chat_router)
-app.include_router(scan_router)
+app.include_router(agent_router)
 
 
 if __name__ == "__main__":

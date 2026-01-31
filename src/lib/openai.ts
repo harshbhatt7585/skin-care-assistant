@@ -1,5 +1,5 @@
 import type { ConversationTurn } from '../types/conversation'
-import { runBackendChatTurn, streamScanWorkflow } from '../api/scan'
+import { runBackendChatTurn, streamScanWorkflow } from '../api/agent'
 
 export const runChatTurn = async ({
   photoDataUrls,

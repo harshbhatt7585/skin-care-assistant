@@ -4,6 +4,7 @@ import { getAuth, onAuthStateChanged, type User } from 'firebase/auth'
 import App from './App'
 import SignIn from './components/SignIn'
 import Landing from './components/Landing'
+import Loader from './components/Loader/Loader'
 
 type RouteProps = {
   user: User | null
@@ -41,24 +42,9 @@ const Root = () => {
 
   if (checking) {
     return (
-      <div className="page auth-checking">
-        <div className="auth-loader">
-          <div className="auth-loader__orb">
-            <div className="auth-loader__ring" />
-            <div className="auth-loader__ring" />
-            <div className="auth-loader__ring" />
-            <div className="auth-loader__glow" />
-          </div>
-          <h1 className="auth-loader__brand">
-            <span className="auth-loader__brand-glow" aria-hidden="true">Glowly</span>
-            <span className="auth-loader__brand-text">Glowly</span>
-          </h1>
-          <p className="auth-loader__status">Preparing your experience…</p>
-          <div className="auth-loader__dots">
-            <span />
-            <span />
-            <span />
-          </div>
+      <div className="page auth-checking" aria-busy="true" aria-live="polite">
+        <div className="global-loader">
+          <Loader />
         </div>
       </div>
     )

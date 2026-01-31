@@ -207,9 +207,9 @@ const Chats = forwardRef<ChatsHandle, ChatsProps>(
       setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'user', content: trimmed }])
       setHistory(nextHistory)
       setInput('')
-      void persistMessages([{ role: 'user', content: trimmed }])
 
       await runAgentTurn(photos, nextHistory)
+      void persistMessages([{ role: 'user', content: trimmed }])
     }
 
     return (

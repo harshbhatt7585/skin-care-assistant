@@ -1,10 +1,12 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, type ChangeEvent, type FormEvent } from 'react'
 import './App.css'
 import ScanVisualization from './components/ScanVisualization'
 import ScanMetricsPanel, { type ScanMetrics } from './components/ScanMetricsPanel'
 import Capture from './components/Capture'
 import Chats, { type ChatsHandle } from './components/Chats'
 import Inventory from './components/Inventory/Inventory'
+import type { InventoryItem } from './types/user'
+import { fetchUser, addInventoryItem } from './api/user'
 import Loader from './components/Loader/Loader'
 import { runInitialWorkflowSequenced, type AgentWorkflowStep } from './lib/openai'
 import { detectFaceFromDataUrl } from './lib/faceDetection'
@@ -47,7 +49,16 @@ function App({ user }: AppProps) {
   const chatsRef = useRef<ChatsHandle | null>(null)
   const [agentStep, setAgentStep] = useState<AgentWorkflowStep | null>(null)
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([])
+  const [inventoryLoading, setInventoryLoading] = useState(false)
   const [isInventoryOpen, setInventoryOpen] = useState(false)
+  const [showInventoryForm, setShowInventoryForm] = useState(false)
+  const [inventoryMode, setInventoryMode] = useState<'photo' | 'text'>('photo')
+  const [inventoryName, setInventoryName] = useState('')
+  const [inventoryDescription, setInventoryDescription] = useState('')
+  const [inventoryImage, setInventoryImage] = useState<string | null>(null)
+  const [inventoryError, setInventoryError] = useState<string | null>(null)
+  const [inventorySaving, setInventorySaving] = useState(false)
 
 
   const activateCapture = () => {
@@ -370,6 +381,81 @@ function App({ user }: AppProps) {
 
   const handleVideoReady = () => setCameraReady(true)
 
+  useEffect(() => {
+    if (!isInventoryOpen) return
+    let cancelled = false
+    const loadInventory = async () => {
+      try {
+        setInventoryLoading(true)
+        const data = await fetchUser(user?.uid ?? 'demo')
+        if (!cancelled) setInventoryItems(data.inventory ?? [])
+      } catch (error) {
+        console.error('Failed to load inventory', error)
+        if (!cancelled) setInventoryItems([])
+      } finally {
+        if (!cancelled) setInventoryLoading(false)
+      }
+    }
+    loadInventory()
+    return () => {
+      cancelled = true
+    }
+  }, [isInventoryOpen, user?.uid])
+
+  const resetInventoryForm = () => {
+    setInventoryName('')
+    setInventoryDescription('')
+    setInventoryImage(null)
+    setInventoryError(null)
+    setInventoryMode('photo')
+    setInventorySaving(false)
+    setShowInventoryForm(false)
+  }
+
+  const handleInventoryFile = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) {
+      setInventoryImage(null)
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setInventoryImage(reader.result)
+        if (!inventoryName.trim()) {
+          setInventoryName(file.name.replace(/\.[^.]+$/, ''))
+        }
+      }
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleInventorySubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!inventoryName.trim()) {
+      setInventoryError('Name required')
+      return
+    }
+    if (inventoryMode === 'photo' && !inventoryImage) {
+      setInventoryError('Upload a photo first.')
+      return
+    }
+    try {
+      setInventorySaving(true)
+      const payload: InventoryItem = {
+        name: inventoryName.trim(),
+        description: inventoryDescription.trim() || undefined,
+        image: inventoryMode === 'photo' ? inventoryImage ?? undefined : undefined,
+      }
+      const saved = await addInventoryItem(payload)
+      setInventoryItems((prev) => [saved, ...prev])
+      resetInventoryForm()
+    } catch (error) {
+      setInventoryError(error instanceof Error ? error.message : 'Failed to save item')
+      setInventorySaving(false)
+    }
+  }
+
   return (
     <div className="page">
       <header className="hero">
@@ -510,7 +596,85 @@ function App({ user }: AppProps) {
           >
             ×
           </button>
-          <Inventory uid={user?.uid ?? null} />
+          <Inventory items={inventoryItems} loading={inventoryLoading} onAddClick={() => setShowInventoryForm(true)} />
+        </div>
+      )}
+
+      {showInventoryForm && (
+        <div className="inventory-overlay" role="dialog" aria-modal="true" aria-label="Add inventory item">
+          <div className="inventory-overlay__backdrop" onClick={resetInventoryForm} />
+          <div className="inventory-overlay__content">
+            <button className="inventory-overlay__close" onClick={resetInventoryForm} aria-label="Close">
+              ×
+            </button>
+            <div className="inventory-panel__tabs" role="tablist">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={inventoryMode === 'photo'}
+                className={inventoryMode === 'photo' ? 'is-active' : ''}
+                onClick={() => setInventoryMode('photo')}
+              >
+                Upload photo
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={inventoryMode === 'text'}
+                className={inventoryMode === 'text' ? 'is-active' : ''}
+                onClick={() => setInventoryMode('text')}
+              >
+                Just type
+              </button>
+            </div>
+
+            <form className="inventory-form" onSubmit={handleInventorySubmit}>
+              <label className="inventory-form__field">
+                <span>Product name</span>
+                <input
+                  type="text"
+                  placeholder="e.g., Minimalist B5 Gel"
+                  value={inventoryName}
+                  onChange={(event) => setInventoryName(event.target.value)}
+                />
+              </label>
+
+              <label className="inventory-form__field">
+                <span>{inventoryMode === 'photo' ? 'Notes' : 'Details'}</span>
+                <textarea
+                  rows={inventoryMode === 'photo' ? 2 : 3}
+                  placeholder="Texture, usage slot, how it feels..."
+                  value={inventoryDescription}
+                  onChange={(event) => setInventoryDescription(event.target.value)}
+                />
+              </label>
+
+              {inventoryMode === 'photo' && (
+                <label className="inventory-form__field">
+                  <span>Upload photo</span>
+                  <div className="inventory-form__upload">
+                    <input type="file" accept="image/*" onChange={handleInventoryFile} />
+                    <p>Drop a product shot or browse files</p>
+                    {inventoryImage && (
+                      <div className="inventory-form__preview">
+                        <img src={inventoryImage} alt={inventoryName || 'Product preview'} />
+                      </div>
+                    )}
+                  </div>
+                </label>
+              )}
+
+              {inventoryError && <p className="inventory-form__error">{inventoryError}</p>}
+              <div className="inventory-form__actions">
+                <button type="button" className="inventory-form__cancel" onClick={resetInventoryForm}>
+                  Cancel
+                </button>
+                <button type="submit" className="inventory-form__submit" disabled={inventorySaving}>
+                  {inventorySaving ? 'Saving…' : 'Save to cabinet'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

@@ -9,6 +9,7 @@ from routers.search import search_router
 from routers.chat import chat_router
 from routers.agent import agent_router
 from routers.user import user_router
+from routers.scan import scan_router
 
 
 @asynccontextmanager
@@ -32,6 +33,7 @@ app.include_router(search_router)
 app.include_router(chat_router)
 app.include_router(agent_router)
 app.include_router(user_router)
+app.include_router(scan_router)
 
 
 if __name__ == "__main__":

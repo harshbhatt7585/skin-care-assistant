@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -33,3 +33,27 @@ class WorkflowEvent(BaseModel):
     shopping: str | None = None
     error: str | None = None
     history: list[ConversationTurn] | None = None
+
+
+class GetScanRequest(BaseModel):
+    scan_id: str
+
+
+class GetScanResponse(BaseModel):
+    scan: dict[str, Any]
+
+
+class GetUserScansRequest(BaseModel):
+    uid: str
+
+
+class GetUserScansResponse(BaseModel):
+    scans: list[dict[str, Any]]
+
+
+class DeleteScanRequest(BaseModel):
+    scan_id: str
+
+
+class DeleteScanResponse(BaseModel):
+    success: bool

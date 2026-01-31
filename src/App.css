@@ -375,12 +375,23 @@ a {
   top: 0;
   right: 0;
   bottom: 0;
-  max-width: 400px;
-  width: 100%;
+  width: min(420px, 100vw);
   padding: 32px 24px;
-  background: rgba(0, 0, 0, 0.65);
+  background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(18px);
   overflow-y: auto;
+  z-index: 120;
+}
+
+.inventory-drawer__close {
+  border: none;
+  background: transparent;
+  color: rgba(247, 251, 255, 0.85);
+  font-size: 1.5rem;
+  cursor: pointer;
+  position: absolute;
+  top: 12px;
+  right: 16px;
 }
 
 /* ==========================================

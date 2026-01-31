@@ -123,8 +123,40 @@ const Inventory = ({ uid }: InventoryProps) => {
       </header>
 
       <div className="inventory-panel__body">
-        {showForm && (
-          <>
+        <section className="inventory-list" aria-live="polite">
+          <h3>In rotation</h3>
+          {loading ? (
+            <p className="inventory-list__empty">Loading your products…</p>
+          ) : items.length === 0 ? (
+            <p className="inventory-list__empty">
+              No products logged yet. Tap the + to add your cleanser, serum, or moisturizer.
+            </p>
+          ) : (
+            <ul>
+              {items.map((product, idx) => (
+                <li key={`${product.name}-${idx}`}>
+                  {product.image && (
+                    <span className="inventory-list__thumb">
+                      <img src={product.image} alt={product.name} />
+                    </span>
+                  )}
+                  <p className="inventory-list__name">{product.name}</p>
+                  {product.description && (
+                    <p className="inventory-list__note">{product.description}</p>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
+
+      {showForm && (
+        <div className="inventory-modal" role="dialog" aria-modal="true" aria-label="Add product">
+          <div className="inventory-modal__content">
+            <button type="button" className="inventory-modal__close" onClick={resetForm} aria-label="Close">
+              ×
+            </button>
             <div className="inventory-panel__tabs" role="tablist">
               <button
                 type="button"
@@ -192,36 +224,9 @@ const Inventory = ({ uid }: InventoryProps) => {
                 </button>
               </div>
             </form>
-          </>
-        )}
-
-        <section className="inventory-list" aria-live="polite">
-          <h3>In rotation</h3>
-          {loading ? (
-            <p className="inventory-list__empty">Loading your products…</p>
-          ) : items.length === 0 ? (
-            <p className="inventory-list__empty">
-              No products logged yet. Tap the + to add your cleanser, serum, or moisturizer.
-            </p>
-          ) : (
-            <ul>
-              {items.map((product, idx) => (
-                <li key={`${product.name}-${idx}`}>
-                  {product.image && (
-                    <span className="inventory-list__thumb">
-                      <img src={product.image} alt={product.name} />
-                    </span>
-                  )}
-                  <p className="inventory-list__name">{product.name}</p>
-                  {product.description && (
-                    <p className="inventory-list__note">{product.description}</p>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      </div>
+          </div>
+        </div>
+      )}
     </aside>
   )
 }

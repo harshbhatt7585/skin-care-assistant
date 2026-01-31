@@ -503,7 +503,14 @@ function App({ user }: AppProps) {
       </main>
       {isInventoryOpen && (
         <div className="inventory-drawer" role="dialog" aria-label="Skin care inventory">
-          <Inventory />
+          <button
+            className="inventory-drawer__close"
+            aria-label="Close inventory"
+            onClick={() => setInventoryOpen(false)}
+          >
+            ×
+          </button>
+          <Inventory uid={user?.uid ?? null} />
         </div>
       )}
     </div>

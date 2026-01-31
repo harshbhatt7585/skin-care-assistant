@@ -1,4 +1,4 @@
-import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
+import { useEffect, useState } from 'react'
 import './Inventory.css'
 
 type Product = {

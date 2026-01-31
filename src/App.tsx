@@ -4,7 +4,7 @@ import ScanVisualization from './components/ScanVisualization'
 import ScanMetricsPanel, { type ScanMetrics } from './components/ScanMetricsPanel'
 import Capture from './components/Capture'
 import Chats, { type ChatsHandle } from './components/Chats'
-import Inventory, { type InventoryItem } from './components/Inventory/Inventory'
+import Inventory from './components/Inventory/Inventory'
 import Loader from './components/Loader/Loader'
 import { runInitialWorkflowSequenced, type AgentWorkflowStep } from './lib/openai'
 import { detectFaceFromDataUrl } from './lib/faceDetection'
@@ -47,7 +47,6 @@ function App({ user }: AppProps) {
   const chatsRef = useRef<ChatsHandle | null>(null)
   const [agentStep, setAgentStep] = useState<AgentWorkflowStep | null>(null)
   const [showUserMenu, setShowUserMenu] = useState(false)
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([])
   const [isInventoryOpen, setInventoryOpen] = useState(false)
 
 
@@ -369,19 +368,6 @@ function App({ user }: AppProps) {
     })
   }
 
-  const handleInventoryAdd = ({ name, note, image }: { name: string; note?: string; image?: string }) => {
-    setInventoryItems((prev) => [
-      {
-        id: crypto.randomUUID(),
-        name,
-        note,
-        image,
-        addedAt: new Date().toISOString(),
-      },
-      ...prev,
-    ])
-  }
-
   const handleVideoReady = () => setCameraReady(true)
 
   return (
@@ -517,7 +503,7 @@ function App({ user }: AppProps) {
       </main>
       {isInventoryOpen && (
         <div className="inventory-drawer" role="dialog" aria-label="Skin care inventory">
-          <Inventory items={inventoryItems} onAdd={handleInventoryAdd} />
+          <Inventory />
         </div>
       )}
     </div>

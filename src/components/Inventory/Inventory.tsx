@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent, type FormEvent } from 'react'
+import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 import './Inventory.css'
 
 export type InventoryItem = {
@@ -33,47 +33,14 @@ const Inventory = ({ items, onAdd }: InventoryProps) => {
   const [products, setProducts] = useState<Product[]>([])
 
 
-  const resetForm = () => {
-    setName('')
-    setNote('')
-    setImagePreview(null)
-    setError(null)
-  }
+  useEffect(() => {
+    const fetchProducts = async () => {
+      const products = await getProducts()
+      setProducts(products)
+    }
+    fetchProducts()
+  }, [])
 
-  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) {
-      setImagePreview(null)
-      return
-    }
-    const reader = new FileReader()
-    reader.onload = () => {
-      const result = typeof reader.result === 'string' ? reader.result : null
-      setImagePreview(result)
-      if (!name.trim()) {
-        setName(file.name.replace(/\.[^.]+$/, ''))
-      }
-    }
-    reader.readAsDataURL(file)
-  }
-
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    if (!name.trim()) {
-      setError('Add a product name first.')
-      return
-    }
-    if (mode === 'photo' && !imagePreview) {
-      setError('Upload a product photo to save this entry.')
-      return
-    }
-    onAdd({
-      name: name.trim(),
-      note: note.trim() || undefined,
-      image: mode === 'photo' ? imagePreview ?? undefined : undefined,
-    })
-    resetForm()
-  }
 
   return (
     <aside className="inventory-panel">

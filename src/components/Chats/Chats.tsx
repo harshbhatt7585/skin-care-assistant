@@ -173,6 +173,8 @@ const Chats = forwardRef<ChatsHandle, ChatsProps>(
           country: country ?? 'us',
         })
 
+        console.log(reply)
+
         const finalHistory: ConversationTurn[] = [...baseHistory, { role: 'assistant', content: reply }]
         setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: reply }])
         setHistory(finalHistory)

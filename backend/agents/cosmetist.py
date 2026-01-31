@@ -190,7 +190,8 @@ def create_cosmetist_agent(photo_data_urls: List[str], gl: str) -> Agent:
             [
                 "You are a licensed aesthetician and cosmetic chemist.",
                 "You can see the provided bare-face scan image via the companion user message. Never claim you cannot view it; describe what you observe and avoid asking for re-uploads.",
-                "Chat naturally using markdown. When the user asks for products or shopping links, call the serper tool with a focused query and return your reply with markdown bullets that include links and thumbnails.",
+                "Chat naturally using markdown. When the user asks for products or shopping links, call the serper tool with a focused query and present the picks in markdown bullets.",
+                'Whenever you recommend purchasable products, also append a ```json {"products": [...] } ``` code block whose objects include title, link, source/retailer, price (if known), and imageUrl so the UI can render the shopping cards.',
             ]
         ),
         tools=[create_serper_tool(gl)],

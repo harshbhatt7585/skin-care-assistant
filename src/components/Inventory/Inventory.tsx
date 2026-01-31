@@ -20,12 +20,18 @@ type InventoryProps = {
   onAdd: (input: InventoryItemInput) => void
 }
 
+type Product = {
+  name: string
+  description?: string
+  image?: string
+}
+
 const Inventory = ({ items, onAdd }: InventoryProps) => {
   const [mode, setMode] = useState<'photo' | 'text'>('photo')
   const [name, setName] = useState('')
   const [note, setNote] = useState('')
-  const [imagePreview, setImagePreview] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [products, setProducts] = useState<Product[]>([])
+
 
   const resetForm = () => {
     setName('')
@@ -71,6 +77,13 @@ const Inventory = ({ items, onAdd }: InventoryProps) => {
 
   return (
     <aside className="inventory-panel">
+      <div>
+        <h2>Inventory</h2>
+      </div>
+
+      <div>
+        
+      </div>
     </aside>
   )
 }

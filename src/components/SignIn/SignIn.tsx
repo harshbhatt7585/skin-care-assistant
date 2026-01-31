@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getAuth, GoogleAuthProvider, signInWithPopup, type User } from 'firebase/auth'
-import { registerUser, getUser,  } from '../../api/auth'
+import { getAuth, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
+import { registerUser, getUser } from '../../api/auth'
 import type { User as UserType } from '../../types/auth'
 import './SignIn.css'
 
@@ -11,12 +11,13 @@ const SignIn = () => {
   const navigate = useNavigate()
 
 
-  const checkUserExists = async (uid: string): Promise<UserType | false> => {
+  const checkUserExists = async (uid: string | undefined): Promise<UserType | null> => {
+    if (!uid) return null
     const response = await getUser(uid)
-    if (response.exists) {
+    if (response.exists && response.user) {
       return response.user
     }
-    return false  
+    return null
   }
 
 
@@ -26,16 +27,16 @@ const SignIn = () => {
     try {
       const auth = getAuth()
       const provider = new GoogleAuthProvider()
-      await signInWithPopup(auth, provider)
-      let currentUser = auth.currentUser
-      const user = await checkUserExists(currentUser?.uid)
-      if (!user) {
+      const result = await signInWithPopup(auth, provider)
+      const currentUser = result.user ?? auth.currentUser
+      const existingUser = await checkUserExists(currentUser?.uid)
+      if (!existingUser && currentUser) {
         const now = new Date().toISOString()
-        const userDetails: UserType  = {
+        const userDetails: UserType = {
           personal: {
-            email: currentUser?.email,
-            name: currentUser?.displayName,
-            uid: currentUser?.uid,
+            email: currentUser.email ?? '',
+            name: currentUser.displayName ?? currentUser.email ?? 'Glowly User',
+            uid: currentUser.uid,
           },
           created_at: now,
         }

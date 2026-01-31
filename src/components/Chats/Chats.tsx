@@ -43,7 +43,6 @@ type ChatsProps = {
   setLoading: Dispatch<SetStateAction<boolean>>
   setStatus: Dispatch<SetStateAction<string>>
   setError: Dispatch<SetStateAction<string | null>>
-  minPhotosRequired: number
   initialMessages?: PersistedChatMessage[]
   uid: string | null
   chatId?: string | null
@@ -60,7 +59,6 @@ const Chats = forwardRef<ChatsHandle, ChatsProps>(
       setLoading,
       setStatus,
       setError,
-      minPhotosRequired,
       initialMessages,
       uid,
       chatId,

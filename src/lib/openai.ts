@@ -61,12 +61,6 @@ export const runInitialWorkflowSequenced = async ({
     country,
     signal: controller.signal,
     onEvent: (event) => {
-      if (event.step === 'error' || event.status === 'failed') {
-        workflowError = event.error ?? event.message ?? 'Scan failed.'
-        controller.abort()
-        callbacks?.onStepChange?.(null)
-        return
-      }
 
       if (event.step === 'complete') {
         finalHistory = event.history ?? []

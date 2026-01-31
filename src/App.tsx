@@ -520,14 +520,13 @@ function App({ user }: AppProps) {
                 photos={photos}
                 country={country}
                 isLoading={isLoading}
-                setLoading={setLoading}
-                setStatus={setStatus}
-                setError={setError}
-                minPhotosRequired={MIN_PHOTOS_REQUIRED}
-                initialMessages={persistedMessages ?? undefined}
-                uid={user?.uid ?? null}
-                onNewScan={handleNewScan}
-                onPersistedMessages={handlePersistedMessages}
+              setLoading={setLoading}
+              setStatus={setStatus}
+              setError={setError}
+              initialMessages={persistedMessages ?? undefined}
+              uid={user?.uid ?? null}
+              onNewScan={handleNewScan}
+              onPersistedMessages={handlePersistedMessages}
               />
             </section>
         )}

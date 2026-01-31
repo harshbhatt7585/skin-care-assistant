@@ -6,7 +6,7 @@ type CaptureProps = {
   isCaptureActive: boolean
   captureStep: number
   captureInstructions: string[]
-  videoRef: RefObject<HTMLVideoElement>
+  videoRef: RefObject<HTMLVideoElement | null>
   cameraReady: boolean
   onDeactivateCapture: () => void
   onCapture: () => Promise<void>

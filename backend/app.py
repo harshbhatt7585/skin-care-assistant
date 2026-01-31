@@ -35,6 +35,13 @@ app.include_router(user_router)
 
 
 if __name__ == "__main__":
+    import os
     import uvicorn
 
-    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
+    reload_enabled = os.environ.get("UVICORN_RELOAD") == "1"
+    if reload_enabled:
+        uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
+    else:
+        default_workers = 4
+        workers = int(os.environ.get("UVICORN_WORKERS", default_workers))
+        uvicorn.run("app:app", host="0.0.0.0", port=8000, workers=workers)

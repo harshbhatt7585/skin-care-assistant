@@ -338,6 +338,15 @@ function App({ user }: AppProps) {
   }
 
   const handleNewScan = () => {
+    stopCamera()
+    setPhotos([])
+    setScanMetrics(null)
+    setStatus('Upload a clear photo to begin.')
+    setError(null)
+    setAgentStep(null)
+    setPersistedMessages([])
+    chatsRef.current?.reset()
+    activateCapture()
   }
 
   const getUserDisplayName = () => {

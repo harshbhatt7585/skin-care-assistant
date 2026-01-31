@@ -113,6 +113,12 @@
   padding-top: 18px;
 }
 
+.chat-input__notice {
+  margin: 10px 0 0;
+  font-size: 0.85rem;
+  color: rgba(247, 251, 255, 0.5);
+}
+
 .chat-input input {
   flex: 1;
   border-radius: 999px;

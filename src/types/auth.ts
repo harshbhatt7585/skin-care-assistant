@@ -22,3 +22,4 @@ export interface GetUserResponse {
   exists: boolean;
   user?: User;
 }
+

@@ -65,5 +65,15 @@ class StoreScanPayload(BaseModel):
     data: dict[str, Any]
 
 
+class Scan(BaseModel):
+    id: str
+    uid: str
+    created_at: str
+    updated_at: str
+    images: list[str]
+    analysis: str
+    scores: dict[str, Any]
+
+
 class StoreScanResponse(BaseModel):
     success: bool

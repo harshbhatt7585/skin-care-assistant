@@ -3,89 +3,227 @@ import type { InventoryItem } from '../../types/user'
 import { addInventoryItem, fetchUser } from '../../api/user'
 import './Inventory.css'
 
-type InventoryItemInput = InventoryItem & { imageFile?: File }
+type InventoryProps = {
+  uid: string | null
+}
 
-function Inventory() {
-  const [products, setProducts] = useState<InventoryItem[]>([])
+const DEFAULT_UID = 'demo'
+
+type Mode = 'photo' | 'text'
+
+const Inventory = ({ uid }: InventoryProps) => {
+  const [items, setItems] = useState<InventoryItem[]>([])
+  const [mode, setMode] = useState<Mode>('photo')
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
-  const [imageFile, setImageFile] = useState<File | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [formError, setFormError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [showForm, setShowForm] = useState(false)
+
+  const resolvedUid = uid || DEFAULT_UID
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    let cancelled = false
+    const loadInventory = async () => {
       try {
-        const user = await fetchUser('demo')
-        setProducts(user.inventory)
-      } catch (err) {
-        console.error(err)
+        setLoading(true)
+        const user = await fetchUser(resolvedUid)
+        if (!cancelled) {
+          setItems(user.inventory)
+        }
+      } catch (error) {
+        console.error('Failed to load inventory', error)
+        if (!cancelled) {
+          setItems([])
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
       }
     }
-    fetchProducts()
-  }, [])
+    loadInventory()
+    return () => {
+      cancelled = true
+    }
+  }, [resolvedUid])
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) {
+      setImagePreview(null)
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setImagePreview(reader.result)
+        if (!name.trim()) {
+          setName(file.name.replace(/\.[^.]+$/, ''))
+        }
+      }
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const resetForm = () => {
+    setName('')
+    setDescription('')
+    setImagePreview(null)
+    setFormError(null)
+    setShowForm(false)
+  }
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!name.trim()) {
-      setError('Please add a name first')
+      setFormError('Add the product name first.')
       return
     }
-    const payload: InventoryItem = {
-      name: name.trim(),
-      description: description.trim() || undefined,
+    if (mode === 'photo' && !imagePreview) {
+      setFormError('Upload a photo to save this entry.')
+      return
     }
     try {
-      const item = await addInventoryItem(payload)
-      setProducts((prev) => [item, ...prev])
-      setName('')
-      setDescription('')
-      setImageFile(null)
-      setError(null)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save item')
+      setSaving(true)
+      const payload: InventoryItem = {
+        name: name.trim(),
+        description: description.trim() || undefined,
+        image: mode === 'photo' ? imagePreview ?? undefined : undefined,
+      }
+      const saved = await addInventoryItem(payload)
+      setItems((prev) => [saved, ...prev])
+      resetForm()
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : 'Could not save item.')
+    } finally {
+      setSaving(false)
     }
   }
 
   return (
     <aside className="inventory-panel">
-      <div className="inventory-panel__header">
-        <h2>Inventory</h2>
-      </div>
+      <header className="inventory-panel__header">
+        <div>
+          <p className="inventory-panel__eyebrow">Current cabinet</p>
+          <h2>Skin care inventory</h2>
+          <p className="inventory-panel__meta">{items.length} products logged</p>
+        </div>
+        <button
+          type="button"
+          className="inventory-panel__add"
+          onClick={() => setShowForm((prev) => !prev)}
+          aria-expanded={showForm}
+        >
+          <span aria-hidden="true">+</span>
+          <span>{showForm ? 'Hide form' : 'Add product'}</span>
+        </button>
+      </header>
+
       <div className="inventory-panel__body">
-        <form className="inventory-form" onSubmit={handleSubmit}>
-          <input
-            type="text"
-            placeholder="Product name"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-          />
-          <textarea
-            rows={2}
-            placeholder="Description"
-            value={description}
-            onChange={(event) => setDescription(event.target.value)}
-          />
-          <input type="file" onChange={(event) => setImageFile(event.target.files?.[0] ?? null)} />
-          {error && <p className="inventory-form__error">{error}</p>}
-          <button type="submit">Save</button>
-        </form>
-        {products.length === 0 ? (
-          <div>No products found.</div>
-        ) : (
-          <ul>
-            {products.map((product, idx) => (
-              <li key={idx}>
-                <div>{product.name}</div>
-                {product.description && <div>{product.description}</div>}
-                {product.image && <img src={product.image} alt={product.name} />}
-              </li>
-            ))}
-          </ul>
+        {showForm && (
+          <>
+            <div className="inventory-panel__tabs" role="tablist">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={mode === 'photo'}
+                className={mode === 'photo' ? 'is-active' : ''}
+                onClick={() => setMode('photo')}
+              >
+                Upload photo
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={mode === 'text'}
+                className={mode === 'text' ? 'is-active' : ''}
+                onClick={() => setMode('text')}
+              >
+                Just type
+              </button>
+            </div>
+
+            <form className="inventory-form" onSubmit={handleSubmit}>
+              <label className="inventory-form__field">
+                <span>Product name</span>
+                <input
+                  type="text"
+                  placeholder="e.g., Minimalist B5 Gel"
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                />
+              </label>
+
+              <label className="inventory-form__field">
+                <span>{mode === 'photo' ? 'Notes' : 'Details'}</span>
+                <textarea
+                  rows={mode === 'photo' ? 2 : 3}
+                  placeholder="Texture, usage slot, how it feels..."
+                  value={description}
+                  onChange={(event) => setDescription(event.target.value)}
+                />
+              </label>
+
+              {mode === 'photo' && (
+                <label className="inventory-form__field">
+                  <span>Upload photo</span>
+                  <div className="inventory-form__upload">
+                    <input type="file" accept="image/*" onChange={handleFileChange} />
+                    <p>Drop a product shot or browse files</p>
+                    {imagePreview && (
+                      <div className="inventory-form__preview">
+                        <img src={imagePreview} alt={name || 'Product preview'} />
+                      </div>
+                    )}
+                  </div>
+                </label>
+              )}
+
+              {formError && <p className="inventory-form__error">{formError}</p>}
+              <div className="inventory-form__actions">
+                <button type="button" className="inventory-form__cancel" onClick={resetForm}>
+                  Cancel
+                </button>
+                <button type="submit" className="inventory-form__submit" disabled={saving}>
+                  {saving ? 'Saving…' : 'Save to cabinet'}
+                </button>
+              </div>
+            </form>
+          </>
         )}
+
+        <section className="inventory-list" aria-live="polite">
+          <h3>In rotation</h3>
+          {loading ? (
+            <p className="inventory-list__empty">Loading your products…</p>
+          ) : items.length === 0 ? (
+            <p className="inventory-list__empty">
+              No products logged yet. Tap the + to add your cleanser, serum, or moisturizer.
+            </p>
+          ) : (
+            <ul>
+              {items.map((product, idx) => (
+                <li key={`${product.name}-${idx}`}>
+                  {product.image && (
+                    <span className="inventory-list__thumb">
+                      <img src={product.image} alt={product.name} />
+                    </span>
+                  )}
+                  <div>
+                    <p className="inventory-list__name">{product.name}</p>
+                    {product.description && <p className="inventory-list__note">{product.description}</p>}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </div>
     </aside>
   )
 }
 
-export type { InventoryItemInput }
 export default Inventory

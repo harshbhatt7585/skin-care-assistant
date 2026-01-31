@@ -1,30 +1,66 @@
 .inventory-panel {
-  background: rgba(5, 10, 16, 0.7);
-  border: 1px solid rgba(114, 255, 230, 0.12);
+  background: rgba(5, 10, 16, 0.78);
+  border: 1px solid rgba(114, 255, 230, 0.16);
   border-radius: 28px;
   padding: 24px;
   display: flex;
   flex-direction: column;
   gap: 18px;
-  min-width: 300px;
-  max-width: 360px;
-  backdrop-filter: blur(16px);
+  min-width: 320px;
+  max-width: 380px;
+  backdrop-filter: blur(18px);
   box-shadow:
     0 25px 60px rgba(0, 0, 0, 0.45),
-    inset 0 0 30px rgba(114, 255, 230, 0.04);
+    inset 0 0 30px rgba(114, 255, 230, 0.05);
+}
+
+.inventory-panel__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .inventory-panel__header h2 {
   margin: 4px 0 0;
-  font-size: 1.4rem;
+  font-size: 1.35rem;
 }
 
 .inventory-panel__eyebrow {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(247, 251, 255, 0.5);
+  color: rgba(247, 251, 255, 0.45);
+}
+
+.inventory-panel__meta {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: rgba(247, 251, 255, 0.55);
+}
+
+.inventory-panel__add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(114, 255, 230, 0.45);
+  background: rgba(114, 255, 230, 0.12);
+  color: #72ffe6;
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.inventory-panel__add span:first-child {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.inventory-panel__add:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 22px rgba(114, 255, 230, 0.35);
 }
 
 .inventory-panel__body {
@@ -50,11 +86,10 @@
   color: rgba(247, 251, 255, 0.7);
   background: transparent;
   cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease;
 }
 
 .inventory-panel__tabs button.is-active {
-  background: rgba(114, 255, 230, 0.15);
+  background: rgba(114, 255, 230, 0.18);
   color: #72ffe6;
 }
 
@@ -63,8 +98,9 @@
   flex-direction: column;
   gap: 12px;
   padding: 16px;
-  border-radius: 20px;
-  background: rgba(4, 7, 10, 0.45);
+  border-radius: 22px;
+  background: rgba(4, 7, 10, 0.55);
+  border: 1px solid rgba(114, 255, 230, 0.1);
 }
 
 .inventory-form__field {
@@ -78,17 +114,16 @@
 .inventory-form__field input,
 .inventory-form__field textarea {
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.04);
   color: inherit;
   padding: 10px 14px;
-  transition: border-color 0.2s ease, background 0.2s ease;
 }
 
 .inventory-form__field input:focus,
 .inventory-form__field textarea:focus {
   outline: none;
-  border-color: rgba(114, 255, 230, 0.45);
+  border-color: rgba(114, 255, 230, 0.5);
   background: rgba(255, 255, 255, 0.06);
   box-shadow: 0 0 0 3px rgba(114, 255, 230, 0.1);
 }
@@ -125,6 +160,12 @@
   margin: 0;
 }
 
+.inventory-form__actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
 .inventory-form__submit {
   border: none;
   border-radius: 999px;
@@ -133,6 +174,22 @@
   padding: 0.9rem 1.2rem;
   font-weight: 600;
   cursor: pointer;
+  flex: 1;
+}
+
+.inventory-form__submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.inventory-form__cancel {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(247, 251, 255, 0.8);
+  padding: 0.9rem 1.2rem;
+  cursor: pointer;
+  flex: 1;
 }
 
 .inventory-list h3 {
@@ -190,17 +247,4 @@
   margin: 4px 0;
   font-size: 0.85rem;
   color: rgba(247, 251, 255, 0.75);
-}
-
-.inventory-list__meta {
-  margin: 0;
-  font-size: 0.75rem;
-  color: rgba(247, 251, 255, 0.5);
-}
-
-@media (max-width: 1100px) {
-  .inventory-panel {
-    max-width: none;
-    width: 100%;
-  }
 }

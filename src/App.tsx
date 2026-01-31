@@ -4,6 +4,7 @@ import ScanVisualization from './components/ScanVisualization'
 import ScanMetricsPanel, { type ScanMetrics } from './components/ScanMetricsPanel'
 import Capture from './components/Capture'
 import Chats, { type ChatsHandle } from './components/Chats'
+import Loader from './components/Loader/Loader'
 import { runInitialWorkflowSequenced, type AgentWorkflowStep } from './lib/openai'
 import { detectFaceFromDataUrl } from './lib/faceDetection'
 import { getAuth, signOut, type User } from 'firebase/auth'
@@ -405,10 +406,8 @@ function App({ user }: AppProps) {
 
       <main className="simple-main">
         {isLoadingPersistedMessages ? (
-          <section className="messages-loader" aria-busy="true" aria-live="polite">
-            <div className="messages-loader__visual">
-              <div className="messages-loader__shimmer" />
-            </div>
+          <section className="loader-panel" aria-busy="true" aria-live="polite">
+            <Loader />
           </section>
         ) : shouldShowCapture ? (
           <section className="capture-panel">

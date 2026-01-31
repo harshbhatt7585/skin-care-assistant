@@ -1,6 +1,7 @@
 import type { FormEvent } from 'react'
 import ProductShowcase from './ProductShowcase'
 import ShoppingPreview from './ShoppingPreview'
+import Loader from './Loader/Loader'
 import { parseProductSections, parseShoppingPayload, stripToolArtifacts } from '../lib/parsers'
 import './Chats/Chat.css'
 
@@ -71,11 +72,9 @@ const ChatInterface = ({ messages, inputValue, isLoading, onInputChange, onSubmi
           )
         })}
         {isLoading && (
-          <div className="typing" aria-live="polite" aria-label="Assistant is replying">
-            <span />
-            <span />
-            <span />
-          </div>
+          <article className="bubble bubble--loader" aria-live="polite" aria-label="Assistant is replying">
+            <Loader variant="inline" />
+          </article>
         )}
       </div>
 

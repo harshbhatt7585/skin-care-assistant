@@ -65,7 +65,6 @@
   padding: 16px;
   border-radius: 20px;
   background: rgba(4, 7, 10, 0.45);
-  border: 1px solid rgba(114, 255, 230, 0.08);
 }
 
 .inventory-form__field {

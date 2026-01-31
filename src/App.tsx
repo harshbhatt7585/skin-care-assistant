@@ -381,13 +381,14 @@ function App({ user }: AppProps) {
           <p className="hero__tagline">Your AI-powered skin care companion</p>
         </div>
         <div className="account-menu">
-          <button
+          {/* Cabinet button hidden for now */}
+          {/* <button
             type="button"
             className="inventory-toggle"
             onClick={() => setInventoryOpen((prev) => !prev)}
           >
             <span>Cabinet</span>
-          </button>
+          </button> */}
           <button
             className="account-button"
             onClick={() => setShowUserMenu(!showUserMenu)}

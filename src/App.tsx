@@ -55,11 +55,6 @@ function App({ user }: AppProps) {
       ? crypto.randomUUID()
       : `scan-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 
-  const generateScanId = () =>
-    typeof crypto !== 'undefined' && crypto.randomUUID
-      ? crypto.randomUUID()
-      : `scan-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-
 
   const activateCapture = () => {
     setCaptureStep(0)

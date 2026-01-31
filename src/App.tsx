@@ -11,6 +11,7 @@ import { detectFaceFromDataUrl } from './lib/faceDetection'
 import { getAuth, signOut, type User } from 'firebase/auth'
 import { getMessages } from './api/chats'
 import type { ChatMessage as PersistedChatMessage } from './types/chats'
+import { storeScan } from './api/scans'
 
 
 type AppProps = {
@@ -48,6 +49,11 @@ function App({ user }: AppProps) {
   const [agentStep, setAgentStep] = useState<AgentWorkflowStep | null>(null)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [isInventoryOpen, setInventoryOpen] = useState(false)
+
+  const generateScanId = () =>
+    typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `scan-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 
 
   const activateCapture = () => {
@@ -289,6 +295,18 @@ function App({ user }: AppProps) {
           },
         },
       })
+      if (user?.uid) {
+        const scanId = generateScanId()
+        const payload = {
+          uid: user.uid,
+          scanId,
+          data: {
+            photos: nextPhotos,
+            capturedAt: new Date().toISOString(),
+          },
+        }
+        void storeScan(payload).catch((error) => console.error('Failed to store scan', error))
+      }
       setStatus('Done. Ask anything else or upload again to iterate.')
       return { stored: true, completed: true }
     } catch (err) {

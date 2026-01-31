@@ -198,10 +198,6 @@ const Chats = forwardRef<ChatsHandle, ChatsProps>(
         return
       }
 
-      if (photos.length < minPhotosRequired) {
-        setError('Add the front and side scans again to keep chatting. Start a new scan first.')
-        return
-      }
 
       const userTurn: ConversationTurn = { role: 'user', content: input.trim() }
       const nextHistory = [...history, userTurn]

@@ -208,8 +208,9 @@ const Chats = forwardRef<ChatsHandle, ChatsProps>(
       setHistory(nextHistory)
       setInput('')
 
-      await runAgentTurn(photos, nextHistory)
       void persistMessages([{ role: 'user', content: trimmed }])
+
+      await runAgentTurn(photos, nextHistory)
     }
 
     return (

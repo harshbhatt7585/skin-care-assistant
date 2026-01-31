@@ -1,22 +1,22 @@
-const BASE_URL = import.meta.env.VITE_API_URL
-
-export type StoreScanPayload = {
+export type ScanRecord = {
+  id: string
   uid: string
-  scanId: string
-  data: Record<string, unknown>
+  created_at: string
+  updated_at: string
+  images: string[]
+  analysis: string
+  scores: Record<string, unknown>
 }
 
-export async function storeScan(payload: StoreScanPayload): Promise<void> {
+const BASE_URL = import.meta.env.VITE_API_URL
+
+export async function storeScan(scan: ScanRecord): Promise<void> {
   const response = await fetch(`${BASE_URL}/scan/store-scan`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      uid: payload.uid,
-      scan_id: payload.scanId,
-      data: payload.data,
-    }),
+    body: JSON.stringify({ scan }),
   })
   if (!response.ok) {
     throw new Error('Failed to store scan')

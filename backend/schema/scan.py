@@ -48,7 +48,17 @@ class GetUserScansRequest(BaseModel):
 
 
 class GetUserScansResponse(BaseModel):
-    scans: list[dict[str, Any]]
+    scans: list["Scan"]
+
+
+class Scan(BaseModel):
+    id: str
+    uid: str
+    created_at: str
+    updated_at: str
+    images: list[str]
+    analysis: str
+    scores: dict[str, Any]
 
 
 class DeleteScanRequest(BaseModel):
@@ -59,10 +69,8 @@ class DeleteScanResponse(BaseModel):
     success: bool
 
 
-class StoreScanPayload(BaseModel):
-    uid: str
-    scan_id: str
-    data: dict[str, Any]
+class StoreScanRequest(BaseModel):
+    scan: Scan
 
 
 class Scan(BaseModel):

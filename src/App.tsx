@@ -11,7 +11,7 @@ import { detectFaceFromDataUrl } from './lib/faceDetection'
 import { getAuth, signOut, type User } from 'firebase/auth'
 import { getMessages } from './api/chats'
 import type { ChatMessage as PersistedChatMessage } from './types/chats'
-import { storeScan } from './api/scans'
+import { storeScan, type ScanRecord } from './api/scans'
 
 
 type AppProps = {
@@ -49,6 +49,11 @@ function App({ user }: AppProps) {
   const [agentStep, setAgentStep] = useState<AgentWorkflowStep | null>(null)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [isInventoryOpen, setInventoryOpen] = useState(false)
+
+  const generateScanId = () =>
+    typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `scan-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 
   const generateScanId = () =>
     typeof crypto !== 'undefined' && crypto.randomUUID
@@ -267,12 +272,16 @@ function App({ user }: AppProps) {
 
       setError(null)
       setStatus('Consulting the cosmetist...')
+      let latestAnalysis = ''
+      let latestScores: Record<string, unknown> = {}
+
       await runInitialWorkflowSequenced({
         photoDataUrls: nextPhotos,
         country: country ?? 'us',
         callbacks: {
           onStepChange: setAgentStep,
           onAnalysis: (analysis, historySnapshot) => {
+            latestAnalysis = analysis
             chatsRef.current?.replaceWithAssistantMessages([analysis], historySnapshot)
             setStatus('Reviewing concerns…')
           },
@@ -286,6 +295,13 @@ function App({ user }: AppProps) {
                 barrierStrength: Number(parsed.barrierStrength),
                 sensitivity: Number(parsed.sensitivity),
               })
+              latestScores = {
+                hydration: Number(parsed.hydration),
+                oilBalance: Number(parsed.oilBalance),
+                tone: Number(parsed.tone),
+                barrierStrength: Number(parsed.barrierStrength),
+                sensitivity: Number(parsed.sensitivity),
+              }
             } catch (error) {
               console.warn('Could not parse scan metrics JSON', error)
             }
@@ -296,16 +312,17 @@ function App({ user }: AppProps) {
         },
       })
       if (user?.uid) {
-        const scanId = generateScanId()
-        const payload = {
+        const timestamp = new Date().toISOString()
+        const scanRecord: ScanRecord = {
+          id: generateScanId(),
           uid: user.uid,
-          scanId,
-          data: {
-            photos: nextPhotos,
-            capturedAt: new Date().toISOString(),
-          },
+          created_at: timestamp,
+          updated_at: timestamp,
+          images: nextPhotos,
+          analysis: latestAnalysis || 'Analysis not available yet.',
+          scores: latestScores,
         }
-        void storeScan(payload).catch((error) => console.error('Failed to store scan', error))
+        void storeScan(scanRecord).catch((error) => console.error('Failed to store scan', error))
       }
       setStatus('Done. Ask anything else or upload again to iterate.')
       return { stored: true, completed: true }

@@ -194,18 +194,26 @@ const Chats = forwardRef<ChatsHandle, ChatsProps>(
 
     const handleSend = async (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault()
-      if (!input.trim() || isLoading) {
+      const trimmed = input.trim()
+      if (!trimmed || isLoading) {
         return
       }
 
-
-      const userTurn: ConversationTurn = { role: 'user', content: input.trim() }
-      const nextHistory = [...history, userTurn]
-
-      setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'user', content: userTurn.content }])
-      setHistory(nextHistory)
+      setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'user', content: trimmed }])
       setInput('')
-      void persistMessages([{ role: 'user', content: userTurn.content }])
+      void persistMessages([{ role: 'user', content: trimmed }])
+
+      if (photos.length === 0) {
+        const fallbackReply = agentResponse(trimmed)
+        setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: fallbackReply }])
+        setStatus('Upload a clear photo whenever you want personalized insights again.')
+        setError(null)
+        return
+      }
+
+      const userTurn: ConversationTurn = { role: 'user', content: trimmed }
+      const nextHistory = [...history, userTurn]
+      setHistory(nextHistory)
       await runAgentTurn(photos, nextHistory)
     }
 

@@ -199,21 +199,14 @@ const Chats = forwardRef<ChatsHandle, ChatsProps>(
         return
       }
 
+      const userTurn: ConversationTurn = { role: 'user', content: trimmed }
+      const nextHistory = [...history, userTurn]
+
       setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'user', content: trimmed }])
+      setHistory(nextHistory)
       setInput('')
       void persistMessages([{ role: 'user', content: trimmed }])
 
-      if (photos.length === 0) {
-        const fallbackReply = agentResponse(trimmed)
-        setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: fallbackReply }])
-        setStatus('Upload a clear photo whenever you want personalized insights again.')
-        setError(null)
-        return
-      }
-
-      const userTurn: ConversationTurn = { role: 'user', content: trimmed }
-      const nextHistory = [...history, userTurn]
-      setHistory(nextHistory)
       await runAgentTurn(photos, nextHistory)
     }
 

@@ -14,7 +14,7 @@ class ScanWorkflowRequest(BaseModel):
 
 
 class ScanChatTurnRequest(BaseModel):
-    photo_data_urls: list[str] = Field(..., min_length=1)
+    photo_data_urls: list[str] = Field(default_factory=list)
     country: str
     history: list[ConversationTurn]
 

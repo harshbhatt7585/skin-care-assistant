@@ -98,9 +98,6 @@ export async function runBackendChatTurn({
   country,
   history,
 }: ChatTurnArgs): Promise<{ reply: string; history: ConversationTurn[] }> {
-  if (!photoDataUrls.length) {
-    throw new Error('runBackendChatTurn requires at least one photo.')
-  }
   const response = await fetch(`${BASE_URL}/agent/chat-turn`, {
     method: 'POST',
     headers: {

@@ -10,11 +10,18 @@ class UserPersonal(BaseModel):
     country: str | None = None
 
 
+class InventoryItem(BaseModel):
+    name: str
+    description: str | None = None
+    image: str | None = None
+
+
 class User(BaseModel):
     personal: UserPersonal
     last_scanned: datetime | None = None
     last_chat: datetime | None = None
     created_at: datetime
+    inventory: list[InventoryItem] = []
 
 
 class GetUser(BaseModel):

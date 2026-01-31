@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 import type { InventoryItem } from '../../types/user'
 import { addInventoryItem, fetchUser } from '../../api/user'
 import './Inventory.css'
@@ -7,9 +7,9 @@ type InventoryProps = {
   uid: string | null
 }
 
-const DEFAULT_UID = 'demo'
-
 type Mode = 'photo' | 'text'
+
+const DEFAULT_UID = 'demo'
 
 const Inventory = ({ uid }: InventoryProps) => {
   const [items, setItems] = useState<InventoryItem[]>([])
@@ -50,7 +50,7 @@ const Inventory = ({ uid }: InventoryProps) => {
     }
   }, [resolvedUid])
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) {
       setImagePreview(null)
@@ -76,7 +76,7 @@ const Inventory = ({ uid }: InventoryProps) => {
     setShowForm(false)
   }
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!name.trim()) {
       setFormError('Add the product name first.')
@@ -212,10 +212,10 @@ const Inventory = ({ uid }: InventoryProps) => {
                       <img src={product.image} alt={product.name} />
                     </span>
                   )}
-                  <div>
-                    <p className="inventory-list__name">{product.name}</p>
-                    {product.description && <p className="inventory-list__note">{product.description}</p>}
-                  </div>
+                  <p className="inventory-list__name">{product.name}</p>
+                  {product.description && (
+                    <p className="inventory-list__note">{product.description}</p>
+                  )}
                 </li>
               ))}
             </ul>

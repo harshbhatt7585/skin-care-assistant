@@ -4,6 +4,7 @@ import ScanVisualization from './components/ScanVisualization'
 import ScanMetricsPanel, { type ScanMetrics } from './components/ScanMetricsPanel'
 import Capture from './components/Capture'
 import Chats, { type ChatsHandle } from './components/Chats'
+import Inventory, { type InventoryItem } from './components/Inventory/Inventory'
 import Loader from './components/Loader/Loader'
 import { runInitialWorkflowSequenced, type AgentWorkflowStep } from './lib/openai'
 import { detectFaceFromDataUrl } from './lib/faceDetection'
@@ -46,6 +47,8 @@ function App({ user }: AppProps) {
   const chatsRef = useRef<ChatsHandle | null>(null)
   const [agentStep, setAgentStep] = useState<AgentWorkflowStep | null>(null)
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([])
+  const [isInventoryOpen, setInventoryOpen] = useState(false)
 
 
   const activateCapture = () => {
@@ -366,6 +369,19 @@ function App({ user }: AppProps) {
     })
   }
 
+  const handleInventoryAdd = ({ name, note, image }: { name: string; note?: string; image?: string }) => {
+    setInventoryItems((prev) => [
+      {
+        id: crypto.randomUUID(),
+        name,
+        note,
+        image,
+        addedAt: new Date().toISOString(),
+      },
+      ...prev,
+    ])
+  }
+
   const handleVideoReady = () => setCameraReady(true)
 
   return (
@@ -379,6 +395,13 @@ function App({ user }: AppProps) {
           <p className="hero__tagline">Your AI-powered skin care companion</p>
         </div>
         <div className="account-menu">
+          <button
+            type="button"
+            className="inventory-toggle"
+            onClick={() => setInventoryOpen((prev) => !prev)}
+          >
+            <span>Cabinet</span>
+          </button>
           <button
             className="account-button"
             onClick={() => setShowUserMenu(!showUserMenu)}
@@ -419,79 +442,84 @@ function App({ user }: AppProps) {
           <section className="loader-panel" aria-busy="true" aria-live="polite">
             <Loader />
           </section>
-        ) : shouldShowCapture ? (
-          <section className="capture-panel">
-            {!isCaptureActive && persistedMessages?.length === 0 && (
-              <>
-                <button
-                  type="button"
-                  className="cta-elegant"
-                  onClick={activateCapture}
-                  disabled={isLoading}
-                >
-                  <span className="cta-elegant__text">Get Started</span>
-                  <span className="cta-elegant__icon" aria-hidden="true">
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M5 12h14M12 5l7 7-7 7" />
-                    </svg>
-                  </span>
-                </button>
-                {error && <p className="face-error">{error}</p>}
-              </>
-            )}
-            {isCaptureActive && error && <p className="face-error">{error}</p>}
-            <Capture
-              isLoading={isLoading}
-              isCaptureActive={isCaptureActive}
-              captureStep={captureStep}
-              captureInstructions={CAPTURE_INSTRUCTIONS}
-              videoRef={videoRef}
-              cameraReady={cameraReady}
-              onDeactivateCapture={deactivateCapture}
-              onCapture={handleCapture}
-              onVideoReady={handleVideoReady}
-            />
-          </section>
-        ) : (
-          <section className="analysis-stack">
-            {error && <p className="face-error">{error}</p>}
-            <div className="analysis-visual">
-              <ScanVisualization photos={photos} isLoading={isLoading} />
-              {agentStep && (
-                <p className="agent-step" aria-live="assertive">
-                  <span className="agent-step__flash" aria-hidden="true" />
-                  {AGENT_STEP_COPY[agentStep]}
-                </p>
+          ) : shouldShowCapture ? (
+            <section className="capture-panel">
+              {!isCaptureActive && persistedMessages?.length === 0 && (
+                <>
+                  <button
+                    type="button"
+                    className="cta-elegant"
+                    onClick={activateCapture}
+                    disabled={isLoading}
+                  >
+                    <span className="cta-elegant__text">Get Started</span>
+                    <span className="cta-elegant__icon" aria-hidden="true">
+                      <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M5 12h14M12 5l7 7-7 7" />
+                      </svg>
+                    </span>
+                  </button>
+                  {error && <p className="face-error">{error}</p>}
+                </>
               )}
-              {scanMetrics && <ScanMetricsPanel metrics={scanMetrics} />}
-            </div>
+              {isCaptureActive && error && <p className="face-error">{error}</p>}
+              <Capture
+                isLoading={isLoading}
+                isCaptureActive={isCaptureActive}
+                captureStep={captureStep}
+                captureInstructions={CAPTURE_INSTRUCTIONS}
+                videoRef={videoRef}
+                cameraReady={cameraReady}
+                onDeactivateCapture={deactivateCapture}
+                onCapture={handleCapture}
+                onVideoReady={handleVideoReady}
+              />
+            </section>
+          ) : (
+            <section className="analysis-stack">
+              {error && <p className="face-error">{error}</p>}
+              <div className="analysis-visual">
+                <ScanVisualization photos={photos} isLoading={isLoading} />
+                {agentStep && (
+                  <p className="agent-step" aria-live="assertive">
+                    <span className="agent-step__flash" aria-hidden="true" />
+                    {AGENT_STEP_COPY[agentStep]}
+                  </p>
+                )}
+                {scanMetrics && <ScanMetricsPanel metrics={scanMetrics} />}
+              </div>
 
-            <Chats
-              ref={chatsRef}
-              photos={photos}
-              country={country}
-              isLoading={isLoading}
-              setLoading={setLoading}
-              setStatus={setStatus}
-              setError={setError}
-              minPhotosRequired={MIN_PHOTOS_REQUIRED}
-              initialMessages={persistedMessages ?? undefined}
-              uid={user?.uid ?? null}
-              onNewScan={handleNewScan}
-              onPersistedMessages={handlePersistedMessages}
-            />
-          </section>
+              <Chats
+                ref={chatsRef}
+                photos={photos}
+                country={country}
+                isLoading={isLoading}
+                setLoading={setLoading}
+                setStatus={setStatus}
+                setError={setError}
+                minPhotosRequired={MIN_PHOTOS_REQUIRED}
+                initialMessages={persistedMessages ?? undefined}
+                uid={user?.uid ?? null}
+                onNewScan={handleNewScan}
+                onPersistedMessages={handlePersistedMessages}
+              />
+            </section>
         )}
       </main>
+      {isInventoryOpen && (
+        <div className="inventory-drawer" role="dialog" aria-label="Skin care inventory">
+          <Inventory items={inventoryItems} onAdd={handleInventoryAdd} />
+        </div>
+      )}
     </div>
   )
 }

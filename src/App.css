@@ -203,6 +203,7 @@ a {
 .account-menu {
   position: relative;
   z-index: 100;
+  display: flex;
 }
 
 .account-button {
@@ -357,6 +358,29 @@ a {
   display: flex;
   flex-direction: column;
   gap: 32px;
+}
+
+.inventory-toggle {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.04);
+  color: inherit;
+  border-radius: 999px;
+  padding: 0.65rem 1.2rem;
+  cursor: pointer;
+  margin-right: 12px;
+}
+
+.inventory-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  max-width: 400px;
+  width: 100%;
+  padding: 32px 24px;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(18px);
+  overflow-y: auto;
 }
 
 /* ==========================================

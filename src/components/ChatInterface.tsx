@@ -15,13 +15,12 @@ type ChatInterfaceProps = {
   messages: ChatMessage[]
   inputValue: string
   isLoading: boolean
-  canSend: boolean
   onInputChange: (value: string) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
   onNewScan: () => void
 }
 
-const ChatInterface = ({ messages, inputValue, isLoading, canSend, onInputChange, onSubmit, onNewScan }: ChatInterfaceProps) => {
+const ChatInterface = ({ messages, inputValue, isLoading, onInputChange, onSubmit, onNewScan }: ChatInterfaceProps) => {
   return (
     <div className="chat-thread">
       <div className="messages">
@@ -93,13 +92,10 @@ const ChatInterface = ({ messages, inputValue, isLoading, canSend, onInputChange
           value={inputValue}
           onChange={(event) => onInputChange(event.target.value)}
         />
-        <button type="submit" disabled={isLoading || !inputValue.trim() || !canSend}>
+        <button type="submit" disabled={isLoading || !inputValue.trim()}>
           Send
         </button>
       </form>
-      {!canSend && (
-        <p className="chat-input__notice">Start a new scan to continue chatting.</p>
-      )}
     </div>
   )
 }

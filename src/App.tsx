@@ -47,6 +47,7 @@ function App({ user }: AppProps) {
   const [agentStep, setAgentStep] = useState<AgentWorkflowStep | null>(null)
   const [showUserMenu, setShowUserMenu] = useState(false)
 
+
   const activateCapture = () => {
     setCaptureStep(0)
     setCaptureActive(true)

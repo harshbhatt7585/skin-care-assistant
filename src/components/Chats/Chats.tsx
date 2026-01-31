@@ -72,7 +72,6 @@ const Chats = forwardRef<ChatsHandle, ChatsProps>(
     const [messages, setMessages] = useState<UiChatMessage[]>([])
     const [history, setHistory] = useState<ConversationTurn[]>([])
     const [input, setInput] = useState('')
-    const hasRequiredPhotos = photos.length >= minPhotosRequired
 
     const persistMessages = async (
       entries: Array<{ role: ConversationTurn['role']; content: string }>,
@@ -199,7 +198,7 @@ const Chats = forwardRef<ChatsHandle, ChatsProps>(
         return
       }
 
-      if (!hasRequiredPhotos) {
+      if (photos.length < minPhotosRequired) {
         setError('Add the front and side scans again to keep chatting. Start a new scan first.')
         return
       }
@@ -219,7 +218,6 @@ const Chats = forwardRef<ChatsHandle, ChatsProps>(
         messages={messages}
         inputValue={input}
         isLoading={isLoading}
-        canSend={hasRequiredPhotos}
         onInputChange={setInput}
         onSubmit={handleSend}
         onNewScan={onNewScan}

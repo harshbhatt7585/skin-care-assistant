@@ -10,9 +10,6 @@ export const runChatTurn = async ({
   history: ConversationTurn[]
   country: string
 }): Promise<string> => {
-  if (!photoDataUrls.length) {
-    throw new Error('runChatTurn requires at least one photo.')
-  }
   const seededHistory =
     history.length > 0
       ? history

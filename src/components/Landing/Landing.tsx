@@ -8,6 +8,10 @@ const Landing = () => {
     navigate('/signin')
   }
 
+  const handlePricing = () => {
+    navigate('/pricing')
+  }
+
   return (
     <div className="landing-page">
       <header className="landing-hero">
@@ -28,10 +32,16 @@ const Landing = () => {
             </svg>
           </span>
         </button>
+        <button
+          type="button"
+          className="cta-elegant cta-elegant--ghost"
+          onClick={handlePricing}
+        >
+          <span className="cta-elegant__text">View Pricing</span>
+        </button>
       </header>
     </div>
   )
 }
 
 export default Landing
-

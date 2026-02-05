@@ -150,6 +150,20 @@
   transform: translateX(6px);
 }
 
+.cta-elegant--ghost {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: rgba(247, 251, 255, 0.86);
+}
+
+.cta-elegant--ghost::before {
+  opacity: 0;
+}
+
+.cta-elegant--ghost:hover {
+  background: rgba(114, 255, 230, 0.12);
+}
+
 .landing-page {
   min-height: 100vh;
   display: flex;
@@ -257,4 +271,3 @@
     max-width: 400px;
   }
 }
-

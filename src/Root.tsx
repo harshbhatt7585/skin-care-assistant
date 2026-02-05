@@ -5,6 +5,7 @@ import App from './App'
 import SignIn from './components/SignIn'
 import Landing from './components/Landing'
 import Loader from './components/Loader/Loader'
+import Pricing from './components/Pricing/Pricing'
 
 type RouteProps = {
   user: User | null
@@ -66,6 +67,14 @@ const Root = () => {
           element={
             <PublicRoute user={user}>
               <SignIn />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/pricing"
+          element={
+            <PublicRoute user={user}>
+              <Pricing />
             </PublicRoute>
           }
         />

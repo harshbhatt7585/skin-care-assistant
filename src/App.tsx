@@ -18,6 +18,8 @@ import { storeScan, type ScanRecord } from './api/scans'
 type AppProps = {
   user: User | null
   embedded?: boolean
+  showStartButton?: boolean
+  startCaptureSignal?: number
 }
 
 const FACE_ERROR_MESSAGE = 'Face not detected, upload Face image'
@@ -35,7 +37,12 @@ const AGENT_STEP_COPY: Record<AgentWorkflowStep, string> = {
   shopping: 'Finding matching AM/PM products…',
 }
 
-function App({ user, embedded = false }: AppProps) {
+function App({
+  user,
+  embedded = false,
+  showStartButton = true,
+  startCaptureSignal = 0,
+}: AppProps) {
   const navigate = useNavigate()
   const [photos, setPhotos] = useState<string[]>([])
   const [status, setStatus] = useState('Upload a clear photo to begin.')
@@ -463,6 +470,13 @@ function App({ user, embedded = false }: AppProps) {
   const isLoadingPersistedMessages = Boolean(user?.uid) && persistedMessages === null
   const shouldShowCapture = !hasPersistedMessages && photos.length < MIN_PHOTOS_REQUIRED
 
+  useEffect(() => {
+    if (!startCaptureSignal) return
+    if (!shouldShowCapture) return
+    if (isCaptureActive) return
+    activateCapture()
+  }, [startCaptureSignal, shouldShowCapture, isCaptureActive])
+
   const handlePersistedMessages = (messages: PersistedChatMessage[]) => {
     setPersistedMessages((prev) => {
       const base = prev ?? []
@@ -535,7 +549,7 @@ function App({ user, embedded = false }: AppProps) {
           </section>
           ) : shouldShowCapture ? (
             <section className="capture-panel">
-              {!isCaptureActive && persistedMessages?.length === 0 && (
+              {showStartButton && !isCaptureActive && persistedMessages?.length === 0 && (
                 <>
                   <button
                     type="button"

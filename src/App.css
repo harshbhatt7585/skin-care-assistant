@@ -58,6 +58,11 @@ a {
   gap: 40px;
 }
 
+.page--embedded {
+  min-height: auto;
+  padding: 0;
+}
+
 .hero {
   display: flex;
   justify-content: space-between;

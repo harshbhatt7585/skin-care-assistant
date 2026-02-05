@@ -12,13 +12,6 @@ type RouteProps = {
   children: ReactNode
 }
 
-const ProtectedRoute = ({ user, children }: RouteProps) => {
-  if (!user) {
-    return <Navigate to="/signin" replace />
-  }
-  return <>{children}</>
-}
-
 const PublicRoute = ({ user, children }: RouteProps) => {
   if (user) {
     return <Navigate to="/home" replace />
@@ -58,7 +51,7 @@ const Root = () => {
           path="/"
           element={
             <PublicRoute user={user}>
-              <Landing />
+              <Landing user={user} />
             </PublicRoute>
           }
         />
@@ -81,9 +74,7 @@ const Root = () => {
         <Route
           path="/home"
           element={
-            <ProtectedRoute user={user}>
-              <App user={user} />
-            </ProtectedRoute>
+            <App user={user} />
           }
         />
         <Route

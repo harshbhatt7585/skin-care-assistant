@@ -1,12 +1,18 @@
 import { useNavigate } from 'react-router-dom'
 import Pricing from '../Pricing/Pricing'
+import App from '../../App'
+import type { User } from 'firebase/auth'
 import './Landing.css'
 
-const Landing = () => {
+type LandingProps = {
+  user: User | null
+}
+
+const Landing = ({ user }: LandingProps) => {
   const navigate = useNavigate()
 
   const handleGetStarted = () => {
-    navigate('/signin')
+    document.getElementById('capture')?.scrollIntoView({ behavior: 'smooth' })
   }
 
   const handlePricing = () => {
@@ -34,6 +40,9 @@ const Landing = () => {
           </span>
         </button>
       </header>
+      <section id="capture" className="landing-capture" aria-label="Capture">
+        <App user={user} embedded />
+      </section>
       <section id="pricing" className="landing-pricing" aria-label="Pricing">
         <Pricing embedded />
       </section>

@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import './App.css'
 import ScanVisualization from './components/ScanVisualization'
 import ScanMetricsPanel, { type ScanMetrics } from './components/ScanMetricsPanel'
@@ -16,10 +17,12 @@ import { storeScan, type ScanRecord } from './api/scans'
 
 type AppProps = {
   user: User | null
+  embedded?: boolean
 }
 
 const FACE_ERROR_MESSAGE = 'Face not detected, upload Face image'
 const MIN_PHOTOS_REQUIRED = 3
+const PENDING_SCAN_KEY = 'glowly_pending_scan'
 const CAPTURE_INSTRUCTIONS = [
   'Capture front face',
   'Capture left side of the face',
@@ -32,7 +35,8 @@ const AGENT_STEP_COPY: Record<AgentWorkflowStep, string> = {
   shopping: 'Finding matching AM/PM products…',
 }
 
-function App({ user }: AppProps) {
+function App({ user, embedded = false }: AppProps) {
+  const navigate = useNavigate()
   const [photos, setPhotos] = useState<string[]>([])
   const [status, setStatus] = useState('Upload a clear photo to begin.')
   const [error, setError] = useState<string | null>(null)
@@ -46,14 +50,41 @@ function App({ user }: AppProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const chatsRef = useRef<ChatsHandle | null>(null)
+  const resumeScanRef = useRef(false)
   const [agentStep, setAgentStep] = useState<AgentWorkflowStep | null>(null)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [isInventoryOpen, setInventoryOpen] = useState(false)
 
-  const generateScanId = () =>
-    typeof crypto !== 'undefined' && 'randomUUID' in crypto
-      ? crypto.randomUUID()
-      : `scan-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+  const generateScanId = useCallback(
+    () =>
+      typeof crypto !== 'undefined' && 'randomUUID' in crypto
+        ? crypto.randomUUID()
+        : `scan-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    []
+  )
+
+  const savePendingScan = (nextPhotos: string[]) => {
+    const payload = {
+      photos: nextPhotos,
+      createdAt: new Date().toISOString(),
+    }
+    sessionStorage.setItem(PENDING_SCAN_KEY, JSON.stringify(payload))
+  }
+
+  const readPendingScan = (): { photos: string[]; createdAt: string } | null => {
+    const raw = sessionStorage.getItem(PENDING_SCAN_KEY)
+    if (!raw) return null
+    try {
+      return JSON.parse(raw) as { photos: string[]; createdAt: string }
+    } catch {
+      sessionStorage.removeItem(PENDING_SCAN_KEY)
+      return null
+    }
+  }
+
+  const clearPendingScan = () => {
+    sessionStorage.removeItem(PENDING_SCAN_KEY)
+  }
 
 
   const activateCapture = () => {
@@ -126,8 +157,27 @@ function App({ user }: AppProps) {
   }, [user?.uid])
 
   useEffect(() => {
+    if (!user?.uid || isLoading) return
+    const pending = readPendingScan()
+    if (!pending) return
+    resumeScanRef.current = true
+    clearPendingScan()
+    stopCamera()
+    setCaptureActive(false)
+    setCaptureStep(MIN_PHOTOS_REQUIRED)
+    setPhotos(pending.photos)
+    setPersistedMessages([])
+    void runWorkflowForPhotos(pending.photos)
+  }, [user?.uid, isLoading])
+
+  useEffect(() => {
     if (!user?.uid) {
       setPersistedMessages([])
+      return
+    }
+
+    if (resumeScanRef.current) {
+      resumeScanRef.current = false
       return
     }
 
@@ -264,12 +314,35 @@ function App({ user }: AppProps) {
         return { stored: true, completed: false }
       }
 
+      if (!user?.uid) {
+        savePendingScan(nextPhotos)
+        setError(null)
+        setStatus('Sign in to continue your analysis.')
+        navigate('/signin')
+        return { stored: true, completed: true }
+      }
 
-      setError(null)
-      setStatus('Consulting the cosmetist...')
-      let latestAnalysis = ''
-      let latestScores: Record<string, unknown> = {}
+      await runWorkflowForPhotos(nextPhotos)
+      return { stored: true, completed: true }
+    } catch (err) {
+      console.error(err)
+      setError(err instanceof Error ? err.message : 'Could not process that image. Try another one.')
+      setStatus('Upload a clear photo to begin.')
+      return { stored: false, completed: false }
+    } finally {
+      setAgentStep(null)
+      setLoading(false)
+    }
+  }
 
+  const runWorkflowForPhotos = useCallback(async (nextPhotos: string[]) => {
+    setError(null)
+    setStatus('Consulting the cosmetist...')
+    setLoading(true)
+    let latestAnalysis = ''
+    let latestScores: Record<string, unknown> = {}
+
+    try {
       await runInitialWorkflowSequenced({
         photoDataUrls: nextPhotos,
         country: country ?? 'us',
@@ -306,6 +379,7 @@ function App({ user }: AppProps) {
           },
         },
       })
+
       if (user?.uid) {
         const timestamp = new Date().toISOString()
         const scanRecord: ScanRecord = {
@@ -320,17 +394,15 @@ function App({ user }: AppProps) {
         void storeScan(scanRecord).catch((error) => console.error('Failed to store scan', error))
       }
       setStatus('Done. Ask anything else or upload again to iterate.')
-      return { stored: true, completed: true }
     } catch (err) {
       console.error(err)
       setError(err instanceof Error ? err.message : 'Could not process that image. Try another one.')
       setStatus('Upload a clear photo to begin.')
-      return { stored: false, completed: false }
     } finally {
       setAgentStep(null)
       setLoading(false)
     }
-  }
+  }, [country, generateScanId, user?.uid])
 
   const handleCapture = async () => {
     if (!videoRef.current || !cameraReady || isLoading) return
@@ -401,51 +473,53 @@ function App({ user }: AppProps) {
   const handleVideoReady = () => setCameraReady(true)
 
   return (
-    <div className="page">
-      <header className="hero">
-        <div className="hero__text">
-          <h1 className="brand-logo">
-            <span className="brand-logo__glow" aria-hidden="true">Glowly</span>
-            <span className="brand-logo__text">Glowly</span>
-          </h1>
-          <p className="hero__tagline">Your AI-powered skin care companion</p>
-        </div>
-        <div className="account-menu">
-          {/* Cabinet button hidden for now */}
-          {/* <button
-            type="button"
-            className="inventory-toggle"
-            onClick={() => setInventoryOpen((prev) => !prev)}
-          >
-            <span>Cabinet</span>
-          </button> */}
-          <button
-            className="account-button"
-            onClick={() => setShowUserMenu(!showUserMenu)}
-            aria-label="Account menu"
-          >
-            <span className="account-button__avatar">
-              {getUserDisplayName().charAt(0).toUpperCase()}
-            </span>
-          </button>
-          {showUserMenu && (
-            <div className="account-dropdown">
-              <div className="account-dropdown__info">
-                <p className="account-dropdown__name">{getUserDisplayName()}</p>
-                {user?.email && (
-                  <p className="account-dropdown__email">{user.email}</p>
-                )}
+    <div className={`page ${embedded ? 'page--embedded' : ''}`}>
+      {!embedded && (
+        <header className="hero">
+          <div className="hero__text">
+            <h1 className="brand-logo">
+              <span className="brand-logo__glow" aria-hidden="true">Glowly</span>
+              <span className="brand-logo__text">Glowly</span>
+            </h1>
+            <p className="hero__tagline">Your AI-powered skin care companion</p>
+          </div>
+          <div className="account-menu">
+            {/* Cabinet button hidden for now */}
+            {/* <button
+              type="button"
+              className="inventory-toggle"
+              onClick={() => setInventoryOpen((prev) => !prev)}
+            >
+              <span>Cabinet</span>
+            </button> */}
+            <button
+              className="account-button"
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              aria-label="Account menu"
+            >
+              <span className="account-button__avatar">
+                {getUserDisplayName().charAt(0).toUpperCase()}
+              </span>
+            </button>
+            {showUserMenu && (
+              <div className="account-dropdown">
+                <div className="account-dropdown__info">
+                  <p className="account-dropdown__name">{getUserDisplayName()}</p>
+                  {user?.email && (
+                    <p className="account-dropdown__email">{user.email}</p>
+                  )}
+                </div>
+                <button
+                  className="account-dropdown__signout"
+                  onClick={handleSignOut}
+                >
+                  Sign Out
+                </button>
               </div>
-              <button
-                className="account-dropdown__signout"
-                onClick={handleSignOut}
-              >
-                Sign Out
-              </button>
-            </div>
-          )}
-        </div>
-      </header>
+            )}
+          </div>
+        </header>
+      )}
 
       {status.startsWith('Analyzing face') && (
         <div className="analysis-banner">

@@ -2,7 +2,11 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './Pricing.css'
 
-const Pricing = () => {
+type PricingProps = {
+  embedded?: boolean
+}
+
+const Pricing = ({ embedded = false }: PricingProps) => {
   const navigate = useNavigate()
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly')
 
@@ -54,25 +58,25 @@ const Pricing = () => {
   }
 
   return (
-    <div className="pricing-page">
+    <div className={`pricing-page ${embedded ? 'pricing-page--embedded' : ''}`}>
       <header className="pricing-hero">
-        <nav className="pricing-nav">
-          <button type="button" className="pricing-nav__logo" onClick={() => navigate('/')}
-          >
-            Glowly
-          </button>
-          <div className="pricing-nav__actions">
-            <button type="button" className="pricing-nav__link" onClick={() => navigate('/signin')}>
-              Sign in
+        {!embedded && (
+          <nav className="pricing-nav">
+            <button type="button" className="pricing-nav__logo" onClick={() => navigate('/')}>
+              Glowly
             </button>
-            <button type="button" className="pricing-nav__cta" onClick={handleStart}>
-              Start free
-            </button>
-          </div>
-        </nav>
+            <div className="pricing-nav__actions">
+              <button type="button" className="pricing-nav__link" onClick={() => navigate('/signin')}>
+                Sign in
+              </button>
+              <button type="button" className="pricing-nav__cta" onClick={handleStart}>
+                Start free
+              </button>
+            </div>
+          </nav>
+        )}
 
         <div className="pricing-hero__content">
-          <p className="pricing-hero__eyebrow">Pricing</p>
           <h1 className="pricing-hero__title">Find the ritual that fits your glow.</h1>
           <p className="pricing-hero__subtitle">
             Adaptive plans crafted for skin analytics, product intelligence, and daily care rituals.

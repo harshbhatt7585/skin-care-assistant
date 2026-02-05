@@ -25,6 +25,16 @@
   overflow: hidden;
 }
 
+.pricing-page--embedded {
+  min-height: auto;
+  padding: 0;
+  background: transparent;
+}
+
+.pricing-page--embedded::before {
+  display: none;
+}
+
 .pricing-page::before {
   content: '';
   position: absolute;
@@ -54,6 +64,10 @@
   gap: 48px;
   position: relative;
   z-index: 1;
+}
+
+.pricing-page--embedded .pricing-hero {
+  margin-bottom: 40px;
 }
 
 .pricing-nav {

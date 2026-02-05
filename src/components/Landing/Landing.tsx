@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import Pricing from '../Pricing/Pricing'
 import './Landing.css'
 
 const Landing = () => {
@@ -9,7 +10,7 @@ const Landing = () => {
   }
 
   const handlePricing = () => {
-    navigate('/pricing')
+    document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })
   }
 
   return (
@@ -32,14 +33,10 @@ const Landing = () => {
             </svg>
           </span>
         </button>
-        <button
-          type="button"
-          className="cta-elegant cta-elegant--ghost"
-          onClick={handlePricing}
-        >
-          <span className="cta-elegant__text">View Pricing</span>
-        </button>
       </header>
+      <section id="pricing" className="landing-pricing" aria-label="Pricing">
+        <Pricing embedded />
+      </section>
     </div>
   )
 }

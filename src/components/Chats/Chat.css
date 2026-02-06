@@ -27,6 +27,114 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
+.concern-summary__keywords-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+  font-size: 0.92rem;
+  color: rgba(247, 251, 255, 0.85);
+}
+
+.concern-summary__keywords-label {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(247, 251, 255, 0.6);
+}
+
+.concern-summary__keywords-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.concern-summary__keywords-values span {
+  text-transform: capitalize;
+}
+
+.concern-summary__text {
+  color: rgba(247, 251, 255, 0.92);
+  line-height: 1.55;
+}
+
+.concern-summary__observations {
+  margin: 0 0 12px;
+  color: rgba(247, 251, 255, 0.85);
+  font-size: 0.95rem;
+}
+
+.concern-summary__section {
+  margin-bottom: 16px;
+}
+
+.concern-summary__section:last-child {
+  margin-bottom: 0;
+}
+
+.concern-summary__section-title {
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(247, 251, 255, 0.6);
+  margin: 0 0 8px;
+}
+
+.concern-summary__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.concern-summary__list li {
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.concern-summary__ratings {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.concern-summary__rating {
+  display: grid;
+  grid-template-columns: minmax(90px, 140px) 1fr auto;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.95rem;
+}
+
+.concern-summary__rating span:first-child {
+  color: rgba(247, 251, 255, 0.85);
+}
+
+.concern-summary__rating strong {
+  font-size: 0.95rem;
+  color: rgba(247, 251, 255, 0.95);
+}
+
+.concern-summary__rating-bar {
+  position: relative;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.concern-summary__rating-fill {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #72ffe6, #a78bfa);
+  transition: width 0.4s ease;
+}
+
 .bubble--user {
   background: linear-gradient(135deg, rgba(114, 255, 230, 0.25) 0%, rgba(94, 217, 195, 0.2) 100%);
   border: 1px solid rgba(114, 255, 230, 0.3);

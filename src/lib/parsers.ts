@@ -29,6 +29,14 @@ export type ShoppingPayload = {
   products: ShoppingProduct[]
 }
 
+export type ConcernSummary = {
+  text?: string
+  keywords: string[]
+  concerns?: string[]
+  observations?: string
+  ratings?: Array<{ label: string; value: number }>
+}
+
 type ParsedEntry = ProductEntry & { lineIndexes: number[] }
 type SectionMeta = { startIndex: number; data: { title: string; entries: ParsedEntry[] } }
 
@@ -123,10 +131,144 @@ export const parseProductSections = (
   return {
     sections: filteredSections.map((section) => ({
       title: section.data.title,
-      entries: section.data.entries.map(({ lineIndexes, ...rest }) => rest),
+      entries: section.data.entries.map((entry) => {
+        const { lineIndexes, ...rest } = entry
+        void lineIndexes
+        return rest
+      }),
     })),
     remainder,
   }
+}
+
+export const parseConcernSummary = (content: string): ConcernSummary | null => {
+  if (!content.trim()) {
+    return null
+  }
+
+  const extractJsonCandidate = (input: string) => {
+    const fenced = input.match(/```(?:json)?\s*([\s\S]*?)```/i)
+    if (fenced?.[1]) {
+      return fenced[1].trim()
+    }
+    return input.trim()
+  }
+
+  const tryParse = (candidate: string) => {
+    try {
+      return JSON.parse(candidate)
+    } catch {
+      return null
+    }
+  }
+
+  const candidate = extractJsonCandidate(content)
+  let parsed = tryParse(candidate)
+
+  if (!parsed) {
+    const start = candidate.indexOf('{')
+    const end = candidate.lastIndexOf('}')
+    if (start !== -1 && end !== -1 && end > start) {
+      parsed = tryParse(candidate.slice(start, end + 1))
+    }
+  }
+
+  if (!parsed || typeof parsed !== 'object') {
+    return null
+  }
+
+  const record = parsed as Record<string, unknown>
+
+  const summary: ConcernSummary = {
+    keywords: [],
+  }
+
+  if (Array.isArray(record.concerns)) {
+    const entries = record.concerns
+      .filter((entry): entry is string => typeof entry === 'string' && entry.trim())
+      .map((entry) => entry.trim())
+    if (entries.length) {
+      summary.concerns = entries
+    }
+  } else if (typeof record.concerns === 'string' && record.concerns.trim()) {
+    summary.text = record.concerns.trim()
+  }
+
+  const rawKeys = (record.concerns_keys ?? record.concernKeys ?? null) as unknown
+  const concernKeys = Array.isArray(rawKeys)
+    ? Array.from(
+        new Set(
+          rawKeys
+            .filter((key): key is string => typeof key === 'string' && key.trim())
+            .map((key) => key.trim()),
+        ),
+      )
+    : []
+  if (concernKeys.length) {
+    summary.keywords = concernKeys
+  }
+
+  if (typeof record.observations === 'string' && record.observations.trim()) {
+    summary.observations = record.observations.trim()
+  }
+
+  if (record.ratings && typeof record.ratings === 'object') {
+    const rawRatings = record.ratings as Record<string, unknown>
+    const normalizeKey = (value: string) => value.toLowerCase().replace(/[^a-z]/g, '')
+    const normalizedEntries = Object.entries(rawRatings).reduce<Record<string, number>>((acc, [key, value]) => {
+      const normalizedKey = normalizeKey(key)
+      if (!normalizedKey) return acc
+      const numeric =
+        typeof value === 'number'
+          ? value
+          : typeof value === 'string'
+          ? Number(value)
+          : undefined
+      if (numeric !== undefined && Number.isFinite(numeric)) {
+        acc[normalizedKey] = Number(numeric)
+      }
+      return acc
+    }, {})
+
+    const ratingOrder = [
+      { key: 'hydration', label: 'Hydration' },
+      { key: 'oilbalance', label: 'Oil Balance' },
+      { key: 'tone', label: 'Tone' },
+      { key: 'barrierstrength', label: 'Barrier Strength' },
+      { key: 'sensitivity', label: 'Sensitivity' },
+    ]
+
+    const normalizedRatings = ratingOrder
+      .map((entry) => {
+        const value = normalizedEntries[entry.key]
+        if (typeof value !== 'number') {
+          return null
+        }
+        const clamped = Math.max(1, Math.min(5, Math.round(value)))
+        return { label: entry.label, value: clamped }
+      })
+      .filter((entry): entry is { label: string; value: number } => Boolean(entry))
+
+    if (normalizedRatings.length) {
+      summary.ratings = normalizedRatings
+    }
+  }
+
+  if (
+    summary.keywords.length === 0 &&
+    !summary.concerns?.length &&
+    !summary.text &&
+    !summary.observations &&
+    !summary.ratings?.length
+  ) {
+    return null
+  }
+
+  if (summary.keywords.length === 0) {
+    summary.keywords = []
+  }
+
+  return summary
 }
 
 export const parseShoppingPayload = (
@@ -139,7 +281,7 @@ export const parseShoppingPayload = (
     try {
       parsed = JSON.parse(raw)
       return true
-    } catch (error) {
+    } catch {
       return false
     }
   }
@@ -189,7 +331,7 @@ export const parseShoppingPayload = (
     }
 
     const title = getString(value['title'], value['name'])
-    const link = getString(value['link'], value['website'], (value as any)?.url)
+    const link = getString(value['link'], value['website'], value?.['url'])
     if (!title || !link) return null
 
     const product: ShoppingProduct = { title, link }
@@ -220,8 +362,8 @@ export const parseShoppingPayload = (
 
   const products: ShoppingProduct[] = []
 
-  const directProducts = Array.isArray((raw as any).products)
-    ? ((raw as any).products as Array<Record<string, unknown>>)
+  const directProducts = Array.isArray(raw['products'])
+    ? (raw['products'] as Array<Record<string, unknown>>)
         .map((entry) => toProduct(entry))
         .filter((entry): entry is ShoppingProduct => Boolean(entry))
     : []
@@ -230,13 +372,13 @@ export const parseShoppingPayload = (
     products.push(...directProducts)
   }
 
-  if (!products.length && raw.knowledgeGraph && typeof raw.knowledgeGraph === 'object') {
-    const hero = toProduct(raw.knowledgeGraph as Record<string, unknown>)
+  if (!products.length && raw['knowledgeGraph'] && typeof raw['knowledgeGraph'] === 'object') {
+    const hero = toProduct(raw['knowledgeGraph'] as Record<string, unknown>)
     if (hero) products.push(hero)
   }
 
-  if (!products.length && Array.isArray((raw as any).organic)) {
-    const organicEntries = ((raw as any).organic as Array<Record<string, unknown>>).map((entry) =>
+  if (!products.length && Array.isArray(raw['organic'])) {
+    const organicEntries = (raw['organic'] as Array<Record<string, unknown>>).map((entry) =>
       toProduct(entry),
     )
     products.push(...organicEntries.filter((entry): entry is ShoppingProduct => Boolean(entry)))

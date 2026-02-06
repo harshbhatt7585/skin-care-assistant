@@ -79,7 +79,13 @@ async def run_workflow(payload: ScanWorkflowRequest) -> StreamingResponse:
             )
 
             yield _serialize_event({"step": "scanning", "status": "in_progress"})
-            analysis_prompt = "Please analyze my bare-face photo. List bullet-point concerns (acne, pigmentation, redness, wrinkles, etc.) and rate Hydration, Oil Balance, Tone, Barrier Strength, and Sensitivity on a 1–5 scale. Keep it concise."
+            analysis_prompt = (
+                "Please analyze my bare-face photo and respond with JSON only using this schema: "
+                "{concerns: string[], concerns_keys: string[], ratings: {Hydration: number, Oil_Balance: number, "
+                "Tone: number, Barrier_Strength: number, Sensitivity: number}, observations: string}. "
+                "Each concern entry should be a short sentence (max 15 words). concern_keys must be lowercase snake_case. "
+                "Ratings are integers 1-5. Observations is a concise 1-sentence overview. No markdown, no prose outside the JSON."
+            )
             analysis_reply, analysis_history = await _agent_prompt(
                 agent, history, analysis_prompt
             )
@@ -92,41 +98,41 @@ async def run_workflow(payload: ScanWorkflowRequest) -> StreamingResponse:
                 }
             )
 
-            yield _serialize_event({"step": "analyzing", "status": "in_progress"})
-            ratings_prompt = "From that analysis, output a JSON object with keys hydration, oilBalance, tone, barrierStrength, sensitivity (numbers 1-5). No prose."
-            ratings_reply, ratings_history = await _agent_prompt(
-                agent, history, ratings_prompt
-            )
-            yield _serialize_event(
-                {
-                    "step": "analyzing",
-                    "status": "completed",
-                    "ratings": ratings_reply,
-                    "history": ratings_history,
-                }
-            )
+            # yield _serialize_event({"step": "analyzing", "status": "in_progress"})
+            # ratings_prompt = "From that analysis, output a JSON object with keys hydration, oilBalance, tone, barrierStrength, sensitivity (numbers 1-5). No prose."
+            # ratings_reply, ratings_history = await _agent_prompt(
+            #     agent, history, ratings_prompt
+            # )
+            # yield _serialize_event(
+            #     {
+            #         "step": "analyzing",
+            #         "status": "completed",
+            #         "ratings": ratings_reply,
+            #         "history": ratings_history,
+            #     }
+            # )
 
-            yield _serialize_event({"step": "shopping", "status": "in_progress"})
-            shopping_prompt = 'Using that assessment, fetch current shopping options with links and thumbnails for the AM/PM plan. Use tools if needed and return markdown with inline product cards. Format the response in this format: ```json\\n{\\n  "products": [\\n    {\\n      "title": "Example Product Title",\\n      "source": "ExampleSource.com",\\n      "link": "https://example.com/product-page",\\n      "price": "$0.00",\\n      "imageUrl": "https://example.com/product-image.jpg",\\n      "rating": 0,\\n      "ratingCount": 0,\\n      "productId": "123456789",\\n      "position": 1\\n    }\\n  ]\\n}\\n```'
-            shopping_reply, shopping_history = await _agent_prompt(
-                agent, history, shopping_prompt
-            )
-            yield _serialize_event(
-                {
-                    "step": "shopping",
-                    "status": "completed",
-                    "shopping": shopping_reply,
-                    "history": shopping_history,
-                }
-            )
+            # yield _serialize_event({"step": "shopping", "status": "in_progress"})
+            # shopping_prompt = 'Using that assessment, fetch current shopping options with links and thumbnails for the AM/PM plan. Use tools if needed and return markdown with inline product cards. Format the response in this format: ```json\\n{\\n  "products": [\\n    {\\n      "title": "Example Product Title",\\n      "source": "ExampleSource.com",\\n      "link": "https://example.com/product-page",\\n      "price": "$0.00",\\n      "imageUrl": "https://example.com/product-image.jpg",\\n      "rating": 0,\\n      "ratingCount": 0,\\n      "productId": "123456789",\\n      "position": 1\\n    }\\n  ]\\n}\\n```'
+            # shopping_reply, shopping_history = await _agent_prompt(
+            #     agent, history, shopping_prompt
+            # )
+            # yield _serialize_event(
+            #     {
+            #         "step": "shopping",
+            #         "status": "completed",
+            #         "shopping": shopping_reply,
+            #         "history": shopping_history,
+            #     }
+            # )
 
-            yield _serialize_event(
-                {
-                    "step": "complete",
-                    "status": "succeeded",
-                    "history": shopping_history,
-                }
-            )
+            # yield _serialize_event(
+            #     {
+            #         "step": "complete",
+            #         "status": "succeeded",
+            #         "history": shopping_history,
+            #     }
+            # )
         except Exception as exc:  # pylint: disable=broad-except
             yield _serialize_event(
                 {

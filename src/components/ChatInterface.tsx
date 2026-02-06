@@ -2,7 +2,12 @@ import type { FormEvent } from 'react'
 import ProductShowcase from './ProductShowcase'
 import ShoppingPreview from './ShoppingPreview'
 import Loader from './Loader/Loader'
-import { parseProductSections, parseShoppingPayload, stripToolArtifacts } from '../lib/parsers'
+import {
+  parseConcernSummary,
+  parseProductSections,
+  parseShoppingPayload,
+  stripToolArtifacts,
+} from '../lib/parsers'
 import './Chats/Chat.css'
 
 export type ChatMessage = {
@@ -32,6 +37,76 @@ const ChatInterface = ({ messages, inputValue, isLoading, onInputChange, onSubmi
                 className="bubble bubble--user"
                 dangerouslySetInnerHTML={{ __html: escapeHtml(message.content) }}
               />
+            )
+          }
+
+          const concernSummary = parseConcernSummary(message.content)
+          if (concernSummary) {
+            const { keywords, concerns, text, observations, ratings } = concernSummary
+            return (
+              <article key={message.id} className="bubble">
+                {keywords.length > 0 && (
+                  <div className="concern-summary__keywords-row">
+                    <span className="concern-summary__keywords-label">Concerns detected:</span>
+                    <div className="concern-summary__keywords-values">
+                      {keywords.map((keyword, index) => {
+                        const readable = keyword.replace(/_/g, ' ')
+                        return (
+                          <span key={`${keyword}-${index}`}>
+                            {readable}
+                            {index < keywords.length - 1 ? <span aria-hidden="true"> • </span> : null}
+                          </span>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+                {observations && (
+                  <div
+                    className="concern-summary__observations"
+                    dangerouslySetInnerHTML={{
+                      __html: formatAssistantContent(observations),
+                    }}
+                  />
+                )}
+                {concerns && concerns.length > 0 ? (
+                  <div className="concern-summary__section">
+                    <p className="concern-summary__section-title">Key concerns</p>
+                    <ul className="concern-summary__list">
+                      {concerns.map((entry, index) => (
+                        <li key={`${entry}-${index}`}>{entry}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+                {!concerns?.length && text && (
+                  <div
+                    className="concern-summary__text"
+                    dangerouslySetInnerHTML={{
+                      __html: formatAssistantContent(text),
+                    }}
+                  />
+                )}
+                {ratings && ratings.length > 0 ? (
+                  <div className="concern-summary__section">
+                    <p className="concern-summary__section-title">Condition ratings</p>
+                    <div className="concern-summary__ratings">
+                      {ratings.map((rating) => (
+                        <div key={rating.label} className="concern-summary__rating" aria-label={`${rating.label} ${rating.value} out of 5`}>
+                          <span>{rating.label}</span>
+                          <div className="concern-summary__rating-bar">
+                            <div
+                              className="concern-summary__rating-fill"
+                              style={{ width: `${Math.min(100, Math.max(0, (rating.value / 5) * 100))}%` }}
+                            />
+                          </div>
+                          <strong>{rating.value}/5</strong>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </article>
             )
           }
 

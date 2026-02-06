@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Pricing from '../Pricing/Pricing'
 import App from '../../App'
 import type { User } from 'firebase/auth'
@@ -10,6 +11,7 @@ type LandingProps = {
 
 const Landing = ({ user }: LandingProps) => {
   const [startCaptureSignal, setStartCaptureSignal] = useState(0)
+  const navigate = useNavigate()
 
   const handleGetStarted = () => {
     document.getElementById('capture')?.scrollIntoView({ behavior: 'smooth' })
@@ -19,19 +21,30 @@ const Landing = ({ user }: LandingProps) => {
   return (
     <div className="landing-page">
       <header className="landing-hero">
-        <h1 className="brand-logo">
-          <span className="brand-logo__glow" aria-hidden="true">Glowly</span>
-          <span className="brand-logo__text">Glowly</span>
-        </h1>
-        <p className="landing-hero__tagline">Your AI-powered skin care companion</p>
-        <button type="button" className="cta-elegant" onClick={handleGetStarted}>
-          <span className="cta-elegant__text">Get Started</span>
-          <span className="cta-elegant__icon" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M5 12h14M12 5l7 7-7 7" />
-            </svg>
-          </span>
-        </button>
+        {!user && (
+          <button
+            type="button"
+            className="landing-login-link"
+            onClick={() => navigate('/signin')}
+          >
+            Sign in
+          </button>
+        )}
+        <div className="landing-hero__content">
+          <h1 className="brand-logo">
+            <span className="brand-logo__glow" aria-hidden="true">Glowly</span>
+            <span className="brand-logo__text">Glowly</span>
+          </h1>
+          <p className="landing-hero__tagline">Your AI-powered skin care companion</p>
+          <button type="button" className="cta-elegant" onClick={handleGetStarted}>
+            <span className="cta-elegant__text">Get Started</span>
+            <span className="cta-elegant__icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            </span>
+          </button>
+        </div>
       </header>
       <section id="capture" className="landing-capture" aria-label="Capture">
         <App

@@ -114,6 +114,13 @@
   color: rgba(247, 251, 255, 0.85);
 }
 
+.concern-summary__rating-description {
+  grid-column: 1 / -1;
+  margin: 4px 0 0;
+  font-size: 0.82rem;
+  color: rgba(247, 251, 255, 0.7);
+}
+
 .concern-summary__rating-score {
   font-size: 0.95rem;
   color: rgba(247, 251, 255, 0.95);

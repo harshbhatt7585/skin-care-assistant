@@ -82,9 +82,12 @@ async def run_workflow(payload: ScanWorkflowRequest) -> StreamingResponse:
             analysis_prompt = (
                 "Please analyze my bare-face photo and respond with JSON only using this schema: "
                 "{concerns: string[], concerns_keys: string[], ratings: {Hydration: number, Oil_Balance: number, "
-                "Tone: number, Barrier_Strength: number}, observations: string}. "
-                "Each concern entry should be a short sentence (max 15 words). concern_keys must be lowercase snake_case. "
-                "Ratings are integers 1-5. Observations is a concise 1-sentence overview. No markdown, no prose outside the JSON."
+                "Tone: number, Barrier_Strength: number}, observations: string}. Hydration means how well skin holds "
+                "water. Oil_Balance checks T-zone shine vs dry patches. Tone looks for uneven pigmentation or shadowing. "
+                "Barrier_Strength refers to the outer stratum corneum that keeps moisture in and irritants out—look for "
+                "flakiness, redness, or shine to decide if the barrier is resilient or stressed. Each concern entry should "
+                "be a short sentence (max 15 words). concern_keys must be lowercase snake_case. Ratings are integers 1-5. "
+                "Observations is a concise 1-sentence overview. No markdown, no prose outside the JSON."
             )
             analysis_reply, analysis_history = await _agent_prompt(
                 agent, history, analysis_prompt

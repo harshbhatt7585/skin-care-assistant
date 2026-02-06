@@ -160,7 +160,7 @@ const Chats = forwardRef<ChatsHandle, ChatsProps>(
                 {
                   role: 'user' as const,
                   content:
-                    'Please analyze my bare-face photo and outline AM/PM rituals. Write analysis in points, Write concerns if acne, pigmentation, dark spots, redness, wrinkles, etc. and give rating on these conditions: Hydration, Oil Balance, Tone, Barrier Strength. Dont explain anything, just the points and ratings.',
+                    'Please analyze my bare-face photo and outline AM/PM rituals. Write analysis in points, write concerns if acne, pigmentation, dark spots, redness, wrinkles, etc. For ratings, score these 1-5 with short reasoning: Hydration (how well skin holds water), Oil Balance (shine vs dry patches), Tone (evenness of pigmentation/shadowing), Barrier Strength (outer barrier that keeps moisture in and irritants out—look for flakiness or redness). Dont explain anything else, just the points and ratings.',
                 },
               ]
             : nextHistory

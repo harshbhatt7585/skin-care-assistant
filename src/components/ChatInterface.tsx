@@ -10,6 +10,14 @@ import {
 } from '../lib/parsers'
 import './Chats/Chat.css'
 
+const RATING_DESCRIPTIONS: Record<string, string> = {
+  Hydration: 'Indicates how well your skin is holding water and staying supple.',
+  'Oil Balance': 'Looks for shine or dry patches to judge sebum balance across your T-zone and cheeks.',
+  Tone: 'Tracks uneven pigmentation, dark spots, or shadowing that affect overall tone.',
+  'Barrier Strength':
+    '“Barrier” refers to the outer skin layer that locks moisture in and keeps irritants out—healthy barrier looks calm and resilient.',
+}
+
 export type ChatMessage = {
   id: string
   role: 'user' | 'assistant'
@@ -91,18 +99,26 @@ const ChatInterface = ({ messages, inputValue, isLoading, onInputChange, onSubmi
                   <div className="concern-summary__section">
                     <p className="concern-summary__section-title">Condition ratings</p>
                     <div className="concern-summary__ratings">
-                      {ratings.map((rating) => (
-                        <div key={rating.label} className="concern-summary__rating" aria-label={`${rating.label} ${rating.value} out of 5`}>
-                          <span>{rating.label}</span>
-                          <div className="concern-summary__rating-bar">
-                            <div
-                              className="concern-summary__rating-fill"
-                              style={{ width: `${Math.min(100, Math.max(0, (rating.value / 5) * 100))}%` }}
-                            />
+                      {ratings.map((rating) => {
+                        const percentage = Math.min(100, Math.max(0, (rating.value / 5) * 100))
+                        const tone = rating.value >= 4 ? 'positive' : rating.value <= 2 ? 'negative' : 'neutral'
+                        const description = RATING_DESCRIPTIONS[rating.label]
+                        return (
+                          <div key={rating.label} className="concern-summary__rating" aria-label={`${rating.label} ${rating.value} out of 5`}>
+                            <span>{rating.label}</span>
+                            <div className="concern-summary__rating-bar">
+                              <div
+                                className={`concern-summary__rating-fill concern-summary__rating-fill--${tone}`}
+                                style={{ width: `${percentage}%` }}
+                              />
+                            </div>
+                            <strong className={`concern-summary__rating-score concern-summary__rating-score--${tone}`}>
+                              {rating.value}/5
+                            </strong>
+                            {description && <p className="concern-summary__rating-description">{description}</p>}
                           </div>
-                          <strong>{rating.value}/5</strong>
-                        </div>
-                      ))}
+                        )
+                      })}
                     </div>
                   </div>
                 ) : null}

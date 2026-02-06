@@ -6,7 +6,6 @@ export type ScanMetrics = {
   oilBalance: number
   tone: number
   barrierStrength: number
-  sensitivity: number
 }
 
 const layout = [
@@ -41,14 +40,6 @@ const layout = [
     className: 'scan-metrics__item--barrier',
     floatDelay: 0.2,
     floatDuration: 6.4,
-  },
-  {
-    label: 'Sensitivity',
-    key: 'sensitivity',
-    angle: 330,
-    className: 'scan-metrics__item--sensitivity',
-    floatDelay: 0.9,
-    floatDuration: 5.8,
   },
 ] as const
 
@@ -97,11 +88,6 @@ const ScanMetricsPanel = ({ metrics }: { metrics: ScanMetrics }) => {
           x: circleRect.left + circleRect.width * 0.2 - 50,
           y: circleRect.bottom - 20,
           angle: 160,
-        },
-        sensitivity: {
-          x: circleRect.right - circleRect.width * 0.2 + 70,
-          y: circleRect.bottom - 30,
-          angle: 330,
         },
       } satisfies Record<LayoutKey, { x: number; y: number; angle: number }>
 

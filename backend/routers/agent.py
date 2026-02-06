@@ -82,7 +82,7 @@ async def run_workflow(payload: ScanWorkflowRequest) -> StreamingResponse:
             analysis_prompt = (
                 "Please analyze my bare-face photo and respond with JSON only using this schema: "
                 "{concerns: string[], concerns_keys: string[], ratings: {Hydration: number, Oil_Balance: number, "
-                "Tone: number, Barrier_Strength: number, Sensitivity: number}, observations: string}. "
+                "Tone: number, Barrier_Strength: number}, observations: string}. "
                 "Each concern entry should be a short sentence (max 15 words). concern_keys must be lowercase snake_case. "
                 "Ratings are integers 1-5. Observations is a concise 1-sentence overview. No markdown, no prose outside the JSON."
             )

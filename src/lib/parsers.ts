@@ -235,7 +235,6 @@ export const parseConcernSummary = (content: string): ConcernSummary | null => {
       { key: 'oilbalance', label: 'Oil Balance' },
       { key: 'tone', label: 'Tone' },
       { key: 'barrierstrength', label: 'Barrier Strength' },
-      { key: 'sensitivity', label: 'Sensitivity' },
     ]
 
     const normalizedRatings = ratingOrder

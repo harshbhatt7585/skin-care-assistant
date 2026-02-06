@@ -368,14 +368,12 @@ function App({
                 oilBalance: Number(parsed.oilBalance),
                 tone: Number(parsed.tone),
                 barrierStrength: Number(parsed.barrierStrength),
-                sensitivity: Number(parsed.sensitivity),
               })
               latestScores = {
                 hydration: Number(parsed.hydration),
                 oilBalance: Number(parsed.oilBalance),
                 tone: Number(parsed.tone),
                 barrierStrength: Number(parsed.barrierStrength),
-                sensitivity: Number(parsed.sensitivity),
               }
             } catch (error) {
               console.warn('Could not parse scan metrics JSON', error)

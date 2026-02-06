@@ -1,4 +1,4 @@
-import type { FormEvent } from 'react'
+import { useEffect, useRef, type FormEvent } from 'react'
 import ProductShowcase from './ProductShowcase'
 import ShoppingPreview from './ShoppingPreview'
 import Loader from './Loader/Loader'
@@ -34,6 +34,11 @@ type ChatInterfaceProps = {
 }
 
 const ChatInterface = ({ messages, inputValue, isLoading, onInputChange, onSubmit, onNewScan }: ChatInterfaceProps) => {
+  const bottomRef = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+    window.scrollTo({ top: document.body.scrollHeight + 100000 })
+  }, [messages, isLoading])
+
   return (
     <div className="chat-thread">
       <div className="messages">
@@ -167,6 +172,7 @@ const ChatInterface = ({ messages, inputValue, isLoading, onInputChange, onSubmi
             <Loader variant="inline" />
           </article>
         )}
+        <div ref={bottomRef} aria-hidden />
       </div>
 
       <form className="chat-input" onSubmit={onSubmit}>

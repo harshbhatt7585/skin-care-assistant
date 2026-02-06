@@ -261,7 +261,8 @@
   flex: 1;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(4, 8, 12, 0.45);
+  backdrop-filter: blur(14px);
   padding: 0.95rem 1.4rem;
   color: inherit;
   transition: all 0.3s ease;
@@ -270,7 +271,7 @@
 .chat-input input:focus {
   outline: none;
   border-color: rgba(114, 255, 230, 0.5);
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(4, 8, 12, 0.65);
   box-shadow: 0 0 0 3px rgba(114, 255, 230, 0.1);
 }
 

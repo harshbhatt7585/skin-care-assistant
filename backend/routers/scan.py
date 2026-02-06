@@ -63,5 +63,7 @@ def delete_scan(payload: DeleteScanRequest) -> DeleteScanResponse:
 def store_scan(payload: StoreScanRequest) -> StoreScanResponse:
     scan = payload.scan
     doc_ref = db.collection("scans").document(scan.id)
-    doc_ref.set(scan.model_dump())
+    data = scan.model_dump()
+    data["images"] = []
+    doc_ref.set(data)
     return StoreScanResponse(success=True)

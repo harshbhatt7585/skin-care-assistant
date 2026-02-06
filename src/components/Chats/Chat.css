@@ -114,9 +114,21 @@
   color: rgba(247, 251, 255, 0.85);
 }
 
-.concern-summary__rating strong {
+.concern-summary__rating-score {
   font-size: 0.95rem;
   color: rgba(247, 251, 255, 0.95);
+}
+
+.concern-summary__rating-score--positive {
+  color: #4ade80;
+}
+
+.concern-summary__rating-score--neutral {
+  color: #facc15;
+}
+
+.concern-summary__rating-score--negative {
+  color: #fb7185;
 }
 
 .concern-summary__rating-bar {
@@ -131,8 +143,19 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: linear-gradient(90deg, #72ffe6, #a78bfa);
   transition: width 0.4s ease;
+}
+
+.concern-summary__rating-fill--positive {
+  background: linear-gradient(90deg, #4ade80, #86efac);
+}
+
+.concern-summary__rating-fill--neutral {
+  background: linear-gradient(90deg, #facc15, #fbbf24);
+}
+
+.concern-summary__rating-fill--negative {
+  background: linear-gradient(90deg, #fb7185, #f97316);
 }
 
 .bubble--user {

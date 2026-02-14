@@ -1,0 +1,47 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap');
+
+:root {
+  font-family: 'Manrope', 'Segoe UI', sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: #251b17;
+  background-color: #fff8f3;
+  --ink-primary: #2c201a;
+  --ink-secondary: #5d4a40;
+  --ink-muted: #877267;
+  --line-soft: rgba(120, 88, 67, 0.22);
+  --panel: rgba(255, 250, 246, 0.9);
+  --panel-faint: rgba(255, 255, 255, 0.7);
+  --panel-shadow: 0 20px 46px rgba(89, 50, 25, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink-primary);
+  background:
+    radial-gradient(circle at 12% 14%, rgba(246, 169, 106, 0.25), transparent 42%),
+    radial-gradient(circle at 82% 18%, rgba(242, 204, 157, 0.24), transparent 44%),
+    radial-gradient(circle at 70% 80%, rgba(227, 138, 102, 0.14), transparent 48%),
+    linear-gradient(180deg, #fff8f3 0%, #fdf3eb 55%, #f9ede5 100%);
+  background-attachment: fixed;
+}
+
+a {
+  color: inherit;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+pre {
+  font-family: 'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+}

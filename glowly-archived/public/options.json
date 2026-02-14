@@ -1,0 +1,16 @@
+{
+  "focusOptions": [
+    "Hydration cushion",
+    "Barrier repair",
+    "Calm inflammation",
+    "Clarify breakouts",
+    "Fade spots + brighten",
+    "Smooth texture"
+  ],
+  "environmentOptions": [
+    { "label": "Temperate / mixed climates", "value": "temperate" },
+    { "label": "Dry or desert air", "value": "dry" },
+    { "label": "Humid / tropical", "value": "humid" },
+    { "label": "Cold + indoor heat", "value": "cold" }
+  ]
+}

@@ -1,8 +1,15 @@
 .landing-page {
   min-height: 100vh;
-  padding: 28px clamp(18px, 4vw, 48px) 72px;
+  width: min(100%, 1240px);
+  margin: 0 auto;
+  box-sizing: border-box;
+  padding: 36px clamp(20px, 5vw, 64px) 88px;
   display: grid;
-  gap: 28px;
+  gap: clamp(30px, 4vw, 44px);
+}
+
+.landing-page > * {
+  width: 100%;
 }
 
 .landing-nav {
@@ -50,6 +57,8 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 20px;
+  max-width: 980px;
+  margin: 0 auto;
 }
 
 .landing-hero__content {
@@ -60,7 +69,7 @@
 }
 
 .landing-hero__content {
-  padding: clamp(20px, 4vw, 36px);
+  padding: clamp(24px, 4vw, 40px);
 }
 
 .landing-hero__eyebrow {
@@ -114,7 +123,9 @@
 .landing-categories {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
+  gap: 16px;
+  max-width: 1080px;
+  margin: 0 auto;
 }
 
 .landing-category {
@@ -122,7 +133,7 @@
   border-radius: 18px;
   background: var(--panel);
   box-shadow: var(--panel-shadow);
-  padding: 16px;
+  padding: 18px;
 }
 
 .landing-category h2 {
@@ -137,7 +148,9 @@
 }
 
 .landing-pricing {
-  margin-top: 8px;
+  margin-top: 16px;
+  max-width: 1120px;
+  margin-inline: auto;
 }
 
 @media (max-width: 980px) {
@@ -147,6 +160,11 @@
 }
 
 @media (max-width: 680px) {
+  .landing-page {
+    padding: 24px 16px 56px;
+    gap: 24px;
+  }
+
   .landing-nav {
     flex-direction: column;
     align-items: flex-start;

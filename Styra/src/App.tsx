@@ -289,42 +289,23 @@ function App({ user, embedded = false }: AppProps) {
       </header>
 
       <section className="shop-hero">
-        <div>
-          <p className="shop-hero__eyebrow">Today in your feed</p>
-          <h2>Shop trending edits across beauty, fashion, and accessories in one flow.</h2>
-          <p>
-            Explore curated drops, personalized picks, and quick checkout with a unified cart.
-            Built to make discovery and purchase effortless.
-          </p>
-        </div>
-        <div className="shop-hero__stats" aria-label="Marketplace stats">
-          <article>
-            <span>2h</span>
-            <p>Avg delivery in metro areas</p>
-          </article>
-          <article>
-            <span>98%</span>
-            <p>Verified beauty + fashion brands</p>
-          </article>
-          <article>
-            <span>Free</span>
-            <p>Shipping over $120</p>
-          </article>
+        <div className="shop-hero__content">
+          <p className="shop-hero__eyebrow">Find products fast</p>
+          <h2>What do you want to buy today?</h2>
+          <label className="shop-search shop-search--hero" htmlFor="catalog-search">
+            <span>Search products</span>
+            <input
+              id="catalog-search"
+              type="search"
+              placeholder="Try serum, blazer, sneaker, tote bag..."
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+          </label>
         </div>
       </section>
 
       <section className="shop-controls" aria-label="Catalog controls">
-        <label className="shop-search" htmlFor="catalog-search">
-          <span>Search products</span>
-          <input
-            id="catalog-search"
-            type="search"
-            placeholder="Try serum, blazer, sandal..."
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-          />
-        </label>
-
         <div className="shop-controls__row">
           <div className="shop-chips" role="tablist" aria-label="Department filter">
             {DEPARTMENTS.map((option) => (

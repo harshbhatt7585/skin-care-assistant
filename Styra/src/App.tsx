@@ -4,6 +4,7 @@ import { getAuth, signOut, type User } from 'firebase/auth'
 import { runFashionChatTurn } from './api/agent'
 import { parseShoppingPayload, type ShoppingProduct } from './lib/parsers'
 import type { ConversationTurn } from './types/conversation'
+import { detectCountryCode, getLocaleCountryCode } from './utils/location'
 import './App.css'
 
 type AppProps = {
@@ -11,12 +12,6 @@ type AppProps = {
   embedded?: boolean
   showStartButton?: boolean
   startCaptureSignal?: number
-}
-
-const getLocaleCountryCode = (): string => {
-  const locale = typeof navigator !== 'undefined' ? navigator.language : ''
-  const region = locale.split('-')[1]
-  return (region || 'US').toLowerCase()
 }
 
 const formatRating = (value?: number): string | undefined => {
@@ -80,41 +75,11 @@ function App({ user, embedded = false }: AppProps) {
 
   useEffect(() => {
     let cancelled = false
-
-    const fetchCountryFromCoordinates = async (latitude: number, longitude: number) => {
-      try {
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`
-        )
-        if (!response.ok) return
-        const data = (await response.json()) as { address?: { country_code?: string } }
-        const detectedCountry = data.address?.country_code?.toLowerCase()
-        if (detectedCountry && !cancelled) {
-          setCountry(detectedCountry)
-        }
-      } catch (error) {
-        console.warn('Reverse geocoding failed', error)
+    void detectCountryCode().then((detectedCountry) => {
+      if (detectedCountry && !cancelled) {
+        setCountry(detectedCountry)
       }
-    }
-
-    if (!navigator.geolocation) {
-      return () => {
-        cancelled = true
-      }
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        void fetchCountryFromCoordinates(
-          position.coords.latitude,
-          position.coords.longitude
-        )
-      },
-      (error) => {
-        console.warn('Location detection failed', error)
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-    )
+    })
 
     return () => {
       cancelled = true

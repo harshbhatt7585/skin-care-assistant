@@ -1,5 +1,7 @@
+'use client'
+
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useRouter } from 'next/navigation'
 import { getAuth, signOut, type User } from 'firebase/auth'
 import { runFashionChatTurn } from './api/agent'
 import { parseShoppingPayload, type ShoppingProduct } from './lib/parsers'
@@ -66,7 +68,7 @@ const ProductCards = ({ products }: { products: ShoppingProduct[] }) => {
 }
 
 function App({ user, embedded = false }: AppProps) {
-  const navigate = useNavigate()
+  const router = useRouter()
   const [prompt, setPrompt] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [history, setHistory] = useState<ConversationTurn[]>([])
@@ -88,13 +90,13 @@ function App({ user, embedded = false }: AppProps) {
 
   const handleAccountAction = async () => {
     if (!user) {
-      navigate('/signin')
+      router.push('/signin')
       return
     }
 
     try {
       await signOut(getAuth())
-      navigate('/')
+      router.push('/')
     } catch (error) {
       console.error('Unable to sign out', error)
     }
@@ -149,7 +151,7 @@ function App({ user, embedded = false }: AppProps) {
           <h1>Styra</h1>
         </div>
         <div className="shop-topbar__actions">
-          <button type="button" className="shop-link" onClick={() => navigate('/pricing')}>
+          <button type="button" className="shop-link" onClick={() => router.push('/pricing')}>
             Membership
           </button>
           <button type="button" className="shop-account" onClick={handleAccountAction}>

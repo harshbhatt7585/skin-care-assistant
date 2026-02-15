@@ -1,4 +1,6 @@
-import { useNavigate } from 'react-router-dom'
+'use client'
+
+import { useRouter } from 'next/navigation'
 import type { User } from 'firebase/auth'
 import Pricing from '../Pricing/Pricing'
 import './Landing.css'
@@ -15,20 +17,20 @@ const CATEGORY_SPOTLIGHT = [
 ]
 
 const Landing = ({ user }: LandingProps) => {
-  const navigate = useNavigate()
+  const router = useRouter()
 
   const handleStart = () => {
-    navigate(user ? '/home' : '/signin')
+    router.push(user ? '/home' : '/signin')
   }
 
   return (
     <div className="landing-page">
       <header className="landing-nav">
-        <button type="button" className="landing-nav__brand" onClick={() => navigate('/')}>
+        <button type="button" className="landing-nav__brand" onClick={() => router.push('/')}>
           Styra
         </button>
         <div className="landing-nav__actions">
-          <button type="button" className="landing-nav__link" onClick={() => navigate('/pricing')}>
+          <button type="button" className="landing-nav__link" onClick={() => router.push('/pricing')}>
             Membership
           </button>
           <button type="button" className="landing-nav__cta" onClick={handleStart}>
@@ -53,7 +55,7 @@ const Landing = ({ user }: LandingProps) => {
             <button type="button" className="landing-hero__primary" onClick={handleStart}>
               Enter the app
             </button>
-            <button type="button" className="landing-hero__ghost" onClick={() => navigate('/pricing')}>
+            <button type="button" className="landing-hero__ghost" onClick={() => router.push('/pricing')}>
               View plans
             </button>
           </div>

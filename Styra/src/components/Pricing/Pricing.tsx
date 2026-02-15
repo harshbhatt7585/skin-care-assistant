@@ -1,5 +1,7 @@
+'use client'
+
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useRouter } from 'next/navigation'
 import './Pricing.css'
 
 type PricingProps = {
@@ -7,7 +9,7 @@ type PricingProps = {
 }
 
 const Pricing = ({ embedded = false }: PricingProps) => {
-  const navigate = useNavigate()
+  const router = useRouter()
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly')
 
   const plans = useMemo(
@@ -54,7 +56,7 @@ const Pricing = ({ embedded = false }: PricingProps) => {
   )
 
   const handleStart = () => {
-    navigate('/signin')
+    router.push('/signin')
   }
 
   return (
@@ -62,11 +64,11 @@ const Pricing = ({ embedded = false }: PricingProps) => {
       <header className="pricing-hero">
         {!embedded && (
           <nav className="pricing-nav">
-            <button type="button" className="pricing-nav__logo" onClick={() => navigate('/')}>
+            <button type="button" className="pricing-nav__logo" onClick={() => router.push('/')}>
               Styra
             </button>
             <div className="pricing-nav__actions">
-              <button type="button" className="pricing-nav__link" onClick={() => navigate('/signin')}>
+              <button type="button" className="pricing-nav__link" onClick={() => router.push('/signin')}>
                 Sign in
               </button>
               <button type="button" className="pricing-nav__cta" onClick={handleStart}>

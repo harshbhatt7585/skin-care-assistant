@@ -1,5 +1,7 @@
+'use client'
+
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useRouter } from 'next/navigation'
 import { getAuth, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
 import { registerUser, getUser } from '../../api/auth'
 import type { User as UserType } from '../../types/auth'
@@ -8,7 +10,7 @@ import './SignIn.css'
 const SignIn = () => {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const navigate = useNavigate()
+  const router = useRouter()
 
   const checkUserExists = async (uid: string | undefined): Promise<UserType | null> => {
     if (!uid) return null
@@ -50,7 +52,7 @@ const SignIn = () => {
 
   return (
     <div className="sign-in">
-      <button className="sign-in__back" onClick={() => navigate('/')} aria-label="Go back">
+      <button className="sign-in__back" onClick={() => router.push('/')} aria-label="Go back">
         <svg
           width="20"
           height="20"

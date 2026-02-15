@@ -230,7 +230,6 @@ function App({ user, embedded = false }: AppProps) {
       </section>
 
       {hasConversationStarted ? (
-        <section className="shop-chat-composer" aria-label="Continue conversation">
           <form
             className="shop-prompt-form shop-prompt-form--compact"
             onSubmit={(event) => {
@@ -258,7 +257,6 @@ function App({ user, embedded = false }: AppProps) {
               {isSubmitting ? '...' : 'Send'}
             </button>
           </form>
-        </section>
       ) : null}
     </div>
   )

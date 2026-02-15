@@ -159,11 +159,11 @@ function App({ user, embedded = false }: AppProps) {
         </div>
       </header>
 
-      <section className="shop-hero">
-        <div className="shop-hero__content">
-          <p className="shop-hero__eyebrow">Find products fast</p>
-          <h2>What do you want to buy today?</h2>
-          <div className={`shop-prompt-shell ${hasConversationStarted ? 'is-collapsed' : ''}`}>
+      {!hasConversationStarted ? (
+        <section className="shop-hero">
+          <div className="shop-hero__content">
+            <p className="shop-hero__eyebrow">Find products fast</p>
+            <h2>What do you want to buy today?</h2>
             <form
               className="shop-prompt-form"
               onSubmit={(event) => {
@@ -188,8 +188,8 @@ function App({ user, embedded = false }: AppProps) {
               </button>
             </form>
           </div>
-        </div>
-      </section>
+        </section>
+      ) : null}
 
       <section className="shop-chat" aria-live="polite">
         {assistantError ? (

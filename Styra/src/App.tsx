@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getAuth, signOut, type User } from 'firebase/auth'
 import { runFashionChatTurn } from './api/agent'
@@ -13,7 +13,7 @@ type AppProps = {
   startCaptureSignal?: number
 }
 
-const getCountryCode = (): string => {
+const getLocaleCountryCode = (): string => {
   const locale = typeof navigator !== 'undefined' ? navigator.language : ''
   const region = locale.split('-')[1]
   return (region || 'US').toLowerCase()
@@ -76,7 +76,50 @@ function App({ user, embedded = false }: AppProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [history, setHistory] = useState<ConversationTurn[]>([])
   const [assistantError, setAssistantError] = useState<string | null>(null)
-  const [country] = useState(getCountryCode)
+  const [country, setCountry] = useState(getLocaleCountryCode)
+
+  useEffect(() => {
+    let cancelled = false
+
+    const fetchCountryFromCoordinates = async (latitude: number, longitude: number) => {
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`
+        )
+        if (!response.ok) return
+        const data = (await response.json()) as { address?: { country_code?: string } }
+        const detectedCountry = data.address?.country_code?.toLowerCase()
+        if (detectedCountry && !cancelled) {
+          setCountry(detectedCountry)
+        }
+      } catch (error) {
+        console.warn('Reverse geocoding failed', error)
+      }
+    }
+
+    if (!navigator.geolocation) {
+      return () => {
+        cancelled = true
+      }
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        void fetchCountryFromCoordinates(
+          position.coords.latitude,
+          position.coords.longitude
+        )
+      },
+      (error) => {
+        console.warn('Location detection failed', error)
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    )
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const handleAccountAction = async () => {
     if (!user) {

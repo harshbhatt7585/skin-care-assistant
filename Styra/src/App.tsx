@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getAuth, signOut, type User } from 'firebase/auth'
-import { runBackendChatTurn } from './api/agent'
+import { runFashionChatTurn } from './api/agent'
 import type { ConversationTurn } from './types/conversation'
 import './App.css'
 
@@ -48,16 +48,13 @@ function App({ user, embedded = false }: AppProps) {
       content: trimmed,
     }
 
-    let nextHistory: ConversationTurn[] = []
-    setHistory((current) => {
-      nextHistory = [...current, userTurn]
-      return nextHistory
-    })
+    const nextHistory = [...history, userTurn]
+    setHistory(nextHistory)
     setPrompt('')
     setIsSubmitting(true)
 
     try {
-      const response = await runBackendChatTurn({
+      const response = await runFashionChatTurn({
         photoDataUrls: [],
         country,
         history: nextHistory,

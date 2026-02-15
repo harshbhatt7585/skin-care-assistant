@@ -5,7 +5,7 @@ from typing import AsyncGenerator, List
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
-from agents.cosmetist import create_cosmetist_agent
+from agents.cosmetist import create_cosmetist_agent, create_fashion_assistant_agent
 from schema.scan import (
     ConversationTurn,
     ScanChatTurnRequest,
@@ -151,6 +151,20 @@ async def run_workflow(payload: ScanWorkflowRequest) -> StreamingResponse:
 @agent_router.post("/chat-turn", response_model=ScanChatTurnResponse)
 async def run_chat_turn(payload: ScanChatTurnRequest) -> ScanChatTurnResponse:
     agent = create_cosmetist_agent(payload.photo_data_urls, payload.country.lower())
+    reply = await asyncio.to_thread(
+        agent.respond, [message.model_dump() for message in payload.history]
+    )
+    updated_history = payload.history + [
+        ConversationTurn(role="assistant", content=reply)
+    ]
+    return ScanChatTurnResponse(reply=reply, history=updated_history)
+
+
+@agent_router.post("/fashion-chat-turn", response_model=ScanChatTurnResponse)
+async def run_fashion_chat_turn(payload: ScanChatTurnRequest) -> ScanChatTurnResponse:
+    agent = create_fashion_assistant_agent(
+        payload.country.lower(), payload.photo_data_urls
+    )
     reply = await asyncio.to_thread(
         agent.respond, [message.model_dump() for message in payload.history]
     )

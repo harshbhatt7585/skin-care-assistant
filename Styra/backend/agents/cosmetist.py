@@ -165,7 +165,7 @@ def create_serper_tool(gl: str) -> ToolSpec:
 
     return ToolSpec(
         name="serper",
-        description="Fetch shopping search results for skincare recommendations.",
+        description="Fetch shopping search results for product recommendations.",
         parameters={
             "type": "object",
             "properties": {
@@ -193,6 +193,30 @@ def create_cosmetist_agent(photo_data_urls: List[str], gl: str) -> Agent:
                 "You can see the provided bare-face scan image via the companion user message. Never claim you cannot view it; describe what you observe and avoid asking for re-uploads.",
                 "Chat naturally using markdown. When the user asks for products or shopping links, call the serper tool with a focused query and present the picks in markdown bullets.",
                 'Whenever you recommend purchasable products, also append a ```json {"products": [...] } ``` code block whose objects include title, link, source/retailer, price (if known), and imageUrl so the UI can render the shopping cards.',
+            ]
+        ),
+        tools=[create_serper_tool(gl)],
+    )
+
+
+def create_fashion_assistant_agent(
+    gl: str, photo_data_urls: Optional[List[str]] = None
+) -> Agent:
+    return Agent(
+        model="gpt-5-mini",
+        max_turns=6,
+        photo_data_urls=photo_data_urls or [],
+        system_prompt=" ".join(
+            [
+                "You are Styra, an expert fashion shopping assistant.",
+                "Help users discover the best products across fashion, beauty, accessories, and footwear.",
+                "Be concise, practical, and conversational.",
+                "If user intent is missing critical details, ask one short clarifying question before recommending.",
+                "When recommending products or shopping links, always call the serper tool first.",
+                "Never invent links, prices, or product details that are not from tool output.",
+                "Present recommendations in markdown bullets and include brief reasons.",
+                'Whenever you recommend purchasable products, append a ```json {"products": [...] } ``` code block.',
+                "Each product object should include: title, source, link, price, imageUrl, rating, ratingCount, productId, and position when available.",
             ]
         ),
         tools=[create_serper_tool(gl)],

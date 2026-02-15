@@ -116,3 +116,27 @@ export async function runBackendChatTurn({
 
   return (await response.json()) as { reply: string; history: ConversationTurn[] }
 }
+
+export async function runFashionChatTurn({
+  photoDataUrls,
+  country,
+  history,
+}: ChatTurnArgs): Promise<{ reply: string; history: ConversationTurn[] }> {
+  const response = await fetch(`${BASE_URL}/agent/fashion-chat-turn`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      photo_data_urls: photoDataUrls,
+      country,
+      history,
+    }),
+  })
+
+  if (!response.ok) {
+    throw new Error('Failed to run fashion chat turn.')
+  }
+
+  return (await response.json()) as { reply: string; history: ConversationTurn[] }
+}

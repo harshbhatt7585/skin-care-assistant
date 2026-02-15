@@ -140,6 +140,8 @@ function App({ user, embedded = false }: AppProps) {
     }
   }
 
+  const hasConversationStarted = history.length > 0
+
   return (
     <div className={`shop-page ${embedded ? 'shop-page--embedded' : ''}`}>
       <header className="shop-topbar">
@@ -161,29 +163,31 @@ function App({ user, embedded = false }: AppProps) {
         <div className="shop-hero__content">
           <p className="shop-hero__eyebrow">Find products fast</p>
           <h2>What do you want to buy today?</h2>
-          <form
-            className="shop-prompt-form"
-            onSubmit={(event) => {
-              event.preventDefault()
-              void submitPrompt(prompt)
-            }}
-          >
-            <label className="sr-only" htmlFor="assistant-prompt">
-              Describe what you want to buy
-            </label>
-            <input
-              id="assistant-prompt"
-              type="text"
-              className="shop-prompt-input"
-              placeholder="Describe product, budget, and use case"
-              value={prompt}
-              onChange={(event) => setPrompt(event.target.value)}
-              disabled={isSubmitting}
-            />
-            <button type="submit" className="shop-prompt-submit" disabled={isSubmitting || prompt.trim().length === 0}>
-              {isSubmitting ? 'Thinking...' : 'Ask assistant'}
-            </button>
-          </form>
+          <div className={`shop-prompt-shell ${hasConversationStarted ? 'is-collapsed' : ''}`}>
+            <form
+              className="shop-prompt-form"
+              onSubmit={(event) => {
+                event.preventDefault()
+                void submitPrompt(prompt)
+              }}
+            >
+              <label className="sr-only" htmlFor="assistant-prompt">
+                Describe what you want to buy
+              </label>
+              <input
+                id="assistant-prompt"
+                type="text"
+                className="shop-prompt-input"
+                placeholder="Describe product, budget, and use case"
+                value={prompt}
+                onChange={(event) => setPrompt(event.target.value)}
+                disabled={isSubmitting}
+              />
+              <button type="submit" className="shop-prompt-submit" disabled={isSubmitting || prompt.trim().length === 0}>
+                {isSubmitting ? 'Thinking...' : 'Ask assistant'}
+              </button>
+            </form>
+          </div>
         </div>
       </section>
 
@@ -224,6 +228,38 @@ function App({ user, embedded = false }: AppProps) {
           </article>
         ) : null}
       </section>
+
+      {hasConversationStarted ? (
+        <section className="shop-chat-composer" aria-label="Continue conversation">
+          <form
+            className="shop-prompt-form shop-prompt-form--compact"
+            onSubmit={(event) => {
+              event.preventDefault()
+              void submitPrompt(prompt)
+            }}
+          >
+            <label className="sr-only" htmlFor="assistant-prompt-compact">
+              Continue conversation
+            </label>
+            <input
+              id="assistant-prompt-compact"
+              type="text"
+              className="shop-prompt-input shop-prompt-input--compact"
+              placeholder="Ask a follow-up (size, budget, color, brand...)"
+              value={prompt}
+              onChange={(event) => setPrompt(event.target.value)}
+              disabled={isSubmitting}
+            />
+            <button
+              type="submit"
+              className="shop-prompt-submit shop-prompt-submit--compact"
+              disabled={isSubmitting || prompt.trim().length === 0}
+            >
+              {isSubmitting ? '...' : 'Send'}
+            </button>
+          </form>
+        </section>
+      ) : null}
     </div>
   )
 }

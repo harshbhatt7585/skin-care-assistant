@@ -92,6 +92,21 @@
   line-height: 1.12;
 }
 
+.shop-prompt-shell {
+  max-height: 220px;
+  opacity: 1;
+  transform: translateY(0);
+  overflow: hidden;
+  transition: max-height 0.35s ease, opacity 0.25s ease, transform 0.35s ease;
+}
+
+.shop-prompt-shell.is-collapsed {
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
+}
+
 .shop-prompt-form {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -122,6 +137,49 @@
   font-weight: 700;
   color: #2a1e16;
   background: linear-gradient(140deg, #fcc08e, #ef8d57);
+}
+
+.shop-chat-composer {
+  position: sticky;
+  bottom: 12px;
+  z-index: 20;
+  width: min(100%, 980px);
+  margin: 0 auto;
+  padding: 10px;
+  border: 1px solid var(--line-soft);
+  border-radius: 18px;
+  background: rgba(255, 249, 244, 0.94);
+  box-shadow: 0 14px 30px rgba(39, 22, 10, 0.12);
+  animation: composerSlideUp 0.28s ease;
+}
+
+.shop-prompt-form--compact {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.shop-prompt-input--compact {
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: 0.95rem;
+  box-shadow: none;
+}
+
+.shop-prompt-submit--compact {
+  border-radius: 12px;
+  padding: 11px 14px;
+  font-size: 0.9rem;
+}
+
+@keyframes composerSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .shop-chat {
@@ -316,6 +374,19 @@
   }
 
   .shop-prompt-submit {
+    width: 100%;
+  }
+
+  .shop-chat-composer {
+    bottom: 8px;
+    padding: 8px;
+  }
+
+  .shop-prompt-form--compact {
+    grid-template-columns: 1fr;
+  }
+
+  .shop-prompt-submit--compact {
     width: 100%;
   }
 }

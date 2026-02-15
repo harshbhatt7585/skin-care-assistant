@@ -1,12 +1,9 @@
 {
-  "framework": "vite",
-  "installCommand": "npm --prefix Styra install",
-  "buildCommand": "npm --prefix Styra run build",
-  "outputDirectory": "Styra/dist",
-  "rewrites": [
+  "version": 2,
+  "builds": [
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "src": "Styra/package.json",
+      "use": "@vercel/next"
     }
   ]
 }

@@ -8,7 +8,7 @@ export type ScanRecord = {
   scores: Record<string, unknown>
 }
 
-const BASE_URL = import.meta.env.VITE_API_URL
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
 
 export async function storeScan(scan: ScanRecord): Promise<void> {
   const response = await fetch(`${BASE_URL}/scan/store-scan`, {

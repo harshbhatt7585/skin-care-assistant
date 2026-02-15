@@ -195,27 +195,23 @@ function App({ user, embedded = false }: AppProps) {
           <p className="shop-error-state">{assistantError}</p>
         ) : null}
 
-        {history.length === 0 ? (
-          <p className="shop-empty-state">Start by describing what you want to buy, and I will suggest the best option.</p>
-        ) : (
-          history.map((message, index) => {
-            const parsedShopping =
-              message.role === 'assistant' ? parseShoppingPayload(message.content) : null
-            const messageText = parsedShopping?.remainder || message.content
+        {history.map((message, index) => {
+          const parsedShopping =
+            message.role === 'assistant' ? parseShoppingPayload(message.content) : null
+          const messageText = parsedShopping?.remainder || message.content
 
-            return (
-              <article
-                key={`${message.role}-${index}`}
-                className={`shop-message ${message.role === 'user' ? 'shop-message--user' : 'shop-message--assistant'}`}
-              >
-                <div className="shop-message__bubble">
-                  {messageText ? <p className="shop-message__text">{messageText}</p> : null}
-                  {parsedShopping ? <ProductCards products={parsedShopping.payload.products} /> : null}
-                </div>
-              </article>
-            )
-          })
-        )}
+          return (
+            <article
+              key={`${message.role}-${index}`}
+              className={`shop-message ${message.role === 'user' ? 'shop-message--user' : 'shop-message--assistant'}`}
+            >
+              <div className="shop-message__bubble">
+                {messageText ? <p className="shop-message__text">{messageText}</p> : null}
+                {parsedShopping ? <ProductCards products={parsedShopping.payload.products} /> : null}
+              </div>
+            </article>
+          )
+        })}
 
         {isSubmitting ? (
           <article className="shop-message shop-message--assistant">

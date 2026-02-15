@@ -122,17 +122,26 @@ export async function runFashionChatTurn({
   country,
   history,
 }: ChatTurnArgs): Promise<{ reply: string; history: ConversationTurn[] }> {
-  const response = await fetch(`${BASE_URL}/agent/fashion-chat-turn`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      photo_data_urls: photoDataUrls,
-      country,
-      history,
-    }),
-  })
+  let response: Response
+  try {
+    response = await fetch(`${BASE_URL}/agent/fashion-chat-turn`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        photo_data_urls: photoDataUrls,
+        country,
+        history,
+      }),
+    })
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : 'Network request failed'
+    throw new Error(
+      `Cannot reach assistant API at ${BASE_URL}. ${message}. Start backend on port 8000 and verify VITE_API_URL.`
+    )
+  }
 
   if (!response.ok) {
     throw new Error('Failed to run fashion chat turn.')

@@ -141,6 +141,15 @@
   color: var(--ink-secondary);
 }
 
+.shop-error-state {
+  margin: 0;
+  border: 1px solid rgba(196, 56, 56, 0.25);
+  border-radius: 16px;
+  padding: 12px 14px;
+  background: rgba(255, 231, 231, 0.75);
+  color: #7d2020;
+}
+
 .shop-message {
   display: grid;
   gap: 6px;
@@ -167,6 +176,11 @@
   color: var(--ink-primary);
 }
 
+.shop-message__text {
+  white-space: pre-line;
+  line-height: 1.55;
+}
+
 .shop-message--user {
   justify-items: end;
 }
@@ -183,6 +197,100 @@
 
 .shop-message__bubble--pending {
   opacity: 0.9;
+}
+
+.shop-product-grid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.shop-product-card {
+  display: flex;
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+  border: 1px solid var(--line-soft);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 10px;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.shop-product-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px rgba(30, 17, 9, 0.12);
+}
+
+.shop-product-card__image {
+  width: 72px;
+  height: 72px;
+  border-radius: 10px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid var(--line-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.shop-product-card__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.shop-product-card__image.is-placeholder span {
+  font-size: 0.7rem;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.shop-product-card__body {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  align-content: start;
+}
+
+.shop-product-card__body h4 {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.25;
+  color: var(--ink-primary);
+}
+
+.shop-product-card__source {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--ink-muted);
+}
+
+.shop-product-card__stats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.shop-product-card__price {
+  font-weight: 700;
+  color: #69361d;
+  font-size: 0.84rem;
+}
+
+.shop-product-card__rating {
+  color: #8b5a1a;
+  font-size: 0.8rem;
+}
+
+.shop-product-card__cta {
+  font-size: 0.79rem;
+  color: #7a3f22;
+  font-weight: 600;
 }
 
 .sr-only {

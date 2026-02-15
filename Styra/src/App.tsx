@@ -146,7 +146,6 @@ function App({ user, embedded = false }: AppProps) {
     <div className={`shop-page ${embedded ? 'shop-page--embedded' : ''}`}>
       <header className="shop-topbar">
         <div className="shop-brand">
-          <p className="shop-brand__eyebrow">AI shopping assistant</p>
           <h1>Styra</h1>
         </div>
         <div className="shop-topbar__actions">

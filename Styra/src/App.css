@@ -28,14 +28,6 @@
   letter-spacing: 0.03em;
 }
 
-.shop-brand__eyebrow {
-  margin: 0 0 4px;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  font-size: 0.72rem;
-  color: var(--ink-muted);
-}
-
 .shop-topbar__actions {
   display: flex;
   align-items: center;

@@ -58,20 +58,6 @@ const Landing = ({ user }: LandingProps) => {
             </button>
           </div>
         </div>
-        <aside className="landing-hero__panel" aria-label="Key numbers">
-          <article>
-            <span>15k+</span>
-            <p>Products curated weekly</p>
-          </article>
-          <article>
-            <span>4.9/5</span>
-            <p>Average customer rating</p>
-          </article>
-          <article>
-            <span>24/7</span>
-            <p>Personalized shopping guidance</p>
-          </article>
-        </aside>
       </section>
 
       <section className="landing-categories" aria-label="Category spotlight">

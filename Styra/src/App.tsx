@@ -209,7 +209,6 @@ function App({ user, embedded = false }: AppProps) {
                 key={`${message.role}-${index}`}
                 className={`shop-message ${message.role === 'user' ? 'shop-message--user' : 'shop-message--assistant'}`}
               >
-                <p className="shop-message__label">{message.role === 'user' ? 'You' : 'Styra Assistant'}</p>
                 <div className="shop-message__bubble">
                   {messageText ? <p className="shop-message__text">{messageText}</p> : null}
                   {parsedShopping ? <ProductCards products={parsedShopping.payload.products} /> : null}
@@ -221,7 +220,6 @@ function App({ user, embedded = false }: AppProps) {
 
         {isSubmitting ? (
           <article className="shop-message shop-message--assistant">
-            <p className="shop-message__label">Styra Assistant</p>
             <div className="shop-message__bubble shop-message__bubble--pending">
               <p>Working on your request...</p>
             </div>

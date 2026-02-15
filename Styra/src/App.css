@@ -206,14 +206,6 @@
   gap: 6px;
 }
 
-.shop-message__label {
-  margin: 0;
-  font-size: 0.74rem;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: var(--ink-muted);
-}
-
 .shop-message__bubble {
   border: 1px solid var(--line-soft);
   border-radius: 18px;

@@ -158,6 +158,20 @@
   box-shadow: 0 18px 34px rgba(80, 53, 37, 0.08);
 }
 
+.shop-placeholder {
+  max-width: 880px;
+  margin: 0 auto;
+  border: 1px dashed var(--line-soft);
+  border-radius: 18px;
+  background: var(--panel-faint);
+  padding: 16px 18px;
+}
+
+.shop-placeholder p {
+  margin: 0;
+  color: var(--ink-secondary);
+}
+
 .shop-controls__row {
   display: flex;
   align-items: flex-end;

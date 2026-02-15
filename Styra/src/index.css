@@ -5,7 +5,7 @@
   line-height: 1.5;
   font-weight: 400;
   color: #251b17;
-  background-color: #fff8f3;
+  background-color: #f4ebe4;
   --ink-primary: #2c201a;
   --ink-secondary: #4b392f;
   --ink-muted: #634e43;
@@ -24,10 +24,10 @@ body {
   min-height: 100vh;
   color: var(--ink-primary);
   background:
-    radial-gradient(circle at 12% 14%, rgba(246, 169, 106, 0.25), transparent 42%),
-    radial-gradient(circle at 82% 18%, rgba(242, 204, 157, 0.24), transparent 44%),
-    radial-gradient(circle at 70% 80%, rgba(227, 138, 102, 0.14), transparent 48%),
-    linear-gradient(180deg, #fff8f3 0%, #fdf3eb 55%, #f9ede5 100%);
+    radial-gradient(circle at 12% 14%, rgba(232, 154, 94, 0.24), transparent 42%),
+    radial-gradient(circle at 82% 18%, rgba(218, 177, 132, 0.23), transparent 44%),
+    radial-gradient(circle at 70% 80%, rgba(202, 120, 88, 0.15), transparent 48%),
+    linear-gradient(180deg, #f4ebe4 0%, #efe2d8 55%, #e8d9cc 100%);
   background-attachment: fixed;
 }
 

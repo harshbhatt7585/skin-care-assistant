@@ -7,9 +7,9 @@
   color: #251b17;
   background-color: #fff8f3;
   --ink-primary: #2c201a;
-  --ink-secondary: #5d4a40;
-  --ink-muted: #877267;
-  --line-soft: rgba(120, 88, 67, 0.22);
+  --ink-secondary: #4b392f;
+  --ink-muted: #634e43;
+  --line-soft: rgba(102, 73, 56, 0.3);
   --panel: rgba(255, 250, 246, 0.9);
   --panel-faint: rgba(255, 255, 255, 0.7);
   --panel-shadow: 0 20px 46px rgba(89, 50, 25, 0.08);
@@ -40,6 +40,11 @@ input,
 textarea,
 select {
   font: inherit;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #866c5f;
 }
 
 pre {

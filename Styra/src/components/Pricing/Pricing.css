@@ -3,7 +3,7 @@
 :root {
   --pricing-bg: #070b0c;
   --pricing-ink: #f6f4f1;
-  --pricing-muted: rgba(246, 244, 241, 0.68);
+  --pricing-muted: rgba(246, 244, 241, 0.84);
   --pricing-accent: #ffb36a;
   --pricing-accent-strong: #ff8f4d;
   --pricing-teal: #6dffd6;
@@ -29,10 +29,34 @@
   min-height: auto;
   padding: 0;
   background: transparent;
+  --pricing-ink: var(--ink-primary);
+  --pricing-muted: var(--ink-secondary);
+  --pricing-border: rgba(102, 73, 56, 0.26);
+  --pricing-card: rgba(255, 250, 246, 0.92);
+  --pricing-teal: #2f8f78;
+  --pricing-accent: #f7ba7c;
+  --pricing-accent-strong: #e78d5b;
 }
 
 .pricing-page--embedded::before {
   display: none;
+}
+
+.pricing-page--embedded .pricing-card {
+  box-shadow: var(--panel-shadow);
+}
+
+.pricing-page--embedded .billing-toggle {
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.pricing-page--embedded .billing-toggle__button.is-active {
+  background: rgba(47, 143, 120, 0.14);
+}
+
+.pricing-page--embedded .pricing-faq__card {
+  background: rgba(255, 250, 246, 0.88);
+  border: 1px solid var(--pricing-border);
 }
 
 .pricing-page::before {
@@ -100,7 +124,7 @@
   font-size: 0.95rem;
   color: var(--pricing-muted);
   background: transparent;
-  border: 1px solid transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   padding: 8px 14px;
   border-radius: 999px;
   cursor: pointer;
@@ -201,6 +225,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 24px;
+  align-items: stretch;
   position: relative;
   z-index: 1;
 }
@@ -218,6 +243,7 @@
   backdrop-filter: blur(16px);
   box-shadow: 0 24px 60px rgba(7, 12, 14, 0.5);
   transition: transform 0.3s ease, border-color 0.3s ease;
+  height: 100%;
 }
 
 .pricing-card::after {
@@ -258,17 +284,20 @@
   font-family: 'Fraunces', serif;
   margin: 0;
   font-size: 1.6rem;
+  min-height: 2.2em;
 }
 
 .pricing-card__description {
   margin: 0;
   color: var(--pricing-muted);
+  min-height: 3.2em;
 }
 
 .pricing-card__price {
   display: flex;
   align-items: baseline;
   gap: 10px;
+  min-height: 2.6rem;
 }
 
 .pricing-card__amount {
@@ -301,7 +330,7 @@
 }
 
 .pricing-card__list {
-  margin: 0;
+  margin: auto 0 0;
   padding-left: 18px;
   color: var(--pricing-muted);
   display: grid;

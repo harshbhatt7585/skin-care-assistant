@@ -240,22 +240,24 @@ function App({ user, embedded = false }: AppProps) {
           <label className="sr-only" htmlFor="assistant-prompt-compact">
             Continue conversation
           </label>
-          <input
-            id="assistant-prompt-compact"
-            type="text"
-            className="shop-prompt-input shop-prompt-input--compact"
-            placeholder="Ask a follow-up (size, budget, color, brand...)"
-            value={prompt}
-            onChange={(event) => setPrompt(event.target.value)}
-            disabled={isSubmitting}
-          />
-          <button
-            type="submit"
-            className="shop-prompt-submit shop-prompt-submit--compact"
-            disabled={isSubmitting || prompt.trim().length === 0}
-          >
-            {isSubmitting ? '...' : 'Send'}
-          </button>
+          <div className="shop-input-with-action">
+            <input
+              id="assistant-prompt-compact"
+              type="text"
+              className="shop-prompt-input shop-prompt-input--compact"
+              placeholder="Ask a follow-up (size, budget, color, brand...)"
+              value={prompt}
+              onChange={(event) => setPrompt(event.target.value)}
+              disabled={isSubmitting}
+            />
+            <button
+              type="submit"
+              className="shop-prompt-submit shop-prompt-submit--inside"
+              disabled={isSubmitting || prompt.trim().length === 0}
+            >
+              {isSubmitting ? '...' : 'Send'}
+            </button>
+          </div>
         </form>
       ) : null}
     </div>

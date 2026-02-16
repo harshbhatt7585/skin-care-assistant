@@ -151,9 +151,6 @@ function App({ user, embedded = false }: AppProps) {
           <h1>Styra</h1>
         </div>
         <div className="shop-topbar__actions">
-          <button type="button" className="shop-link" onClick={() => router.push('/pricing')}>
-            Membership
-          </button>
           <button type="button" className="shop-account" onClick={handleAccountAction}>
             {user ? 'Sign out' : 'Sign in'}
           </button>

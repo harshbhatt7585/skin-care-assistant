@@ -2,7 +2,6 @@
 
 import { useRouter } from 'next/navigation'
 import type { User } from 'firebase/auth'
-import Pricing from '../Pricing/Pricing'
 import './Landing.css'
 
 type LandingProps = {
@@ -30,9 +29,6 @@ const Landing = ({ user }: LandingProps) => {
           Styra
         </button>
         <div className="landing-nav__actions">
-          <button type="button" className="landing-nav__link" onClick={() => router.push('/pricing')}>
-            Membership
-          </button>
           <button type="button" className="landing-nav__cta" onClick={handleStart}>
             Start shopping
           </button>
@@ -55,9 +51,6 @@ const Landing = ({ user }: LandingProps) => {
             <button type="button" className="landing-hero__primary" onClick={handleStart}>
               Enter the app
             </button>
-            <button type="button" className="landing-hero__ghost" onClick={() => router.push('/pricing')}>
-              View plans
-            </button>
           </div>
         </div>
       </section>
@@ -71,9 +64,6 @@ const Landing = ({ user }: LandingProps) => {
         ))}
       </section>
 
-      <section className="landing-pricing" aria-label="Membership plans">
-        <Pricing embedded />
-      </section>
     </div>
   )
 }

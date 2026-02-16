@@ -147,12 +147,6 @@
   font-size: 0.92rem;
 }
 
-.landing-pricing {
-  margin-top: 16px;
-  max-width: 1120px;
-  margin-inline: auto;
-}
-
 @media (max-width: 980px) {
   .landing-categories {
     grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -150,6 +150,7 @@
 .landing-showcase {
   margin-inline: calc(50% - 50vw);
   overflow-x: clip;
+  padding: 14px 0 18px;
 }
 
 .landing-showcase__rail {
@@ -157,6 +158,17 @@
   grid-template-columns: repeat(7, minmax(0, 1fr));
   width: 100%;
   gap: 0;
+  align-items: end;
+}
+
+.landing-showcase__image {
+  --float-offset: 0px;
+  --float-delay: 0s;
+  position: relative;
+  padding-inline: 2px;
+  transform: translateY(var(--float-offset));
+  animation: landingFloat 7s ease-in-out infinite;
+  animation-delay: var(--float-delay);
 }
 
 .landing-showcase__image img {
@@ -164,6 +176,59 @@
   aspect-ratio: 3 / 4;
   object-fit: cover;
   display: block;
+  border-radius: 12px;
+  box-shadow: 0 18px 34px rgba(28, 17, 10, 0.16);
+}
+
+.landing-showcase__image:nth-child(1) {
+  --float-offset: 12px;
+  --float-delay: -0.5s;
+}
+
+.landing-showcase__image:nth-child(2) {
+  --float-offset: 2px;
+  --float-delay: -1.8s;
+}
+
+.landing-showcase__image:nth-child(3) {
+  --float-offset: 14px;
+  --float-delay: -2.8s;
+}
+
+.landing-showcase__image:nth-child(4) {
+  --float-offset: 0px;
+  --float-delay: -1.2s;
+}
+
+.landing-showcase__image:nth-child(5) {
+  --float-offset: 16px;
+  --float-delay: -3.4s;
+}
+
+.landing-showcase__image:nth-child(6) {
+  --float-offset: 4px;
+  --float-delay: -2.2s;
+}
+
+.landing-showcase__image:nth-child(7) {
+  --float-offset: 10px;
+  --float-delay: -0.9s;
+}
+
+@keyframes landingFloat {
+  0%,
+  100% {
+    transform: translateY(var(--float-offset));
+  }
+  50% {
+    transform: translateY(calc(var(--float-offset) - 12px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-showcase__image {
+    animation: none;
+  }
 }
 
 @media (max-width: 980px) {
@@ -173,6 +238,10 @@
 
   .landing-showcase__rail {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .landing-showcase__image {
+    --float-offset: 4px;
   }
 }
 
@@ -193,5 +262,11 @@
 
   .landing-showcase__rail {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .landing-showcase__image {
+    animation: none;
+    transform: none;
+    padding-inline: 1px;
   }
 }

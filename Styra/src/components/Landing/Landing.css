@@ -165,6 +165,10 @@
   --float-offset: 0px;
   --float-delay: 0s;
   position: relative;
+  aspect-ratio: 3 / 4;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
   transform: translateY(var(--float-offset));
   animation: landingFloat 7s ease-in-out infinite;
   animation-delay: var(--float-delay);
@@ -172,8 +176,8 @@
 
 .landing-showcase__image img {
   width: 100%;
-  aspect-ratio: 3 / 4;
-  object-fit: cover;
+  height: 100%;
+  object-fit: contain;
   display: block;
 }
 

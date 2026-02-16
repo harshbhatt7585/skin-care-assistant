@@ -165,7 +165,6 @@
   --float-offset: 0px;
   --float-delay: 0s;
   position: relative;
-  padding-inline: 2px;
   transform: translateY(var(--float-offset));
   animation: landingFloat 7s ease-in-out infinite;
   animation-delay: var(--float-delay);
@@ -176,8 +175,6 @@
   aspect-ratio: 3 / 4;
   object-fit: cover;
   display: block;
-  border-radius: 12px;
-  box-shadow: 0 18px 34px rgba(28, 17, 10, 0.16);
 }
 
 .landing-showcase__image:nth-child(1) {
@@ -267,6 +264,5 @@
   .landing-showcase__image {
     animation: none;
     transform: none;
-    padding-inline: 1px;
   }
 }

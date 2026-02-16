@@ -15,6 +15,15 @@ const CATEGORY_SPOTLIGHT = [
   { title: 'Footwear', note: 'Sneakers, heels, and comfort-first essentials in one feed.' },
 ]
 
+const SHOWCASE_ITEMS = [
+  { title: 'Tailored Rack', price: '$89', image: '/images/lookbook/clothes-rack-1.jpg' },
+  { title: 'Capsule Layers', price: '$72', image: '/images/lookbook/clothes-rack-2.jpg' },
+  { title: 'Studio Wardrobe', price: '$95', image: '/images/lookbook/clothes-rack-3.jpg' },
+  { title: 'Glow Serum Set', price: '$48', image: '/images/lookbook/beauty-flatlay-1.jpg' },
+  { title: 'Matte Lip Duo', price: '$36', image: '/images/lookbook/beauty-flatlay-2.jpg' },
+  { title: 'Clean Skin Kit', price: '$52', image: '/images/lookbook/beauty-flatlay-3.jpg' },
+]
+
 const Landing = ({ user }: LandingProps) => {
   const router = useRouter()
 
@@ -62,6 +71,22 @@ const Landing = ({ user }: LandingProps) => {
             <p>{category.note}</p>
           </article>
         ))}
+      </section>
+
+      <section className="landing-showcase" aria-label="Fashion and beauty showcase">
+        <p className="landing-showcase__eyebrow">Styra Edit</p>
+        <h2>fashion + beauty product showcase</h2>
+        <div className="landing-showcase__rail">
+          {SHOWCASE_ITEMS.map((item) => (
+            <article key={item.title} className="landing-showcase__card">
+              <img src={item.image} alt={item.title} loading="lazy" />
+              <div className="landing-showcase__meta">
+                <h3>{item.title}</h3>
+                <p>{item.price}</p>
+              </div>
+            </article>
+          ))}
+        </div>
       </section>
 
     </div>

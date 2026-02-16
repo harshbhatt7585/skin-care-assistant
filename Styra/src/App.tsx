@@ -21,6 +21,13 @@ const formatRating = (value?: number): string | undefined => {
   return value.toFixed(1).replace(/\.0$/, '')
 }
 
+const floatingLookbookImages = [
+  '/images/lookbook/beauty-flatlay-1.jpg',
+  '/images/lookbook/gshop-4.jpg',
+  '/images/lookbook/clothes-rack-2.jpg',
+  '/images/lookbook/beauty-flatlay-3.jpg',
+]
+
 const ProductCards = ({ products }: { products: ShoppingProduct[] }) => {
   const topProducts = products.slice(0, 8)
   if (topProducts.length === 0) return null
@@ -146,6 +153,16 @@ function App({ user, embedded = false }: AppProps) {
 
   return (
     <div className={`shop-page ${embedded ? 'shop-page--embedded' : ''}`}>
+      {!embedded ? (
+        <div className="shop-floating-gallery" aria-hidden="true">
+          {floatingLookbookImages.map((imageSrc, index) => (
+            <figure key={imageSrc} className={`shop-floating-image shop-floating-image--${index + 1}`}>
+              <img src={imageSrc} alt="" loading="lazy" />
+            </figure>
+          ))}
+        </div>
+      ) : null}
+
       <header className="shop-topbar">
         <div className="shop-brand">
           <h1>Styra</h1>

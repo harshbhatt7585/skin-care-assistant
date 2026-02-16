@@ -160,7 +160,6 @@ function App({ user, embedded = false }: AppProps) {
       {!hasConversationStarted ? (
         <section className="shop-hero">
           <div className="shop-hero__content">
-            <p className="shop-hero__eyebrow">Find products fast</p>
             <h2>What do you want to buy today?</h2>
             <form
               className="shop-prompt-form"

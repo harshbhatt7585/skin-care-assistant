@@ -16,13 +16,13 @@ const CATEGORY_SPOTLIGHT = [
 ]
 
 const SHOWCASE_IMAGES = [
-  '/images/lookbook/gshop-1.jpg',
-  '/images/lookbook/gshop-2.jpg',
-  '/images/lookbook/gshop-3.jpg',
-  '/images/lookbook/gshop-4.jpg',
-  '/images/lookbook/gshop-5.jpg',
-  '/images/lookbook/gshop-6.jpg',
-  '/images/lookbook/gshop-7.jpg',
+  '/images/lookbook/gshop-1-cutout.png',
+  '/images/lookbook/gshop-2-cutout.png',
+  '/images/lookbook/gshop-3-cutout.png',
+  '/images/lookbook/gshop-4-cutout.png',
+  '/images/lookbook/gshop-5-cutout.png',
+  '/images/lookbook/gshop-6-cutout.png',
+  '/images/lookbook/gshop-7-cutout.png',
 ]
 
 const Landing = ({ user }: LandingProps) => {

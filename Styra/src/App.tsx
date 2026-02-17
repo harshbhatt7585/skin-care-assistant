@@ -40,6 +40,13 @@ const ProductCards = ({ products }: { products: ShoppingProduct[] }) => {
             rel="noreferrer"
             className="shop-product-card"
           >
+            <div className={`shop-product-card__image${product.imageUrl ? '' : ' is-placeholder'}`}>
+              {product.imageUrl ? (
+                <img src={product.imageUrl} alt={product.title} loading="lazy" />
+              ) : (
+                <span>No image</span>
+              )}
+            </div>
             <div className="shop-product-card__body">
               <h4>{product.title}</h4>
               <p className="shop-product-card__source">{product.source || 'Online store'}</p>

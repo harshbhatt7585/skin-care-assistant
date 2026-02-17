@@ -276,6 +276,26 @@ export const parseShoppingPayload = (
   const codeMatch = content.match(/```json([\s\S]*?)```/i)
   const candidate = codeMatch ? codeMatch[1].trim() : content.trim()
   let parsed: unknown
+
+  const sanitizeLooseJson = (raw: string) => {
+    let normalized = raw
+
+    // Recover protocol-relative URLs accidentally emitted as comment fragments.
+    normalized = normalized.replace(
+      /,\s*\/\/([^\n"]+)"\s*,/g,
+      ', "link": "https://$1",',
+    )
+
+    // Remove line comments that frequently appear in LLM JSON snippets.
+    normalized = normalized.replace(/^\s*\/\/.*$/gm, '')
+    normalized = normalized.replace(/,\s*\/\/.*$/gm, '')
+
+    // Remove trailing commas before object/array close.
+    normalized = normalized.replace(/,\s*([}\]])/g, '$1')
+
+    return normalized
+  }
+
   const tryParse = (raw: string) => {
     try {
       parsed = JSON.parse(raw)
@@ -285,13 +305,24 @@ export const parseShoppingPayload = (
     }
   }
 
-  if (!tryParse(candidate)) {
-    const start = candidate.indexOf('{')
-    const end = candidate.lastIndexOf('}')
+  const tryParseWithSlice = (raw: string) => {
+    if (tryParse(raw)) {
+      return true
+    }
+    const start = raw.indexOf('{')
+    const end = raw.lastIndexOf('}')
     if (start === -1 || end === -1 || end <= start) {
       return null
     }
-    if (!tryParse(candidate.slice(start, end + 1))) {
+    if (!tryParse(raw.slice(start, end + 1))) {
+      return null
+    }
+    return true
+  }
+
+  if (!tryParseWithSlice(candidate)) {
+    const sanitized = sanitizeLooseJson(candidate)
+    if (!tryParseWithSlice(sanitized)) {
       return null
     }
   }

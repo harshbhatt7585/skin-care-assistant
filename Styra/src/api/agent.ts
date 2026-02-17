@@ -114,7 +114,9 @@ export async function runBackendChatTurn({
     throw new Error('Failed to run chat turn.')
   }
 
-  return (await response.json()) as { reply: string; history: ConversationTurn[] }
+  const payload = (await response.json()) as { reply: string; history: ConversationTurn[] }
+  console.log('[agent] backend reply:', payload.reply)
+  return payload
 }
 
 export async function runFashionChatTurn({
@@ -147,5 +149,7 @@ export async function runFashionChatTurn({
     throw new Error('Failed to run fashion chat turn.')
   }
 
-  return (await response.json()) as { reply: string; history: ConversationTurn[] }
+  const payload = (await response.json()) as { reply: string; history: ConversationTurn[] }
+  console.log('[agent] fashion reply:', payload.reply)
+  return payload
 }

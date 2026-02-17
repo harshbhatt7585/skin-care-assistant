@@ -172,15 +172,14 @@ function App({ user, embedded = false }: AppProps) {
           <div className="shop-hero__content">
             <h2>What do you want to buy today?</h2>
             <PromptForm
-              inputId="assistant-prompt"
+              inputId="landing-prompt"
               label="Describe what you want to buy"
               prompt={prompt}
               placeholder="Describe product, budget, and use case"
               onPromptChange={setPrompt}
               onSubmit={submitPrompt}
-              disabled={isSubmitting}
               submitLabel="Ask assistant"
-              submittingLabel="Thinking..."
+              formClassName="landing-hero__prompt"
             />
           </div>
         </section>

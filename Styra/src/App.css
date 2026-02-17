@@ -195,30 +195,6 @@
   background: linear-gradient(140deg, #fcc08e, #ef8d57);
 }
 
-.shop-chat-composer {
-  position: sticky;
-  bottom: 12px;
-  z-index: 20;
-  width: 100%;
-  max-width: 980px;
-  margin: 0 auto;
-  padding: 0;
-  animation: composerSlideUp 0.28s ease;
-}
-
-.shop-prompt-form--compact {
-  width: 80%;
-}
-
-.shop-prompt-input--compact {
-  width: 100%;
-  border-radius: 999px;
-  min-height: 68px;
-  padding: 16px 76px 16px 18px;
-  font-size: 0.9rem;
-  box-shadow: none;
-}
-
 .shop-prompt-submit--inside {
   position: absolute;
   top: 50%;
@@ -258,17 +234,6 @@
 .shop-prompt-submit--inside:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-}
-
-@keyframes composerSlideUp {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 .shop-chat {
@@ -454,14 +419,6 @@
   }
 
   .shop-prompt-form {
-    width: 80%;
-  }
-
-  .shop-chat-composer {
-    bottom: 8px;
-  }
-
-  .shop-prompt-form--compact {
     width: 80%;
   }
 

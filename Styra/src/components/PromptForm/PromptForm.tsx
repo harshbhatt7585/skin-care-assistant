@@ -1,7 +1,5 @@
 'use client'
 
-type PromptFormVariant = 'default' | 'compact'
-
 type PromptFormProps = {
   inputId: string
   label: string
@@ -13,7 +11,6 @@ type PromptFormProps = {
   submitLabel: string
   submittingLabel?: string
   formClassName?: string
-  variant?: PromptFormVariant
 }
 
 const PromptForm = ({
@@ -27,15 +24,10 @@ const PromptForm = ({
   submitLabel,
   submittingLabel = submitLabel,
   formClassName,
-  variant = 'default',
 }: PromptFormProps) => {
-  const isCompact = variant === 'compact'
   const isSubmitDisabled = disabled || prompt.trim().length === 0
 
   const formClasses = ['shop-prompt-form']
-  if (isCompact) {
-    formClasses.push('shop-prompt-form--compact')
-  }
   if (formClassName) {
     formClasses.push(formClassName)
   }
@@ -55,7 +47,7 @@ const PromptForm = ({
       <input
         id={inputId}
         type="text"
-        className={`shop-prompt-input${isCompact ? ' shop-prompt-input--compact' : ''}`}
+        className="shop-prompt-input"
         placeholder={placeholder}
         value={prompt}
         onChange={(event) => onPromptChange(event.target.value)}

@@ -288,7 +288,7 @@
 }
 
 .shop-message--user .shop-message__bubble {
-  max-width: min(100%, 760px);
+  max-width: min(100%, 620px);
   background: linear-gradient(145deg, rgba(255, 236, 220, 0.96), rgba(250, 220, 193, 0.95));
   border-color: rgba(194, 132, 91, 0.45);
   box-shadow: none;

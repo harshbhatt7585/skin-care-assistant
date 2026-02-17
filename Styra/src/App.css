@@ -147,21 +147,19 @@
 }
 
 .shop-prompt-form {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0;
-  align-items: center;
+  display: block;
   position: relative;
-  width: 100%;
+  width: 80%;
+  margin: 0 auto;
 }
 
 .shop-prompt-input {
   width: 100%;
   border: 1px solid var(--line-soft);
   background: #fff;
-  border-radius: 6px;
-  min-height: 68px;
-  padding: 20px 74px 20px 22px;
+  border-radius: 999px;
+  min-height: 74px;
+  padding: 20px 76px 20px 24px;
   color: var(--ink-primary);
   font-size: 1.1rem;
   box-shadow: 0 18px 34px rgba(80, 53, 37, 0.08);
@@ -186,22 +184,22 @@
   position: sticky;
   bottom: 12px;
   z-index: 20;
-  width: min(100%, 980px);
+  width: 100%;
+  max-width: 980px;
   margin: 0 auto;
   padding: 0;
   animation: composerSlideUp 0.28s ease;
 }
 
 .shop-prompt-form--compact {
-  grid-template-columns: 1fr;
-  gap: 0;
+  width: 80%;
 }
 
 .shop-prompt-input--compact {
   width: 100%;
-  border-radius: 6px;
-  min-height: 62px;
-  padding: 16px 104px 16px 16px;
+  border-radius: 999px;
+  min-height: 68px;
+  padding: 16px 76px 16px 18px;
   font-size: 1rem;
   box-shadow: none;
 }
@@ -209,12 +207,12 @@
 .shop-prompt-submit--inside {
   position: absolute;
   top: 50%;
-  right: 10px;
+  right: 12px;
   transform: translateY(-50%);
-  border-radius: 6px;
-  width: 42px;
-  height: 42px;
-  min-width: 42px;
+  border-radius: 999px;
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
   padding: 0;
   border: 1px solid rgba(150, 92, 54, 0.35);
   background: linear-gradient(140deg, #fcc08e, #ef8d57);
@@ -225,6 +223,7 @@
   font-size: 0.88rem;
   box-shadow: 0 8px 16px rgba(108, 62, 35, 0.14);
   transition: filter 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+  z-index: 1;
 }
 
 .shop-prompt-submit--inside:hover:not(:disabled) {
@@ -440,7 +439,7 @@
   }
 
   .shop-prompt-form {
-    grid-template-columns: 1fr;
+    width: 80%;
   }
 
   .shop-chat-composer {
@@ -448,10 +447,10 @@
   }
 
   .shop-prompt-form--compact {
-    grid-template-columns: 1fr;
+    width: 80%;
   }
 
   .shop-prompt-submit--inside {
-    right: 8px;
+    right: 10px;
   }
 }

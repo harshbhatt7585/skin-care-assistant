@@ -118,7 +118,7 @@
 }
 
 .landing-hero__prompt {
-  width: min(100%, 920px);
+  width: 80%;
   margin-top: 16px;
 }
 
@@ -274,6 +274,6 @@
   }
 
   .landing-hero__prompt {
-    width: 100%;
+    width: 80%;
   }
 }

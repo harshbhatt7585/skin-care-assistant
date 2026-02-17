@@ -43,11 +43,6 @@ const Landing = ({ user }: LandingProps) => {
         <button type="button" className="landing-nav__brand" onClick={() => router.push('/')}>
           Styra
         </button>
-        <div className="landing-nav__actions">
-          <button type="button" className="landing-nav__cta" onClick={() => handleStart()}>
-            Start shopping
-          </button>
-        </div>
       </header>
 
       <section className="landing-hero">

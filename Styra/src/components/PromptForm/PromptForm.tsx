@@ -52,41 +52,33 @@ const PromptForm = ({
         {label}
       </label>
 
-      {isCompact ? (
-        <div className="shop-input-with-action">
-          <input
-            id={inputId}
-            type="text"
-            className="shop-prompt-input shop-prompt-input--compact"
-            placeholder={placeholder}
-            value={prompt}
-            onChange={(event) => onPromptChange(event.target.value)}
-            disabled={disabled}
-          />
-          <button
-            type="submit"
-            className="shop-prompt-submit shop-prompt-submit--inside"
-            disabled={isSubmitDisabled}
-          >
-            {disabled ? submittingLabel : submitLabel}
-          </button>
-        </div>
-      ) : (
-        <>
-          <input
-            id={inputId}
-            type="text"
-            className="shop-prompt-input"
-            placeholder={placeholder}
-            value={prompt}
-            onChange={(event) => onPromptChange(event.target.value)}
-            disabled={disabled}
-          />
-          <button type="submit" className="shop-prompt-submit" disabled={isSubmitDisabled}>
-            {disabled ? submittingLabel : submitLabel}
-          </button>
-        </>
-      )}
+      <input
+        id={inputId}
+        type="text"
+        className={`shop-prompt-input${isCompact ? ' shop-prompt-input--compact' : ''}`}
+        placeholder={placeholder}
+        value={prompt}
+        onChange={(event) => onPromptChange(event.target.value)}
+        disabled={disabled}
+      />
+      <button
+        type="submit"
+        className="shop-prompt-submit shop-prompt-submit--inside"
+        disabled={isSubmitDisabled}
+        aria-label={disabled ? submittingLabel : submitLabel}
+        title={disabled ? submittingLabel : submitLabel}
+      >
+        <svg
+          className="shop-prompt-submit__icon"
+          viewBox="0 0 16 16"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-hidden="true"
+        >
+          <path d="M8 12V4" />
+          <path d="M4.5 7.5L8 4L11.5 7.5" />
+        </svg>
+      </button>
     </form>
   )
 }

@@ -148,18 +148,22 @@
 
 .shop-prompt-form {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 10px;
+  grid-template-columns: 1fr;
+  gap: 0;
   align-items: center;
+  position: relative;
+  width: 100%;
 }
 
 .shop-prompt-input {
+  width: 100%;
   border: 1px solid var(--line-soft);
   background: #fff;
-  border-radius: 18px;
-  padding: 18px 20px;
+  border-radius: 6px;
+  min-height: 68px;
+  padding: 20px 74px 20px 22px;
   color: var(--ink-primary);
-  font-size: 1.05rem;
+  font-size: 1.1rem;
   box-shadow: 0 18px 34px rgba(80, 53, 37, 0.08);
 }
 
@@ -193,29 +197,53 @@
   gap: 0;
 }
 
-.shop-input-with-action {
-  position: relative;
-  width: 100%;
-}
-
 .shop-prompt-input--compact {
   width: 100%;
-  border-radius: 999px;
-  padding: 12px 96px 12px 14px;
-  font-size: 0.95rem;
+  border-radius: 6px;
+  min-height: 62px;
+  padding: 16px 104px 16px 16px;
+  font-size: 1rem;
   box-shadow: none;
 }
 
 .shop-prompt-submit--inside {
   position: absolute;
   top: 50%;
-  right: 6px;
+  right: 10px;
   transform: translateY(-50%);
-  border-radius: 999px;
-  padding: 9px 14px;
-  font-size: 0.84rem;
-  box-shadow: none;
-  min-width: 70px;
+  border-radius: 6px;
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  padding: 0;
+  border: 1px solid rgba(150, 92, 54, 0.35);
+  background: linear-gradient(140deg, #fcc08e, #ef8d57);
+  color: #2a1e16;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.88rem;
+  box-shadow: 0 8px 16px rgba(108, 62, 35, 0.14);
+  transition: filter 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+
+.shop-prompt-submit--inside:hover:not(:disabled) {
+  border-color: rgba(112, 72, 52, 0.52);
+  filter: brightness(0.98);
+}
+
+.shop-prompt-submit--inside .shop-prompt-submit__icon {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.shop-prompt-submit--inside:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 @keyframes composerSlideUp {
@@ -415,10 +443,6 @@
     grid-template-columns: 1fr;
   }
 
-  .shop-prompt-submit {
-    width: 100%;
-  }
-
   .shop-chat-composer {
     bottom: 8px;
   }
@@ -428,6 +452,6 @@
   }
 
   .shop-prompt-submit--inside {
-    right: 5px;
+    right: 8px;
   }
 }

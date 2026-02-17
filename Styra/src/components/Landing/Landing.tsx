@@ -50,7 +50,7 @@ const Landing = ({ user }: LandingProps) => {
           <h1>
             <span className="landing-hero__line">Buy fashion through</span>
             <span className="landing-hero__line landing-hero__line--delayed">
-              <span className="landing-hero__accent">Personalised</span> conversation
+              <span className="landing-hero__accent">Personal</span> stylist
             </span>
           </h1>
           <PromptForm

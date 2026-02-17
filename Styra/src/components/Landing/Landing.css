@@ -74,7 +74,7 @@
 }
 
 .landing-hero h1 {
-  margin: 4px 0 10px;
+  margin: 8px 0 18px;
   font-size: clamp(2.2rem, 5.4vw, 3.6rem);
   line-height: 1.02;
   font-weight: 400;
@@ -88,7 +88,7 @@
 }
 
 .landing-hero__line + .landing-hero__line {
-  margin-top: clamp(8px, 1.3vw, 14px);
+  margin-top: clamp(14px, 2vw, 24px);
 }
 
 .landing-hero__line--delayed {
@@ -120,7 +120,7 @@
 
 .landing-hero__prompt {
   width: 80%;
-  margin-top: 16px;
+  margin-top: 24px;
 }
 
 .landing-hero p {

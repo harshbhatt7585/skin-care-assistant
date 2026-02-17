@@ -246,7 +246,7 @@
   width: 100%;
   margin: 0 auto;
   display: grid;
-  gap: 12px;
+  gap: 18px;
   position: relative;
   z-index: 2;
 }

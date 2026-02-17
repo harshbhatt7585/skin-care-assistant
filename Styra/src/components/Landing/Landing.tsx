@@ -8,13 +8,6 @@ type LandingProps = {
   user: User | null
 }
 
-const CATEGORY_SPOTLIGHT = [
-  { title: 'Fashion', note: 'Tailored picks from daily fits to statement layers.' },
-  { title: 'Beauty', note: 'High-performance skincare and makeup edits.' },
-  { title: 'Accessories', note: 'Bags, jewelry, and finishing details that convert any look.' },
-  { title: 'Footwear', note: 'Sneakers, heels, and comfort-first essentials in one feed.' },
-]
-
 const SHOWCASE_IMAGES = [
   '/images/lookbook/gshop-2-cutout.png',
 
@@ -60,15 +53,6 @@ const Landing = ({ user }: LandingProps) => {
           <div className="landing-hero__actions">
           </div>
         </div>
-      </section>
-
-      <section className="landing-categories" aria-label="Category spotlight">
-        {CATEGORY_SPOTLIGHT.map((category) => (
-          <article key={category.title} className="landing-category">
-            <h2>{category.title}</h2>
-            <p>{category.note}</p>
-          </article>
-        ))}
       </section>
 
       <section className="landing-showcase" aria-label="Fashion and beauty showcase">

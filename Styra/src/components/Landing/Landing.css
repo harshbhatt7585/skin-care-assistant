@@ -75,9 +75,9 @@
 
 .landing-hero h1 {
   margin: 4px 0 10px;
-  font-size: clamp(2.6rem, 7.8vw, 5.6rem);
-  line-height: 0.9;
-  font-weight: 700;
+  font-size: clamp(2.2rem, 5.4vw, 3.6rem);
+  line-height: 1.02;
+  font-weight: 400;
   font-family: var(--font-display);
 }
 

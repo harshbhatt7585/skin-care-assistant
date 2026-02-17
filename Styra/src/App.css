@@ -129,21 +129,24 @@
 .shop-hero__content {
   max-width: 920px;
   margin: 0 auto;
-  background: var(--panel);
-  border: 1px solid var(--line-soft);
-  border-radius: 28px;
-  padding: clamp(24px, 4vw, 42px);
-  box-shadow: var(--panel-shadow);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
   text-align: center;
   position: relative;
   z-index: 2;
 }
 
 .shop-hero h2 {
-  margin: 10px 0 20px;
-  font-family: var(--font-display);
-  font-size: clamp(2rem, 4vw, 3rem);
-  line-height: 1.12;
+  margin: 4px 0 10px;
+  font-size: clamp(2.2rem, 5.4vw, 3.6rem);
+  line-height: 1.02;
+  font-weight: 400;
+  font-family: var(--font-heading);
+  font-optical-sizing: auto;
+  font-style: normal;
 }
 
 .shop-prompt-form {

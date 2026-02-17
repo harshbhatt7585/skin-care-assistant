@@ -78,7 +78,7 @@
   font-size: clamp(2.2rem, 5.4vw, 3.6rem);
   line-height: 1.02;
   font-weight: 400;
-  font-family: var(--font-display);
+  font-family: var(--font-heading);
 }
 
 .landing-hero__accent {

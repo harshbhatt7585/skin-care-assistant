@@ -81,6 +81,14 @@
   font-family: var(--font-display);
 }
 
+.landing-hero__accent {
+  font-family: var(--font-script);
+  font-size: 1.06em;
+  font-weight: 400;
+  color: #8f4f25;
+  letter-spacing: 0.01em;
+}
+
 .landing-hero__prompt {
   width: min(100%, 920px);
   margin-top: 16px;

@@ -1,0 +1,129 @@
+.shop-product-strip {
+  margin-top: 14px;
+  display: flex;
+  gap: 12px;
+  width: max-content;
+  min-width: 100%;
+  max-width: 100%;
+  overflow: visible;
+  padding: 2px 2px 10px;
+  box-sizing: border-box;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+
+.shop-product-tile {
+  --product-pop-delay: 0ms;
+  flex: 0 0 clamp(230px, 28vw, 300px);
+  min-width: 0;
+  display: flex;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+  border: 1px solid rgba(150, 109, 84, 0.24);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 12px;
+  scroll-snap-align: start;
+  opacity: 0;
+  transform: translateY(10px) scale(0.96);
+  animation: shopProductPopIn 0.36s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  animation-delay: var(--product-pop-delay);
+  transition: transform 0.18s ease, box-shadow 0.2s ease;
+}
+
+.shop-product-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(83, 48, 28, 0.12);
+}
+
+.shop-product-tile__image {
+  width: 82px;
+  height: 82px;
+  border-radius: 14px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(160, 120, 97, 0.24);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.shop-product-tile__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.shop-product-tile__image--placeholder span {
+  font-size: 0.7rem;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.shop-product-tile__body {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  align-content: start;
+}
+
+.shop-product-tile__body h4 {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.3;
+  color: var(--ink-primary);
+}
+
+.shop-product-tile__source {
+  margin: 0;
+  font-size: 0.76rem;
+  color: var(--ink-muted);
+}
+
+.shop-product-tile__stats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.shop-product-tile__price {
+  font-weight: 700;
+  color: #6c3a20;
+  font-size: 0.83rem;
+}
+
+.shop-product-tile__rating {
+  color: #8a591f;
+  font-size: 0.79rem;
+}
+
+.shop-product-tile__rating-count {
+  color: #8a6b58;
+}
+
+.shop-product-tile__cta {
+  font-size: 0.78rem;
+  color: #7a3f22;
+  font-weight: 600;
+}
+
+@keyframes shopProductPopIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 860px) {
+  .shop-product-tile {
+    flex-basis: min(82vw, 300px);
+  }
+}

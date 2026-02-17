@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getAuth, signOut, type User } from 'firebase/auth'
 import { runFashionChatTurn } from './api/agent'
-import { parseShoppingPayload, type ShoppingProduct } from './lib/parsers'
+import { parseShoppingPayload } from './lib/parsers'
+import ProductShelf from './components/ProductShelf/ProductShelf'
 import PromptForm from './components/PromptForm/PromptForm'
 import type { ConversationTurn } from './types/conversation'
 import { detectCountryCode, getLocaleCountryCode } from './utils/location'
@@ -15,57 +16,6 @@ type AppProps = {
   embedded?: boolean
   showStartButton?: boolean
   startCaptureSignal?: number
-}
-
-const formatRating = (value?: number): string | undefined => {
-  if (typeof value !== 'number') return undefined
-  return value.toFixed(1).replace(/\.0$/, '')
-}
-
-const ProductCards = ({ products }: { products: ShoppingProduct[] }) => {
-  const topProducts = products.slice(0, 8)
-  if (topProducts.length === 0) return null
-
-  return (
-    <div className="shop-product-grid">
-      {topProducts.map((product, index) => {
-        const rating = formatRating(product.rating)
-        const ratingCount = typeof product.ratingCount === 'number' ? product.ratingCount : undefined
-
-        return (
-          <a
-            key={`${product.link}-${index}`}
-            href={product.link}
-            target="_blank"
-            rel="noreferrer"
-            className="shop-product-card"
-          >
-            <div className={`shop-product-card__image${product.imageUrl ? '' : ' is-placeholder'}`}>
-              {product.imageUrl ? (
-                <img src={product.imageUrl} alt={product.title} loading="lazy" />
-              ) : (
-                <span>No image</span>
-              )}
-            </div>
-            <div className="shop-product-card__body">
-              <h4>{product.title}</h4>
-              <p className="shop-product-card__source">{product.source || 'Online store'}</p>
-              <div className="shop-product-card__stats">
-                {product.price ? <span className="shop-product-card__price">{product.price}</span> : null}
-                {rating ? (
-                  <span className="shop-product-card__rating">
-                    ★ {rating}
-                    {ratingCount ? <span> ({ratingCount})</span> : null}
-                  </span>
-                ) : null}
-              </div>
-              <span className="shop-product-card__cta">Open product ↗</span>
-            </div>
-          </a>
-        )
-      })}
-    </div>
-  )
 }
 
 function App({ user, embedded = false }: AppProps) {
@@ -207,10 +157,16 @@ function App({ user, embedded = false }: AppProps) {
               key={`${message.role}-${index}`}
               className={`shop-message ${message.role === 'user' ? 'shop-message--user' : 'shop-message--assistant'}`}
             >
-              <div className="shop-message__bubble">
-                {messageText ? <p className="shop-message__text">{messageText}</p> : null}
-                {parsedShopping ? <ProductCards products={parsedShopping.payload.products} /> : null}
-              </div>
+              {messageText ? (
+                <div className="shop-message__bubble">
+                  <p className="shop-message__text">{messageText}</p>
+                </div>
+              ) : null}
+              {parsedShopping ? (
+                <div className="shop-message__products">
+                  <ProductShelf products={parsedShopping.payload.products} />
+                </div>
+              ) : null}
             </article>
           )
         })}

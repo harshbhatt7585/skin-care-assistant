@@ -11,9 +11,6 @@ const pick = (...values: Array<string | undefined>) => {
 }
 
 const nextConfig: NextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   env: {
     NEXT_PUBLIC_API_URL: pick(
       process.env.NEXT_PUBLIC_API_URL,

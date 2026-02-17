@@ -266,11 +266,11 @@
 }
 
 .shop-message__bubble {
-  border: 1px solid var(--line-soft);
+  border: 1px solid rgba(150, 109, 84, 0.2);
   border-radius: 18px;
   padding: 12px 14px;
-  background: var(--panel);
-  box-shadow: var(--panel-shadow);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 10px 24px rgba(92, 58, 37, 0.08);
 }
 
 .shop-message__bubble p {
@@ -289,12 +289,12 @@
 
 .shop-message--user .shop-message__bubble {
   max-width: min(100%, 760px);
-  background: #fff;
+  background: rgba(255, 255, 255, 0.98);
 }
 
 .shop-message--assistant .shop-message__bubble {
   max-width: min(100%, 900px);
-  background: var(--panel-faint);
+  background: rgba(255, 255, 255, 0.9);
 }
 
 .shop-responding {

@@ -96,6 +96,7 @@
   transform: translateY(8px);
   animation: landingHeroLineReveal 560ms ease forwards;
   animation-delay: 380ms;
+  margin-left: clamp(72px, 21vw, 210px);
 }
 
 @keyframes landingHeroLineReveal {

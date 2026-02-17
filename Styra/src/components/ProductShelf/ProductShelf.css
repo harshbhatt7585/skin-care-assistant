@@ -14,9 +14,12 @@
 
 .shop-product-tile {
   --product-pop-delay: 0ms;
-  flex: 0 0 clamp(230px, 28vw, 300px);
+  flex: 0 0 clamp(280px, 34vw, 380px);
   min-width: 0;
   display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  flex-wrap: nowrap;
   gap: 12px;
   text-decoration: none;
   color: inherit;
@@ -38,8 +41,8 @@
 }
 
 .shop-product-tile__image {
-  width: 82px;
-  height: 82px;
+  width: 132px;
+  height: 132px;
   border-radius: 14px;
   overflow: hidden;
   flex-shrink: 0;
@@ -65,6 +68,7 @@
 
 .shop-product-tile__body {
   min-width: 0;
+  flex: 1;
   display: grid;
   gap: 4px;
   align-content: start;
@@ -124,6 +128,11 @@
 
 @media (max-width: 860px) {
   .shop-product-tile {
-    flex-basis: min(82vw, 300px);
+    flex-basis: min(88vw, 360px);
+  }
+
+  .shop-product-tile__image {
+    width: 112px;
+    height: 112px;
   }
 }

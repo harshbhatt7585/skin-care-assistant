@@ -1,9 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Lilita+One&family=Pacifico&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Pacifico&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
 :root {
   --font-sans: 'Plus Jakarta Sans', 'Space Grotesk', 'Segoe UI', sans-serif;
   --font-display: 'Fraunces', 'Times New Roman', serif;
-  --font-heading: 'Lilita One', 'Plus Jakarta Sans', sans-serif;
+  --font-heading: 'Unbounded', 'Plus Jakarta Sans', sans-serif;
   --font-script: 'Pacifico', 'Brush Script MT', cursive;
   font-family: var(--font-sans);
   line-height: 1.5;

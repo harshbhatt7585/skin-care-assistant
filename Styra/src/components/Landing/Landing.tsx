@@ -53,8 +53,10 @@ const Landing = ({ user }: LandingProps) => {
       <section className="landing-hero">
         <div className="landing-hero__content">
           <h1>
-            Buy fashion through <span className="landing-hero__accent">Personalised</span>{' '}
-            conversation
+            <span className="landing-hero__line">Buy fashion through</span>
+            <span className="landing-hero__line landing-hero__line--delayed">
+              <span className="landing-hero__accent">Personalised</span> conversation
+            </span>
           </h1>
           <PromptForm
             inputId="landing-prompt"

@@ -42,16 +42,8 @@ const Landing = ({ user }: LandingProps) => {
       <section className="landing-hero">
         <div className="landing-hero__content">
           <h1>
-            One app for style discovery,
-            <br />
-            beauty essentials, and fast checkout.
+            Buy fashion through personalised conversation
           </h1>
-          <p>
-            Styra blends trend intelligence and curated products so you can move from inspiration
-            to purchase in minutes.
-          </p>
-          <div className="landing-hero__actions">
-          </div>
         </div>
       </section>
 

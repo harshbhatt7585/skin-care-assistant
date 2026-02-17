@@ -24,7 +24,7 @@
   background: transparent;
   color: var(--ink-primary);
   font-size: 1.7rem;
-  font-family: 'Cormorant Garamond', serif;
+  font-family: var(--font-display);
   letter-spacing: 0.05em;
   cursor: pointer;
 }
@@ -78,7 +78,7 @@
   font-size: clamp(2.6rem, 7.8vw, 5.6rem);
   line-height: 0.9;
   font-weight: 700;
-  font-family: 'Cormorant Garamond', serif;
+  font-family: var(--font-display);
 }
 
 .landing-hero p {

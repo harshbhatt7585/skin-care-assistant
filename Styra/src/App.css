@@ -286,6 +286,18 @@
   line-height: 1.62;
 }
 
+.shop-message--user .shop-message__text {
+  font-family: 'Plus Jakarta Sans', var(--font-sans);
+  font-weight: 400;
+  color: rgba(62, 42, 32, 0.92);
+  letter-spacing: 0.005em;
+}
+
+.shop-message--assistant .shop-message__text {
+  font-family: 'Space Grotesk', var(--font-sans);
+  font-weight: 450;
+}
+
 .shop-message__products {
   width: 100%;
   max-width: 100%;

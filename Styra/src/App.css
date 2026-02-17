@@ -7,6 +7,7 @@
   color: var(--ink-primary);
   display: grid;
   gap: 28px;
+  align-content: start;
   position: relative;
   isolation: isolate;
 }
@@ -247,6 +248,7 @@
   margin: 0 auto;
   display: grid;
   gap: 18px;
+  align-content: start;
   position: relative;
   z-index: 2;
 }
@@ -263,6 +265,7 @@
 .shop-message {
   display: grid;
   gap: 6px;
+  align-self: start;
 }
 
 .shop-message__bubble {
@@ -289,6 +292,8 @@
 
 .shop-message--user .shop-message__bubble {
   max-width: min(100%, 620px);
+  min-height: 44px;
+  padding: 10px 12px;
   background: linear-gradient(145deg, rgba(255, 236, 220, 0.96), rgba(250, 220, 193, 0.95));
   border-color: rgba(194, 132, 91, 0.45);
   box-shadow: none;

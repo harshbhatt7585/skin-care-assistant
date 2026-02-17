@@ -47,7 +47,6 @@ const Landing = ({ user }: LandingProps) => {
 
       <section className="landing-hero">
         <div className="landing-hero__content">
-          <p className="landing-hero__eyebrow">Fashion + beauty marketplace</p>
           <h1>
             One app for style discovery,
             <br />

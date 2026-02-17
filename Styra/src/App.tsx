@@ -209,10 +209,12 @@ function App({ user, embedded = false }: AppProps) {
         })}
 
         {isSubmitting ? (
-          <article className="shop-message shop-message--assistant">
-            <div className="shop-message__bubble shop-message__bubble--pending">
-              <p>Working on your request...</p>
-            </div>
+          <article className="shop-responding" aria-live="polite" aria-label="Assistant is responding">
+            <span className="shop-responding__dots" aria-hidden="true">
+              <span className="shop-responding__dot" />
+              <span className="shop-responding__dot" />
+              <span className="shop-responding__dot" />
+            </span>
           </article>
         ) : null}
       </section>

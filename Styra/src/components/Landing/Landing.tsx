@@ -58,9 +58,6 @@ const Landing = ({ user }: LandingProps) => {
             to purchase in minutes.
           </p>
           <div className="landing-hero__actions">
-            <button type="button" className="landing-hero__primary" onClick={handleStart}>
-              Enter the app
-            </button>
           </div>
         </div>
       </section>

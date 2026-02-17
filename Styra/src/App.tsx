@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getAuth, signOut, type User } from 'firebase/auth'
 import { runFashionChatTurn } from './api/agent'
 import { parseShoppingPayload, type ShoppingProduct } from './lib/parsers'
+import PromptForm from './components/PromptForm/PromptForm'
 import type { ConversationTurn } from './types/conversation'
 import { detectCountryCode, getLocaleCountryCode } from './utils/location'
 import './App.css'
@@ -81,6 +82,7 @@ function App({ user, embedded = false }: AppProps) {
   const [history, setHistory] = useState<ConversationTurn[]>([])
   const [assistantError, setAssistantError] = useState<string | null>(null)
   const [country, setCountry] = useState(getLocaleCountryCode)
+  const hasConsumedInitialPrompt = useRef(false)
 
   useEffect(() => {
     let cancelled = false
@@ -149,6 +151,21 @@ function App({ user, embedded = false }: AppProps) {
     }
   }
 
+  useEffect(() => {
+    if (hasConsumedInitialPrompt.current) return
+    if (history.length > 0 || isSubmitting) return
+
+    const promptFromUrl =
+      typeof window !== 'undefined'
+        ? new URLSearchParams(window.location.search).get('prompt')?.trim() ?? ''
+        : ''
+    if (!promptFromUrl) return
+
+    hasConsumedInitialPrompt.current = true
+    void submitPrompt(promptFromUrl)
+    router.replace('/home')
+  }, [history.length, isSubmitting, router])
+
   const hasConversationStarted = history.length > 0
 
   return (
@@ -178,29 +195,17 @@ function App({ user, embedded = false }: AppProps) {
         <section className="shop-hero">
           <div className="shop-hero__content">
             <h2>What do you want to buy today?</h2>
-            <form
-              className="shop-prompt-form"
-              onSubmit={(event) => {
-                event.preventDefault()
-                void submitPrompt(prompt)
-              }}
-            >
-              <label className="sr-only" htmlFor="assistant-prompt">
-                Describe what you want to buy
-              </label>
-              <input
-                id="assistant-prompt"
-                type="text"
-                className="shop-prompt-input"
-                placeholder="Describe product, budget, and use case"
-                value={prompt}
-                onChange={(event) => setPrompt(event.target.value)}
-                disabled={isSubmitting}
-              />
-              <button type="submit" className="shop-prompt-submit" disabled={isSubmitting || prompt.trim().length === 0}>
-                {isSubmitting ? 'Thinking...' : 'Ask assistant'}
-              </button>
-            </form>
+            <PromptForm
+              inputId="assistant-prompt"
+              label="Describe what you want to buy"
+              prompt={prompt}
+              placeholder="Describe product, budget, and use case"
+              onPromptChange={setPrompt}
+              onSubmit={submitPrompt}
+              disabled={isSubmitting}
+              submitLabel="Ask assistant"
+              submittingLabel="Thinking..."
+            />
           </div>
         </section>
       ) : null}
@@ -238,35 +243,19 @@ function App({ user, embedded = false }: AppProps) {
       </section>
 
       {hasConversationStarted ? (
-        <form
-          className="shop-chat-composer shop-prompt-form shop-prompt-form--compact"
-          onSubmit={(event) => {
-            event.preventDefault()
-            void submitPrompt(prompt)
-          }}
-        >
-          <label className="sr-only" htmlFor="assistant-prompt-compact">
-            Continue conversation
-          </label>
-          <div className="shop-input-with-action">
-            <input
-              id="assistant-prompt-compact"
-              type="text"
-              className="shop-prompt-input shop-prompt-input--compact"
-              placeholder="Ask a follow-up (size, budget, color, brand...)"
-              value={prompt}
-              onChange={(event) => setPrompt(event.target.value)}
-              disabled={isSubmitting}
-            />
-            <button
-              type="submit"
-              className="shop-prompt-submit shop-prompt-submit--inside"
-              disabled={isSubmitting || prompt.trim().length === 0}
-            >
-              {isSubmitting ? '...' : 'Send'}
-            </button>
-          </div>
-        </form>
+        <PromptForm
+          inputId="assistant-prompt-compact"
+          label="Continue conversation"
+          prompt={prompt}
+          placeholder="Ask a follow-up (size, budget, color, brand...)"
+          onPromptChange={setPrompt}
+          onSubmit={submitPrompt}
+          disabled={isSubmitting}
+          submitLabel="Send"
+          submittingLabel="..."
+          variant="compact"
+          formClassName="shop-chat-composer"
+        />
       ) : null}
     </div>
   )

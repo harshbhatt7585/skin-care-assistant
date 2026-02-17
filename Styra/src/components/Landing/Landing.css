@@ -81,6 +81,11 @@
   font-family: var(--font-display);
 }
 
+.landing-hero__prompt {
+  width: min(100%, 920px);
+  margin-top: 16px;
+}
+
 .landing-hero p {
   margin: 0;
   color: var(--ink-secondary);
@@ -224,5 +229,9 @@
     flex-basis: calc(50% - 8px);
     animation: none;
     transform: none;
+  }
+
+  .landing-hero__prompt {
+    width: 100%;
   }
 }

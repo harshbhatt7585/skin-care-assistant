@@ -12,6 +12,16 @@ export default function SignInPage() {
 
   useEffect(() => {
     if (!checking && user) {
+      const prompt =
+        typeof window !== 'undefined'
+          ? new URLSearchParams(window.location.search).get('prompt')?.trim() ?? ''
+          : ''
+      if (prompt) {
+        const query = new URLSearchParams({ prompt }).toString()
+        router.replace(`/home?${query}`)
+        return
+      }
+
       router.replace('/home')
     }
   }, [checking, user, router])

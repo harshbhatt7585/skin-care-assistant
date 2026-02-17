@@ -1,7 +1,10 @@
 'use client'
 
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { User } from 'firebase/auth'
+import PromptForm from '../PromptForm/PromptForm'
+import '../../App.css'
 import './Landing.css'
 
 type LandingProps = {
@@ -21,8 +24,16 @@ const SHOWCASE_IMAGES = [
 
 const Landing = ({ user }: LandingProps) => {
   const router = useRouter()
+  const [prompt, setPrompt] = useState('')
 
-  const handleStart = () => {
+  const handleStart = (input?: string) => {
+    const trimmed = input?.trim()
+    if (trimmed) {
+      const query = new URLSearchParams({ prompt: trimmed }).toString()
+      router.push(user ? `/home?${query}` : `/signin?${query}`)
+      return
+    }
+
     router.push(user ? '/home' : '/signin')
   }
 
@@ -33,7 +44,7 @@ const Landing = ({ user }: LandingProps) => {
           Styra
         </button>
         <div className="landing-nav__actions">
-          <button type="button" className="landing-nav__cta" onClick={handleStart}>
+          <button type="button" className="landing-nav__cta" onClick={() => handleStart()}>
             Start shopping
           </button>
         </div>
@@ -41,9 +52,17 @@ const Landing = ({ user }: LandingProps) => {
 
       <section className="landing-hero">
         <div className="landing-hero__content">
-          <h1>
-            Buy fashion through personalised conversation
-          </h1>
+          <h1>Buy fashion through personalised conversation</h1>
+          <PromptForm
+            inputId="landing-prompt"
+            label="Describe what you want to buy"
+            prompt={prompt}
+            placeholder="Describe product, budget, and use case"
+            onPromptChange={setPrompt}
+            onSubmit={handleStart}
+            submitLabel="Ask assistant"
+            formClassName="landing-hero__prompt"
+          />
         </div>
       </section>
 
@@ -56,7 +75,6 @@ const Landing = ({ user }: LandingProps) => {
           ))}
         </div>
       </section>
-
     </div>
   )
 }

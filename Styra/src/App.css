@@ -153,6 +153,11 @@
   margin: 0 auto;
 }
 
+.landing-hero__prompt {
+  width: 80%;
+  margin: 16px auto 0;
+}
+
 .shop-prompt-input {
   width: 100%;
   border: 1px solid var(--line-soft);

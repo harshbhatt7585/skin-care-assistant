@@ -22,13 +22,6 @@ const formatRating = (value?: number): string | undefined => {
   return value.toFixed(1).replace(/\.0$/, '')
 }
 
-const floatingLookbookImages = [
-  '/images/lookbook/beauty-flatlay-1.jpg',
-  '/images/lookbook/gshop-4.jpg',
-  '/images/lookbook/clothes-rack-2.jpg',
-  '/images/lookbook/beauty-flatlay-3.jpg',
-]
-
 const ProductCards = ({ products }: { products: ShoppingProduct[] }) => {
   const topProducts = products.slice(0, 8)
   if (topProducts.length === 0) return null
@@ -47,13 +40,6 @@ const ProductCards = ({ products }: { products: ShoppingProduct[] }) => {
             rel="noreferrer"
             className="shop-product-card"
           >
-            <div className={`shop-product-card__image${product.imageUrl ? '' : ' is-placeholder'}`}>
-              {product.imageUrl ? (
-                <img src={product.imageUrl} alt={product.title} loading="lazy" />
-              ) : (
-                <span>No image</span>
-              )}
-            </div>
             <div className="shop-product-card__body">
               <h4>{product.title}</h4>
               <p className="shop-product-card__source">{product.source || 'Online store'}</p>
@@ -170,16 +156,6 @@ function App({ user, embedded = false }: AppProps) {
 
   return (
     <div className={`shop-page ${embedded ? 'shop-page--embedded' : ''}`}>
-      {!embedded ? (
-        <div className="shop-floating-gallery" aria-hidden="true">
-          {floatingLookbookImages.map((imageSrc, index) => (
-            <figure key={imageSrc} className={`shop-floating-image shop-floating-image--${index + 1}`}>
-              <img src={imageSrc} alt="" loading="lazy" />
-            </figure>
-          ))}
-        </div>
-      ) : null}
-
       <header className="shop-topbar">
         <div className="shop-brand">
           <h1>Styra</h1>
@@ -244,17 +220,14 @@ function App({ user, embedded = false }: AppProps) {
 
       {hasConversationStarted ? (
         <PromptForm
-          inputId="assistant-prompt-compact"
-          label="Continue conversation"
+          inputId="landing-prompt"
+          label="Describe what you want to buy"
           prompt={prompt}
-          placeholder="Ask a follow-up (size, budget, color, brand...)"
+          placeholder="Describe product, budget, and use case"
           onPromptChange={setPrompt}
           onSubmit={submitPrompt}
-          disabled={isSubmitting}
-          submitLabel="Send"
-          submittingLabel="..."
-          variant="compact"
-          formClassName="shop-chat-composer"
+          submitLabel="Ask assistant"
+          formClassName="landing-hero__prompt"
         />
       ) : null}
     </div>

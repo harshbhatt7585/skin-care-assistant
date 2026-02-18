@@ -1,17 +1,21 @@
 import asyncio
 import json
+from datetime import datetime, timezone
 from typing import AsyncGenerator, List
 
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
 from agents.cosmetist import create_cosmetist_agent, create_fashion_assistant_agent
+from agents.memory import search_agent
+from llm.gemini import get_gemini_embedding
 from schema.scan import (
     ConversationTurn,
     ScanChatTurnRequest,
     ScanChatTurnResponse,
     ScanWorkflowRequest,
 )
+from utils.search import upload_documents
 
 agent_router = APIRouter(prefix="/agent", tags=["agent"])
 
@@ -21,6 +25,66 @@ async def _agent_prompt(agent, history: List[dict], content: str):
     reply = await asyncio.to_thread(agent.respond, history.copy())
     history.append({"role": "assistant", "content": reply})
     return reply, list(history)
+
+
+def _latest_user_message(history: List[ConversationTurn]) -> str:
+    return next(
+        (
+            turn.content.strip()
+            for turn in reversed(history)
+            if turn.role == "user" and turn.content.strip()
+        ),
+        "",
+    )
+
+
+def _build_memory_context(uid: str, question: str) -> str | None:
+    try:
+        result = search_agent(
+            question,
+            uid=uid,
+            timestamp=datetime.now(timezone.utc),
+        )
+    except Exception as exc:  # pylint: disable=broad-except
+        print(f"[fashion-memory] retrieval skipped: {exc}")
+        return None
+
+    if not isinstance(result, dict):
+        return None
+
+    found = bool(result.get("found"))
+    answer = str(result.get("answer", "")).strip()
+    if not found or not answer:
+        return None
+
+    return (
+        "Relevant memory from past conversation. Use this only when helpful:\n"
+        f"- {answer}"
+    )
+
+
+def _store_memory(uid: str, user_message: str, assistant_reply: str) -> bool:
+    memory_record = (
+        f"User request: {user_message}\nAssistant response: {assistant_reply}"
+        if user_message
+        else f"Assistant response: {assistant_reply}"
+    )
+    memory_record = memory_record[:4000]
+    try:
+        embedding = get_gemini_embedding(
+            memory_record,
+            task_type="RETRIEVAL_DOCUMENT",
+        )
+        upload_documents(
+            uid,
+            memory_record,
+            embedding,
+            datetime.now(timezone.utc),
+        )
+        return True
+    except Exception as exc:  # pylint: disable=broad-except
+        print(f"[fashion-memory] persistence skipped: {exc}")
+        return False
 
 
 def _serialize_event(payload: dict) -> bytes:
@@ -165,10 +229,28 @@ async def run_fashion_chat_turn(payload: ScanChatTurnRequest) -> ScanChatTurnRes
     agent = create_fashion_assistant_agent(
         payload.country.lower(), payload.photo_data_urls
     )
-    reply = await asyncio.to_thread(
-        agent.respond, [message.model_dump() for message in payload.history]
-    )
+    agent_history = [message.model_dump() for message in payload.history]
+    latest_user_message = _latest_user_message(payload.history)
+
+    if payload.uid and latest_user_message:
+        memory_context = _build_memory_context(payload.uid, latest_user_message)
+        if memory_context:
+            agent_history = [
+                {"role": "system", "content": memory_context},
+                *agent_history,
+            ]
+
+    reply = await asyncio.to_thread(agent.respond, agent_history)
+
+    memory_saved = False
+    if payload.uid:
+        memory_saved = _store_memory(payload.uid, latest_user_message, reply)
+
     updated_history = payload.history + [
         ConversationTurn(role="assistant", content=reply)
     ]
-    return ScanChatTurnResponse(reply=reply, history=updated_history)
+    return ScanChatTurnResponse(
+        reply=reply,
+        history=updated_history,
+        memory_saved=memory_saved,
+    )

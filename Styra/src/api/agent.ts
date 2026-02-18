@@ -90,14 +90,22 @@ export async function streamScanWorkflow({
 type ChatTurnArgs = {
   photoDataUrls: string[]
   country: string
+  uid?: string
   history: ConversationTurn[]
+}
+
+type ChatTurnResponse = {
+  reply: string
+  history: ConversationTurn[]
+  memory_saved?: boolean
 }
 
 export async function runBackendChatTurn({
   photoDataUrls,
   country,
+  uid,
   history,
-}: ChatTurnArgs): Promise<{ reply: string; history: ConversationTurn[] }> {
+}: ChatTurnArgs): Promise<ChatTurnResponse> {
   const response = await fetch(`${BASE_URL}/agent/chat-turn`, {
     method: 'POST',
     headers: {
@@ -106,6 +114,7 @@ export async function runBackendChatTurn({
     body: JSON.stringify({
       photo_data_urls: photoDataUrls,
       country,
+      uid,
       history,
     }),
   })
@@ -114,7 +123,7 @@ export async function runBackendChatTurn({
     throw new Error('Failed to run chat turn.')
   }
 
-  const payload = (await response.json()) as { reply: string; history: ConversationTurn[] }
+  const payload = (await response.json()) as ChatTurnResponse
   console.log('[agent] backend reply:', payload.reply)
   return payload
 }
@@ -122,8 +131,9 @@ export async function runBackendChatTurn({
 export async function runFashionChatTurn({
   photoDataUrls,
   country,
+  uid,
   history,
-}: ChatTurnArgs): Promise<{ reply: string; history: ConversationTurn[] }> {
+}: ChatTurnArgs): Promise<ChatTurnResponse> {
   let response: Response
   try {
     response = await fetch(`${BASE_URL}/agent/fashion-chat-turn`, {
@@ -134,6 +144,7 @@ export async function runFashionChatTurn({
       body: JSON.stringify({
         photo_data_urls: photoDataUrls,
         country,
+        uid,
         history,
       }),
     })
@@ -149,7 +160,7 @@ export async function runFashionChatTurn({
     throw new Error('Failed to run fashion chat turn.')
   }
 
-  const payload = (await response.json()) as { reply: string; history: ConversationTurn[] }
+  const payload = (await response.json()) as ChatTurnResponse
   console.log('[agent] fashion reply:', payload.reply)
   return payload
 }

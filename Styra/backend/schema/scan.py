@@ -16,12 +16,14 @@ class ScanWorkflowRequest(BaseModel):
 class ScanChatTurnRequest(BaseModel):
     photo_data_urls: list[str] = Field(default_factory=list)
     country: str
+    uid: str | None = None
     history: list[ConversationTurn]
 
 
 class ScanChatTurnResponse(BaseModel):
     reply: str
     history: list[ConversationTurn]
+    memory_saved: bool | None = None
 
 
 class WorkflowEvent(BaseModel):

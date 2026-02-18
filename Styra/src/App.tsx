@@ -24,6 +24,9 @@ function App({ user, embedded = false }: AppProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [history, setHistory] = useState<ConversationTurn[]>([])
   const [assistantError, setAssistantError] = useState<string | null>(null)
+  const [memorySavedTurnIndexes, setMemorySavedTurnIndexes] = useState<Set<number>>(
+    () => new Set(),
+  )
   const [country, setCountry] = useState(getLocaleCountryCode)
   const hasConsumedInitialPrompt = useRef(false)
 
@@ -66,6 +69,7 @@ function App({ user, embedded = false }: AppProps) {
     }
 
     const nextHistory = [...history, userTurn]
+    const userTurnIndex = nextHistory.length - 1
     setHistory(nextHistory)
     setPrompt('')
     setIsSubmitting(true)
@@ -74,9 +78,17 @@ function App({ user, embedded = false }: AppProps) {
       const response = await runFashionChatTurn({
         photoDataUrls: [],
         country,
+        uid: user?.uid,
         history: nextHistory,
       })
       setHistory(response.history)
+      if (response.memory_saved) {
+        setMemorySavedTurnIndexes((current) => {
+          const next = new Set(current)
+          next.add(userTurnIndex)
+          return next
+        })
+      }
     } catch (error) {
       console.error('Failed to run chat turn', error)
       const message =
@@ -161,6 +173,9 @@ function App({ user, embedded = false }: AppProps) {
                 <div className="shop-message__bubble">
                   <p className="shop-message__text">{messageText}</p>
                 </div>
+              ) : null}
+              {message.role === 'user' && memorySavedTurnIndexes.has(index) ? (
+                <span className="shop-message__memory-note">Saved this information</span>
               ) : null}
               {parsedShopping ? (
                 <div className="shop-message__products">

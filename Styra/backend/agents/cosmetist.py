@@ -94,6 +94,8 @@ class Agent:
             message = completion.choices[0].message
             tool_calls = message.tool_calls or []
             if tool_calls:
+                tool_names = [call.function.name for call in tool_calls]
+                print(f"[agent] tool calls: {tool_names}")
                 compiled.append(
                     {
                         "role": "assistant",
@@ -143,13 +145,14 @@ class Agent:
         raise RuntimeError("Agent exceeded max turns without producing a response.")
 
 
-def create_serper_tool(gl: str) -> ToolSpec:
+def _create_search_tool(gl: str, name: str, description: str) -> ToolSpec:
     api_key = _require_env("SERPER_API_KEY")
 
     def _handler(args: Dict[str, Any]) -> str:
         query = args.get("q")
         if not query:
             raise ValueError("Missing 'q' for serper tool call")
+        print(f"[serper] query={query!r} gl={gl}")
         response = httpx.post(
             "https://google.serper.dev/shopping",
             headers={
@@ -161,11 +164,13 @@ def create_serper_tool(gl: str) -> ToolSpec:
         )
         response.raise_for_status()
         payload = response.json()
-        return json.dumps(payload.get("shopping"))
+        shopping_results = payload.get("shopping") or []
+        print(f"[serper] results={len(shopping_results)}")
+        return json.dumps(shopping_results)
 
     return ToolSpec(
-        name="serper",
-        description="Fetch shopping search results for product recommendations.",
+        name=name,
+        description=description,
         parameters={
             "type": "object",
             "properties": {
@@ -178,6 +183,24 @@ def create_serper_tool(gl: str) -> ToolSpec:
             "additionalProperties": False,
         },
         handler=_handler,
+    )
+
+
+def create_serper_tool(gl: str) -> ToolSpec:
+    return _create_search_tool(
+        gl,
+        name="serper",
+        description="Fetch shopping search results for product recommendations.",
+    )
+
+
+def create_fashion_search_tool(gl: str) -> ToolSpec:
+    return _create_search_tool(
+        gl,
+        name="search_tool",
+        description=(
+            "Search live shopping results for fashion and beauty products using Serper."
+        ),
     )
 
 
@@ -214,14 +237,14 @@ def create_fashion_assistant_agent(
                 "You will help user to evaluate products one over the other to shop the best products for specific use case and event.",
                 "You will not only toch the technical details of the products, but also the emotional preferences",
                 "Be concise, practical, and conversational.",
-                "don't use -- (dashes), be short and to the point"
+                "don't use -- (dashes), be short and to the point",
                 "If user intent is missing critical details, ask one short clarifying question before recommending.",
-                "When recommending products or shopping links, always call the serper tool first.",
+                "When recommending products or shopping links, always call search_tool first.",
                 "Never invent links, prices, or product details that are not from tool output.",
                 "Present recommendations in markdown bullets and include brief reasons.",
                 'Whenever you recommend purchasable products, append a ```json {"products": [...] } ``` code block.',
                 "Each product object should include: title, source, link, price, imageUrl, rating, ratingCount, productId, and position when available.",
             ]
         ),
-        tools=[create_serper_tool(gl)],
+        tools=[create_fashion_search_tool(gl)],
     )

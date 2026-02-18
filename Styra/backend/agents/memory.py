@@ -12,7 +12,7 @@ from utils.search import search_vector_db
 
 load_dotenv()
 
-MODEL_NAME = os.getenv("OPENROUTER_MODEL", "openai/gpt-oss-20b:free")
+MODEL_NAME = os.getenv("OPENROUTER_MODEL", "arcee-ai/trinity-large-preview:free")
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 

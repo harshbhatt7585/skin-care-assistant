@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import AddProduct from '../../src/components/Inventory/AddProduct'
+import ModelStudio from '../../src/components/Inventory/ModelStudio'
 import Loader from '../../src/components/Loader/Loader'
 import { useAuthSession } from '../../src/hooks/useAuthSession'
 
@@ -26,5 +26,5 @@ export default function InventoryPage() {
     )
   }
 
-  return <AddProduct uid={user.uid} isOpen onClose={() => router.push('/home')} />
+  return <ModelStudio uid={user.uid} />
 }
